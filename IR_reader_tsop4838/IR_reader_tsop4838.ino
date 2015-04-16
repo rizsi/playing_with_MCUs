@@ -14,8 +14,9 @@ int led = 13; // LED pin
 
 boolean lampOn=false;
 uint32_t lampOnAtMillis;
+//#define DEBUG
 
-#define LAMPTIMEOUTMILLIS 5000
+#define LAMPTIMEOUTMILLIS 900000l
 
 // Maximum length of a single signal - in microseconds
 #define MAXSIGNALTIME 500000
@@ -112,6 +113,7 @@ void decode()
 0,0,0,0,
 0,0,0,0,0,0,0,0,0};
   boolean finished=false;
+  boolean clearAll=false;
   cli();
     long t=micros();
     if(t-timeSignalLast>MAXSIGNALTIME)
@@ -121,7 +123,6 @@ void decode()
       finished=signalStartAt!=currentSegment;
     }
   sei();
-
   while(processed!=currentSegment)
   {
     uint16_t val=segments[processed];
@@ -143,6 +144,8 @@ void decode()
              decodedInput(i);
               signalStartAt=processed+1;
               match[i]=0;
+              clearAll=true;
+              goto decoderExit; // See: https://xkcd.com/292/
          }
        }else
        {
@@ -152,6 +155,7 @@ void decode()
 //    Serial.println(val);
     processed++;
   }
+  decoderExit:
   if(finished)
   {
 #ifdef DEBUG
@@ -173,6 +177,14 @@ void decode()
     Serial.println("");
 #endif
     signalStartAt=currentSegment;
+    clearAll=true;
+  }
+  if(clearAll)
+  {
+        for(uint8_t i=0;i<POSSIBLESIGNAL;++i)
+    {
+      match[i]=0;
+    }
   }
 }
 
