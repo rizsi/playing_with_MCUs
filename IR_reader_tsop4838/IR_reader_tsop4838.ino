@@ -12,6 +12,11 @@ int gnd=6;    // GND - middle leg of TSOP 4838
 int Vs=7;     // Vs - right leg of TSOP 4838
 int led = 13; // LED pin
 
+boolean lampOn=false;
+uint32_t lampOnAtMillis;
+
+#define LAMPTIMEOUTMILLIS 5000
+
 // Maximum length of a single signal - in microseconds
 #define MAXSIGNALTIME 500000
 
@@ -38,7 +43,7 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
    currentSegment++;
    timeSignalLast=t;
 //  Uncommenting this line helps debugging whether something happens or not
-   digitalWrite(led,input);
+//   digitalWrite(led,input);
 }
 // the setup routine runs once when you press reset:
 void setup() {                
@@ -55,8 +60,11 @@ void setup() {
   digitalWrite(Vs, HIGH);
   pinMode(Vs, OUTPUT);
   pinMode(led, OUTPUT);
+#ifdef DEBUG
   Serial.begin(9600);
+#endif
 }
+#ifdef DEBUG
 void printValue(uint8_t processed, uint16_t value)
 {
     Serial.print(value);
@@ -68,9 +76,32 @@ void printValue(uint8_t processed, uint16_t value)
       Serial.print(',');
     }
 }
+#endif
 uint16_t getSample(uint8_t sampleIndex, uint8_t segmentIndex)
 {
   pgm_read_word_near(signalSamples+(((uint16_t)sampleIndex)*MAXSIGNALSEGMENTS)+segmentIndex);
+}
+void setLamp(boolean value)
+{
+    lampOn=value;
+    digitalWrite(led, lampOn);
+    // Storing the simestamp is only required when "on" but it makes no harm to store when going off
+    lampOnAtMillis=millis();
+}
+void decodedInput(uint8_t buttonIndex)
+{
+  setLamp(!lampOn);
+}
+void timeoutLamp()
+{
+  if(lampOn)
+  {
+    uint32_t t=millis();
+    if((uint32_t)(t-lampOnAtMillis) > LAMPTIMEOUTMILLIS)
+    {
+      setLamp(false);
+    }
+  }
 }
 
 void decode()
@@ -103,10 +134,13 @@ void decode()
          // Decode is still ok for this sample
          if(match[i]<MAXSIGNALSEGMENTS && getSample(i, match[i])==0)
          {
+#ifdef DEBUG
              Serial.print("Decoded! ");
              Serial.print(match[i]);
              Serial.print(" ");
              Serial.println(i);
+#endif
+             decodedInput(i);
               signalStartAt=processed+1;
               match[i]=0;
          }
@@ -120,6 +154,7 @@ void decode()
   }
   if(finished)
   {
+#ifdef DEBUG
     uint8_t idx=0;
     Serial.println("Unkown: ");
     signalStartAt++;
@@ -136,101 +171,14 @@ void decode()
        idx++;
     }
     Serial.println("");
+#endif
     signalStartAt=currentSegment;
   }
-  /*
-  static uint8_t n=0;
-  static uint32_t possibleDecodes=0xFFFFFFFFl;
-  static uint32_t processSum=0;
-  static uint16_t received[MAXSIGNALSEGMENTS];
-  boolean finished=false;
-  cli();
-   while(currentSegment>n)
-   {
-     received[n]=segments[n];
-     n++;
-   }
-   if(decoding&&(t-timeSignalStart)>MAXSIGNALTIME)
-   {
-     decoding=false;
-     currentSegment=0;
-     finished=true;
-   }
-  sei();
-  while(n>processed)
-  {
-    uint16_t val=received[processed];
-    processSum+=val;
-    for(uint8_t i=0;i<POSSIBLESIGNAL;++i)
-    {
-      uint32_t mask=1<<i;
-      if(possibleDecodes&mask)
-      {
-        uint16_t sample=getSample(i, processed);
-        if(sample-MAXERROR <val && sample+MAXERROR>val)
-        {
-          // Decode is still ok for this sample
-          if(processed<MAXSIGNALSEGMENTS-1)
-          {
-            if(getSample(i, processed+1)==0)
-            {
-              Serial.print("Decoded! ");
-              Serial.print(processed);
-              Serial.print(" ");
-              Serial.println(i);
-            }
-          }
-        }else
-        {
-              Serial.print("FAIL ");
-              Serial.print(processed);
-              Serial.print(" ");
-              Serial.println(i);
-          // Clear this possibility from the mask!
-          possibleDecodes&=~mask;
-        }
-      }
-    }
-    processed++;
-  }
-  if(finished)
-  {
-    if(1)
-    {
-      Serial.print("processed: ");
-      Serial.println(processed);
-      processed=0;
-      Serial.println("uint16_t diffs[]={");
-      while(n>processed)
-      {
-        uint16_t val=received[processed];
-        printValue(processed, val);
-        received[processed]=0;
-        processed++;
-      }
-      while(processed<MAXSIGNALSEGMENTS)
-      {
-        printValue(processed, 0);
-        received[processed]=0;
-        processed++;
-      }
-      Serial.println();
-      Serial.print("}; // N samples, sum:");
-      Serial.print(n);
-      Serial.print(" ");
-      Serial.println(processSum);
-      Serial.println(sizeof(signalSamples));
-    }
-    processed=0;
-    processSum=0;
-    possibleDecodes=0xFFFFFFFFl;
-    n=0;
-  }
-  */
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
   decode();
+  timeoutLamp();
 }
 
