@@ -32,12 +32,17 @@ uint32_t lampOnAtMillis;
 #define MAXSIGNALTIME 500000
 
 // Maximum number of signal segments - the measured pieces of a signal
-#define MAXSIGNALSEGMENTS 100
+#define MAXSIGNALSEGMENTS 160
 
 //const uint16_t variableName[] PROGMEM = {data0, data1, data3...};
+const uint16_t signalSamples[] PROGMEM={
+#define NOELEC_BASE 0
 #include "neoelec.h"
+#define SAMSUNG_BASE NOELEC_N_BUTTONS
+#include "samsung_ak59_00149a.h"
+};
 #define POSSIBLESIGNAL (sizeof(signalSamples)/2/MAXSIGNALSEGMENTS)
-#define MAXERROR 150
+#define MAXERROR 160
 
 
 // State of pulse length receiver:
@@ -134,7 +139,7 @@ void decodedInput(uint8_t buttonIndex)
 {
   // On each button touch we reset the timeout
   lampOnAtMillis=millis();
-  if(1==buttonIndex)
+  if(NOELEC_VOL_PLUS==buttonIndex || SAMSUNG_VOL_PLUS==buttonIndex)
   {
     uint8_t next=pwmDuty+PWMSTEP;
     if(next<pwmDuty)
@@ -142,7 +147,7 @@ void decodedInput(uint8_t buttonIndex)
       next=PWMMAX;
     }
     setPWM(next);
-  }else if(2==buttonIndex)
+  }else if(NOELEC_VOL_MINUS==buttonIndex|| SAMSUNG_VOL_MINUS==buttonIndex)
   {
     uint8_t next=pwmDuty-PWMSTEP;
     if(next>pwmDuty)
@@ -150,7 +155,7 @@ void decodedInput(uint8_t buttonIndex)
       next=PWMMIN;
     }
     setPWM(next);
-  }else if(0==buttonIndex)
+  }else if(NOELEC_POWER==buttonIndex|| SAMSUNG_POWER==buttonIndex)
   {
     setLamp(pwmDuty==0);
   }
@@ -185,9 +190,11 @@ void decode()
 {
   static uint8_t processed=0;
   static uint8_t signalStartAt=0;
-  static uint8_t match[POSSIBLESIGNAL]={0,0,0,0,0,
-0,0,0,0,
-0,0,0,0,0,0,0,0,0};
+  static uint8_t match[POSSIBLESIGNAL]={0,0,
+0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,
+0,0,0
+};
   boolean finished=false;
   boolean clearAll=false;
   cli();
