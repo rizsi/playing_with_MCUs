@@ -16,17 +16,18 @@ int gnd=6;    // GND - middle leg of TSOP 4838
 int Vs=7;     // Vs - right leg of TSOP 4838
 int led = 13; // LED pin
 int pwmOut=11; // PWM output
+int16_t fadePwm=0; // Fading value - added to current PWM value to find the required power
 
-boolean lampOn=false;
 #define PWMSTEP 32
 #define PWMMIN 31
 #define PWMMAX 255
+#define FADEPERIODMILLIS 8
 uint8_t pwmDuty=255;
+uint8_t pwmDutyTarget=255;
 uint32_t lampOnAtMillis;
 //#define DEBUG
 
 #define LAMPTIMEOUTMILLIS 900000l
-
 // Maximum length of a single signal - in microseconds
 #define MAXSIGNALTIME 500000
 
@@ -57,7 +58,7 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
 }
 // the setup routine runs once when you press reset:
 void setup() {
-  pwmDuty=EEPROM.read(EEADDR_DUTY);
+  pwmDuty=0;
   // initialize the pins communicationg with the receiver.
   digitalWrite(datain, HIGH);
   pinMode(datain, INPUT);
@@ -95,26 +96,44 @@ uint16_t getSample(uint8_t sampleIndex, uint8_t segmentIndex)
 }
 void setPWM(uint8_t duty)
 {
-  EEPROM.write(EEADDR_DUTY, duty);
+  fadePwm=((int16_t)pwmDuty)-duty;
+  if(duty!=0)
+  {
+    EEPROM.write(EEADDR_DUTY, duty);
+  }
   pwmDuty=duty;
-  setLamp(lampOn);
+  updateOutput();
 }
-void setLamp(boolean value)
+void updateOutput()
 {
-    lampOn=value;
-    digitalWrite(led, lampOn);
-    // Storing the simestamp is only required when "on" but it makes no harm to store when going off
-    lampOnAtMillis=millis();
-    if(value)
+    digitalWrite(led, pwmDuty!=0);
+    if(fadePwm!=0||pwmDuty!=0)
     {
-      analogWrite(pwmOut, pwmDuty);
+      int16_t val=fadePwm+pwmDuty;
+      if(val<0) val=0;
+      if(val>255) val=255;
+      analogWrite(pwmOut, (uint8_t)val);
     }else
     {
       digitalWrite(pwmOut, 0);
     }
 }
+void setLamp(boolean value)
+{
+  if(value)
+  {
+    uint8_t duty=EEPROM.read(EEADDR_DUTY);
+    if(duty==0) duty=255;
+    setPWM(duty);
+  }else
+  {
+    setPWM(0);
+  }
+}
 void decodedInput(uint8_t buttonIndex)
 {
+  // On each button touch we reset the timeout
+  lampOnAtMillis=millis();
   if(1==buttonIndex)
   {
     uint8_t next=pwmDuty+PWMSTEP;
@@ -133,18 +152,32 @@ void decodedInput(uint8_t buttonIndex)
     setPWM(next);
   }else if(0==buttonIndex)
   {
-    setLamp(!lampOn);
+    setLamp(pwmDuty==0);
   }
 }
 void timeoutLamp()
 {
-  if(lampOn)
+  static uint32_t lastFadeStepT;
+  uint32_t t=millis();
+  if(pwmDuty!=0)
   {
-    uint32_t t=millis();
     if((uint32_t)(t-lampOnAtMillis) > LAMPTIMEOUTMILLIS)
     {
       setLamp(false);
     }
+  }
+  if(t-lastFadeStepT>FADEPERIODMILLIS)
+  {
+    if(fadePwm<0)
+    {
+      fadePwm++;
+      updateOutput();
+    }else if (fadePwm>0)
+    {
+      fadePwm--;
+      updateOutput();
+    }
+    lastFadeStepT=t;
   }
 }
 
