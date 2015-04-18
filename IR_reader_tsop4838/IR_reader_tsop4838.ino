@@ -3,6 +3,10 @@
   The receiver can be connectd directly to the Ardino pins: 5-6-7
   facing outwards of the Arduino.
  */
+ 
+// Current setting is written to EEPROM
+#include <EEPROM.h>
+#define EEADDR_DUTY 0
 
 //   (direction is important, see datasheet of TSOP 4838
 //    on the table facing up with the legs towards you)
@@ -11,8 +15,13 @@ int datain=5; // IR input - left leg of TSOP 4838
 int gnd=6;    // GND - middle leg of TSOP 4838
 int Vs=7;     // Vs - right leg of TSOP 4838
 int led = 13; // LED pin
+int pwmOut=11; // PWM output
 
 boolean lampOn=false;
+#define PWMSTEP 32
+#define PWMMIN 31
+#define PWMMAX 255
+uint8_t pwmDuty=255;
 uint32_t lampOnAtMillis;
 //#define DEBUG
 
@@ -47,7 +56,8 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
 //   digitalWrite(led,input);
 }
 // the setup routine runs once when you press reset:
-void setup() {                
+void setup() {
+  pwmDuty=EEPROM.read(EEADDR_DUTY);
   // initialize the pins communicationg with the receiver.
   digitalWrite(datain, HIGH);
   pinMode(datain, INPUT);
@@ -61,6 +71,7 @@ void setup() {
   digitalWrite(Vs, HIGH);
   pinMode(Vs, OUTPUT);
   pinMode(led, OUTPUT);
+  pinMode(pwmOut, OUTPUT);
 #ifdef DEBUG
   Serial.begin(9600);
 #endif
@@ -82,16 +93,48 @@ uint16_t getSample(uint8_t sampleIndex, uint8_t segmentIndex)
 {
   pgm_read_word_near(signalSamples+(((uint16_t)sampleIndex)*MAXSIGNALSEGMENTS)+segmentIndex);
 }
+void setPWM(uint8_t duty)
+{
+  EEPROM.write(EEADDR_DUTY, duty);
+  pwmDuty=duty;
+  setLamp(lampOn);
+}
 void setLamp(boolean value)
 {
     lampOn=value;
     digitalWrite(led, lampOn);
     // Storing the simestamp is only required when "on" but it makes no harm to store when going off
     lampOnAtMillis=millis();
+    if(value)
+    {
+      analogWrite(pwmOut, pwmDuty);
+    }else
+    {
+      digitalWrite(pwmOut, 0);
+    }
 }
 void decodedInput(uint8_t buttonIndex)
 {
-  setLamp(!lampOn);
+  if(1==buttonIndex)
+  {
+    uint8_t next=pwmDuty+PWMSTEP;
+    if(next<pwmDuty)
+    {
+      next=PWMMAX;
+    }
+    setPWM(next);
+  }else if(2==buttonIndex)
+  {
+    uint8_t next=pwmDuty-PWMSTEP;
+    if(next>pwmDuty)
+    {
+      next=PWMMIN;
+    }
+    setPWM(next);
+  }else if(0==buttonIndex)
+  {
+    setLamp(!lampOn);
+  }
 }
 void timeoutLamp()
 {
