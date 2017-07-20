@@ -11,11 +11,24 @@
 //   (direction is important, see datasheet of TSOP 4838
 //    on the table facing up with the legs towards you)
 
-int datain=5; // IR input - left leg of TSOP 4838
-int gnd=6;    // GND - middle leg of TSOP 4838
-int Vs=7;     // Vs - right leg of TSOP 4838
-int led = 13; // LED pin
-int pwmOut=11; // PWM output
+/// IR input - left leg of TSOP 4838
+#define datain 5
+// GND - middle leg of TSOP 4838
+#define gnd 6
+// Vs - right leg of TSOP 4838
+#define Vs 7
+// LED pin
+#define led 13
+// PWM output
+#define pwmOut 11
+// Button input - internal pullup to 5V, button pulls to GND when pressed
+#define button1 9
+// Button input - internal pullup to 5V, button pulls to GND when pressed
+#define button2 10
+
+/// Repeat time of the button when user keeps it pressed
+#define REPEATMILLIS 200
+
 int16_t fadePwm=0; // Fading value - added to current PWM value to find the required power
 
 #define PWMSTEP 32
@@ -49,6 +62,10 @@ const uint16_t signalSamples[] PROGMEM={
 long timeSignalLast;
 uint8_t currentSegment=0;
 uint16_t segments[256];
+/// Previous input value on button1
+uint8_t prevButton1=0;
+/// Previous input value on button2
+uint8_t prevButton2=0;
 
 /// Based on http://playground.arduino.cc/Main/PinChangeInterrupt
 ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
@@ -78,6 +95,8 @@ void setup() {
   pinMode(Vs, OUTPUT);
   pinMode(led, OUTPUT);
   pinMode(pwmOut, OUTPUT);
+  pinMode(button1, INPUT_PULLUP);
+  pinMode(button2, INPUT_PULLUP);
 #ifdef DEBUG
   Serial.begin(9600);
 #endif
@@ -137,8 +156,10 @@ void setLamp(boolean value)
 }
 void decodedInput(uint8_t buttonIndex)
 {
+  uint32_t t=millis();
+  uint32_t diffT=t-lampOnAtMillis;
   // On each button touch we reset the timeout
-  lampOnAtMillis=millis();
+  lampOnAtMillis=t;
   if(NOELEC_VOL_PLUS==buttonIndex || SAMSUNG_VOL_PLUS==buttonIndex)
   {
     uint8_t next=pwmDuty+PWMSTEP;
@@ -157,7 +178,11 @@ void decodedInput(uint8_t buttonIndex)
     setPWM(next);
   }else if(NOELEC_POWER==buttonIndex|| SAMSUNG_POWER==buttonIndex)
   {
-    setLamp(pwmDuty==0);
+    // Prevent sensing a single button press twice when in a short time - issue was reported by users :-)
+    if(diffT>250)
+    {
+      setLamp(pwmDuty==0);
+    }
   }
 }
 void timeoutLamp()
@@ -271,9 +296,51 @@ void decode()
   }
 }
 
+
+void handleButtons()
+{
+  uint32_t t=millis();
+  uint8_t b1=digitalRead(button1);
+  boolean repeat=lampOnAtMillis+REPEATMILLIS-t>REPEATMILLIS;
+  // TODO prell avoidance necessary?
+  if(b1==LOW)
+  {
+    if(b1!=prevButton1 || repeat)
+    {
+    // On each button touch we reset the timeout
+    lampOnAtMillis=t;
+    uint8_t next=pwmDuty+PWMSTEP;
+    if(next<pwmDuty)
+    {
+      next=PWMMAX;
+    }
+    setPWM(next);
+    }
+  }
+  prevButton1=b1;
+  uint8_t b2=digitalRead(button2);
+  // TODO prell avoidance necessary?
+  if(b2==LOW)
+  {
+    if(b2!=prevButton2 || repeat)
+    {
+    // On each button touch we reset the timeout
+    lampOnAtMillis=t;
+    uint8_t next=pwmDuty-PWMSTEP;
+    if(next>pwmDuty)
+    {
+      next=0;
+    }
+    setPWM(next);
+    }
+  }
+  prevButton2=b2;
+}
+
 // the loop routine runs over and over again forever:
 void loop() {
   decode();
+  handleButtons();
   timeoutLamp();
 }
 
