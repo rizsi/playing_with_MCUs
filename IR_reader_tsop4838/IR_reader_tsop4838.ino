@@ -116,7 +116,7 @@ void printValue(uint8_t processed, uint16_t value)
 #endif
 uint16_t getSample(uint8_t sampleIndex, uint8_t segmentIndex)
 {
-  pgm_read_word_near(signalSamples+(((uint16_t)sampleIndex)*MAXSIGNALSEGMENTS)+segmentIndex);
+  return pgm_read_word_near(signalSamples+(((uint16_t)sampleIndex)*MAXSIGNALSEGMENTS)+segmentIndex);
 }
 void setPWM(uint8_t duty)
 {
@@ -214,6 +214,7 @@ void timeoutLamp()
 void decode()
 {
   static uint8_t processed=0;
+  static uint8_t maxMatch=0;
   static uint8_t signalStartAt=0;
   static uint8_t match[POSSIBLESIGNAL]={0,0,
 0,0,0,0,0,0,0,0,
@@ -240,6 +241,7 @@ void decode()
        if(sample-MAXERROR <val && sample+MAXERROR>val)
        {
          match[i]++;
+         maxMatch=max(match[i],maxMatch);
          // Decode is still ok for this sample
          if(match[i]<MAXSIGNALSEGMENTS && getSample(i, match[i])==0)
          {
@@ -268,7 +270,7 @@ void decode()
   {
 #ifdef DEBUG
     uint8_t idx=0;
-    Serial.println("Unkown: ");
+    Serial.println("Unknown: ");
     signalStartAt++;
     while(signalStartAt!=currentSegment)
     {
@@ -289,9 +291,14 @@ void decode()
   }
   if(clearAll)
   {
-        for(uint8_t i=0;i<POSSIBLESIGNAL;++i)
+#ifdef DEBUG
+      Serial.print("clearAll: ");
+      Serial.println(maxMatch);
+#endif
+    for(uint8_t i=0;i<POSSIBLESIGNAL;++i)
     {
       match[i]=0;
+      maxMatch=0;
     }
   }
 }
@@ -301,7 +308,7 @@ void handleButtons()
 {
   uint32_t t=millis();
   uint8_t b1=digitalRead(button1);
-  boolean repeat=lampOnAtMillis+REPEATMILLIS-t>REPEATMILLIS;
+  boolean repeat=t-lampOnAtMillis>REPEATMILLIS;
   // TODO prell avoidance necessary?
   if(b1==LOW)
   {
