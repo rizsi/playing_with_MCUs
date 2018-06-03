@@ -8,6 +8,62 @@
 // 1 us: 16 instruction cycles
 // Interrupt handling is in order of 4us (with pus and pop at the end)
 
+// Max conversion time:
+// R1 R0 (configuration bits)
+// 0  0  9 bits 93.75ms
+// 0  1  10 bits 187.5ms
+// 1  0  11 bits 375ms
+// 1  1  12 bits 750 ms
+
+// Reset: ~1ms
+// command: 60-100 uS/bit -> ~1ms / byte
+// Receive: 65 us/bit -> ~1ms / byte
+// Konfig+konvert:
+// reset+8 bájt küld+8 bájt fogad -> ~17ms
+
+
+uint32_t tot_overflow=0;
+
+#define TIMER_TRIGGER(us, handler) timer_handler=handler; TCNT1=-(((int16_t)us*16)); TIMSK1 |= _BV(TOIE1)
+
+#define OW_LOW()  pinMode(OWIRE_DATA, OUTPUT); digitalWrite(OWIRE_DATA, LOW)
+#define OW_RELEASE() pinMode(OWIRE_DATA, INPUT); digitalWrite(OWIRE_DATA, LOW)
+#define OW_READ() digitalRead(OWIRE_DATA)
+
+
+
+typedef void (*TIMEOUT_HANDLER)(void);
+TIMEOUT_HANDLER timer_handler;
+// TIMER1 overflow interrupt service routine
+// called whenever TCNT1 overflows
+ISR(TIMER1_OVF_vect)
+{
+  // Disable overflow interrupt
+    TIMSK1 &= ~_BV(TOIE1);
+    // keep a track of number of overflows
+    tot_overflow++;
+    timer_handler();
+}
+
+// initialize timer, interrupt and variable. Timer1 no prescaler runs at 16MHz
+void timer1_init()
+{
+    // initialize overflow counter variable
+    tot_overflow = 0;
+    // set up timer with prescaler = 0
+    TCCR1B |= (B00000000 << CS10);
+ 
+    // initialize counter
+    TCNT1 = 0;
+ 
+    // disable overflow interrupt
+    TIMSK1 &= ~_BV(TOIE1);
+ 
+    // enable global interrupts
+    sei(); 
+}
+
+
 
 uint8_t owireCRC(uint8_t data, boolean reset)
 {
@@ -16,17 +72,10 @@ uint8_t owireCRC(uint8_t data, boolean reset)
   {
     crc=0;
   }
-//  Serial.println("CRC cycle");
   for(uint8_t i=0;i<8;++i)
   {
     uint8_t lsbXdataBit=(data&1)^(crc&1);
-/*    Serial.print(lsbXdataBit);
-    Serial.print(" ");
-    Serial.print(data&1);
-    Serial.print(" ");
-    Serial.println(crc, BIN);*/
     crc=(crc>>1) | (crc<<7); // rotate 1 right
-//    Serial.println(crc, BIN);
     if(lsbXdataBit)
     {
       crc^=B00001100;
@@ -58,7 +107,6 @@ void owireSend(uint8_t data)
       pinMode(OWIRE_DATA, INPUT);
       digitalWrite(OWIRE_DATA, LOW);
       delayMicroseconds(15+15+30); // Recovery 1us<T
-//      Serial.println("Send 1");
     }
     else
     {
@@ -68,7 +116,6 @@ void owireSend(uint8_t data)
       pinMode(OWIRE_DATA, INPUT);
       digitalWrite(OWIRE_DATA, LOW);
       delayMicroseconds(10); // Recovery 1us<T
-//      Serial.println("Send 0");
     }
     data>>=1;
   }
@@ -85,7 +132,6 @@ uint8_t owireReceiveBit()
     delayMicroseconds(2); //  58>T>13us
     
     uint8_t sample=digitalRead(OWIRE_DATA);
-//    Serial.println(sample);
     
     delayMicroseconds(60); // T>45us
   return sample;
@@ -119,16 +165,22 @@ boolean owireReceiveBytes(uint8_t * tgBuffer, uint8_t nByte)
 
 boolean owireReset()
 {
-  pinMode(OWIRE_DATA, OUTPUT);
-  digitalWrite(OWIRE_DATA, LOW);
+  OW_LOW();
   delayMicroseconds(480);
-  pinMode(OWIRE_DATA, INPUT);
-  digitalWrite(OWIRE_DATA, LOW);
+  OW_RELEASE();
   delayMicroseconds(30);
-  uint8_t presence=digitalRead(OWIRE_DATA);
+  uint8_t presence=OW_READ();
   delayMicroseconds(450);
   return !presence; 
 }
+
+/*
+void owReset()
+{
+  OW_LOW();
+  
+}
+*/
 
 uint8_t sensorState=0;
 
@@ -146,6 +198,16 @@ void setup() {
   pinMode(OWIRE_VCC, OUTPUT);
   digitalWrite(OWIRE_VCC, HIGH);
   sensorState=0;
+  
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
+  timer1_init();
+}
+
+void handle_println()
+{
+  sei();
+  Serial.println("From handler!");
 }
 
 
@@ -230,5 +292,8 @@ void loop() {
   {
     sensorState=0;
   }
+  Serial.println(tot_overflow);
+  timer_handler=handle_println;
+  TIMER_TRIGGER(1000, handle_println);
   delay(1000);
 }
