@@ -22,9 +22,10 @@
 // reset+8 bájt küld+8 bájt fogad -> ~17ms
 
 
-uint32_t tot_overflow=0;
+//uint32_t tot_overflow=0;
 
-#define TIMER_TRIGGER(us, handler) timer_handler=handler; TCNT1=-(((int16_t)us*16)); TIMSK1 |= _BV(TOIE1)
+#define TIMER_TRIGGER(us, handler) timer_handler=handler; TCNT1=-((int16_t)us*16); TIFR1|=_BV(TOV1); TIMSK1 |= _BV(TOIE1)
+//#define TIMER_TRIGGER(us, handler) timer_handler=handler; TCNT1=0x0; TIFR1=_BV(TOV1); TIMSK1 |= _BV(TOIE1); TCCR1B |= B00000001
 
 #define OW_LOW()  pinMode(OWIRE_DATA, OUTPUT); digitalWrite(OWIRE_DATA, LOW)
 #define OW_RELEASE() pinMode(OWIRE_DATA, INPUT); digitalWrite(OWIRE_DATA, LOW)
@@ -38,10 +39,15 @@ TIMEOUT_HANDLER timer_handler;
 // called whenever TCNT1 overflows
 ISR(TIMER1_OVF_vect)
 {
+  // Disable counter
+//  TCCR1B &=~(B00000111 <<CS10);
+
+//  TCNT1H=0;
+//    TCCR1B &= ~(B00000111 << CS10);
   // Disable overflow interrupt
     TIMSK1 &= ~_BV(TOIE1);
     // keep a track of number of overflows
-    tot_overflow++;
+    //tot_overflow++;
     timer_handler();
 }
 
@@ -49,9 +55,19 @@ ISR(TIMER1_OVF_vect)
 void timer1_init()
 {
     // initialize overflow counter variable
-    tot_overflow = 0;
+    //tot_overflow = 0;
     // set up timer with prescaler = 0
-    TCCR1B |= (B00000000 << CS10);
+    TCCR1B &=~(B00000111 <<CS10);
+    Serial.print("TCCR1B ");
+    Serial.println(TCCR1B, BIN);
+    Serial.print("TCCR1A ");
+    Serial.println(TCCR1A, BIN);
+    TCCR1A&=0;
+    TCCR1B |= (B00000001 << CS10);
+    // TODO prescaler=64
+//    TCCR1B |= (B00000011 << CS10);
+   OCR1A=0xFFFF;
+   OCR1B=0xFFFF;
  
     // initialize counter
     TCNT1 = 0;
@@ -174,13 +190,40 @@ boolean owireReset()
   return !presence; 
 }
 
-/*
+uint32_t t=0;
+volatile uint8_t owStatus;
+
+void owReset_read()
+{
+//  sei();
+ // Serial.println("owRead");
+  uint8_t presence=OW_READ();
+  owStatus=presence?1:2;
+}
+void owReset_release()
+{
+  uint32_t a=micros();
+  t=a-t;
+  sei();
+  Serial.println("owRelease");
+  Serial.println(t);
+//  Serial.println(a);
+
+  OW_RELEASE();
+  TIMER_TRIGGER(30, owReset_read);
+}
+
 void owReset()
 {
-  OW_LOW();
+  sei();
+ // Serial.println("owReset");
+//  Serial.println(((int16_t)480*16));
   
+  owStatus=0;
+  OW_LOW();
+  t=micros();
+  TIMER_TRIGGER(1, owReset_release);  
 }
-*/
 
 uint8_t sensorState=0;
 
@@ -212,6 +255,7 @@ void handle_println()
 
 
 void loop() {
+  /*
   uint8_t buffer[9];
   boolean presence=owireReset();
   
@@ -292,8 +336,16 @@ void loop() {
   {
     sensorState=0;
   }
-  Serial.println(tot_overflow);
-  timer_handler=handle_println;
-  TIMER_TRIGGER(1000, handle_println);
+  */
+//  Serial.println(tot_overflow);
+static uint32_t t;
+uint32_t a=micros();
+  Serial.println(a-t);
+  t=a;
+  owReset();
+  while(owStatus==0);
+//  Serial.print("Presence: ");
+//  Serial.println(owStatus);
+//  TIMER_TRIGGER(1000, handle_println);
   delay(1000);
 }
