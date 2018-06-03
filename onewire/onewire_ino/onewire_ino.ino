@@ -9,21 +9,6 @@
 // Interrupt handling is in order of 4us (with pus and pop at the end)
 
 
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);
-  
-  digitalWrite(OWIRE_GND, LOW);
-  pinMode(OWIRE_GND, OUTPUT);
-  digitalWrite(OWIRE_GND, LOW);
-  
-  pinMode(OWIRE_DATA, INPUT);
-  digitalWrite(OWIRE_DATA, LOW);
-  
-  pinMode(OWIRE_VCC, OUTPUT);
-  digitalWrite(OWIRE_VCC, HIGH);
-}
-
 uint8_t owireCRC(uint8_t data, boolean reset)
 {
   static uint8_t crc=0;
@@ -89,11 +74,8 @@ void owireSend(uint8_t data)
   }
 }
 
-uint8_t owireReceive()
+uint8_t owireReceiveBit()
 {
-  uint8_t ret=0;
-  for(int i=0;i<8;++i)
-  {
     pinMode(OWIRE_DATA, OUTPUT);
     digitalWrite(OWIRE_DATA, LOW);
     delayMicroseconds(2); // 1<T<15 us
@@ -106,13 +88,20 @@ uint8_t owireReceive()
 //    Serial.println(sample);
     
     delayMicroseconds(60); // T>45us
+  return sample;
+}
+
+uint8_t owireReceive()
+{
+  uint8_t ret=0;
+  for(int i=0;i<8;++i)
+  {
+    uint8_t sample=owireReceiveBit();
     ret>>=1;
     ret|=(sample?(uint8_t)0x80:0);
   }
   return ret;
 }
-
-uint8_t buffer[8];
 
 boolean owireReceiveBytes(uint8_t * tgBuffer, uint8_t nByte)
 {
@@ -140,7 +129,28 @@ boolean owireReset()
   delayMicroseconds(450);
   return !presence; 
 }
+
+uint8_t sensorState=0;
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  
+  digitalWrite(OWIRE_GND, LOW);
+  pinMode(OWIRE_GND, OUTPUT);
+  digitalWrite(OWIRE_GND, LOW);
+  
+  pinMode(OWIRE_DATA, INPUT);
+  digitalWrite(OWIRE_DATA, LOW);
+  
+  pinMode(OWIRE_VCC, OUTPUT);
+  digitalWrite(OWIRE_VCC, HIGH);
+  sensorState=0;
+}
+
+
 void loop() {
+  uint8_t buffer[9];
   boolean presence=owireReset();
   
   if(presence)
@@ -163,33 +173,62 @@ void loop() {
     }
   }else
   {
+    sensorState=0;
     Serial.println("Device present not received");
   }
-/*  for(int i=0;i<8;++i)
+  presence=owireReset();
+  if(presence)
   {
-     buffer[i]=owireReceive();
-  }
-  
-  if(presence==0)
-  {
-    Serial.println("Device present\n");
-    for(int i=0;i<8;++i)
-    {
-      Serial.println(buffer[i]);
-    }
-    uint8_t crc;
-    for(int i=0;i<7;++i)
-    {
-      crc=owireCRC(buffer[i], i==0);
-    }
-    Serial.print("Check CRC: ");
-    Serial.println(crc);
-//    crc=owireCRC(B00000010, 1);
-//    Serial.println(crc, BIN);
+      if(!sensorState)
+      {
+        Serial.println("Reconfigure sensor!");
+        owireSend(0xCC); // Skip ROM command - we have only one sensor on the line.
+        owireSend(0x4E); // Write scratchpad - Configure the device
+        owireSend(0);
+        owireSend(0);
+        owireSend(B01100000);
+        sensorState=1;
+        presence=owireReset();
+      }
+      if(presence)
+      {
+        owireSend(0xCC); // Skip ROM command - we have only one sensor on the line.
+        owireSend(0x44); // Convert temperature
+        while(owireReceiveBit()==0)
+        {
+           // wait for temperature read ready. TODO this point is possible deadlock if device fails
+        }
+        presence=owireReset();
+        owireSend(0xCC); // Skip ROM command - we have only one sensor on the line.
+        owireSend(0xBE); // Read scratchpad
+        if(owireReceiveBytes(buffer, 9))
+        {
+          uint16_t data=buffer[1]&B00000111;
+          uint8_t signum=buffer[1]&B11111000;
+          data<<=8;
+          data|=buffer[0];
+          float valueT=((float)data)/16.0f;
+          if(signum)
+          {
+            valueT=-valueT;
+          }
+          Serial.println("Scratchpad read successfully!");
+          Serial.println(valueT);
+        }else
+        {
+          for(uint8_t i=0;i<9;++i)
+          {
+            Serial.println(buffer[i],HEX);
+          }
+          Serial.println("Error reading scratchpad");
+        }
+      }else
+      {
+        sensorState=0;
+      }
   }else
   {
-    Serial.println("Not present\n");
+    sensorState=0;
   }
-  */
   delay(1000);
 }
