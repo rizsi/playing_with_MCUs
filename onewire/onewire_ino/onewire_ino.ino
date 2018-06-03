@@ -24,31 +24,27 @@
 
 //uint32_t tot_overflow=0;
 
-#define TIMER_TRIGGER(us, handler) timer_handler=handler; TCNT1=-((int16_t)us*16); TIFR1|=_BV(TOV1); TIMSK1 |= _BV(TOIE1)
-//#define TIMER_TRIGGER(us, handler) timer_handler=handler; TCNT1=0x0; TIFR1=_BV(TOV1); TIMSK1 |= _BV(TOIE1); TCCR1B |= B00000001
+/// Trigger timer us - prescaler: 1
+#define TIMER_TRIGGER(us, handler) timer_handler=handler; TCCR1B &=~(B00000111 <<CS10); TCCR1B |= (B00000001 << CS10); TCNT1=-((int16_t)us*16); TIFR1|=_BV(TOV1); TIMSK1 |= _BV(TOIE1)
+/// Trigger timer ms - prescaler: 1024
+#define TIMER_TRIGGER_MS(ms, handler) timer_handler=handler; TCCR1B &=~(B00000111 <<CS10); TCCR1B |= (B00000101 << CS10); TCNT1=-(int16_t)((int32_t)ms*16*1000/1024); TIFR1|=_BV(TOV1); TIMSK1 |= _BV(TOIE1)
 
-#define OW_LOW()  pinMode(OWIRE_DATA, OUTPUT); digitalWrite(OWIRE_DATA, LOW)
-#define OW_RELEASE() pinMode(OWIRE_DATA, INPUT); digitalWrite(OWIRE_DATA, LOW)
+#define OW_LOW()  pinMode(OWIRE_DATA, OUTPUT)
+#define OW_RELEASE() pinMode(OWIRE_DATA, INPUT)
 #define OW_READ() digitalRead(OWIRE_DATA)
 
 
 
 typedef void (*TIMEOUT_HANDLER)(void);
+typedef void (*OW_HANDLER)(void);
 TIMEOUT_HANDLER timer_handler;
 // TIMER1 overflow interrupt service routine
 // called whenever TCNT1 overflows
 ISR(TIMER1_OVF_vect)
 {
-  // Disable counter
-//  TCCR1B &=~(B00000111 <<CS10);
-
-//  TCNT1H=0;
-//    TCCR1B &= ~(B00000111 << CS10);
   // Disable overflow interrupt
-    TIMSK1 &= ~_BV(TOIE1);
-    // keep a track of number of overflows
-    //tot_overflow++;
-    timer_handler();
+  TIMSK1 &= ~_BV(TOIE1);
+  timer_handler();
 }
 
 // initialize timer, interrupt and variable. Timer1 no prescaler runs at 16MHz
@@ -100,12 +96,6 @@ uint8_t owireCRC(uint8_t data, boolean reset)
     {
       crc^=B10000000;
     }
-    /*
-    Serial.print(i);
-    Serial.print(" ");
-    Serial.print(data&1);
-    Serial.print(" bit CRC ");
-    Serial.println(crc, BIN);*/
     data>>=1;
   }
   return crc;
@@ -190,39 +180,354 @@ boolean owireReset()
   return !presence; 
 }
 
-uint32_t t=0;
-volatile uint8_t owStatus;
+#define OW_STEP_RESET_CONVERSION 0
+#define OW_STEP_INITIALIZE 1
+#define OW_STEP_START_CONVERSION 2
+#define OW_STEP_READ_SCRATCHPAD 3
+#define OW_STEP_CHECK_SCRATCHPAD 4
+#define OW_STEP_READ_SCRATCHPAD_RESET 5
+#define OW_STEP_READ_ROM 6
+#define OW_STEP_CHECK_ROM 7
+#define OW_STEP_RESET_READ_ROM 8
+#define OW_STEP_READ_SCRATCHPAD_REQ_RESET 9
 
-void owReset_read()
+#define OW_ERROR_UNKNOWN -1
+#define OW_ERROR_PRESENCE -2
+#define OW_ERROR_CRC -3
+
+struct
 {
-//  sei();
- // Serial.println("owRead");
-  uint8_t presence=OW_READ();
-  owStatus=presence?1:2;
+  volatile int8_t state;
+  uint8_t data[9];
+  uint8_t bit;
+  uint8_t nByte;
+  uint8_t currentByte;
+  int8_t istate;
+  uint8_t presence;
+  uint8_t initialized=0;
+  int16_t tempM16;
+} owStatus;
+
+void owInit()
+{
+  owStatus.initialized=0;
 }
-void owReset_release()
-{
-  uint32_t a=micros();
-  t=a-t;
-  sei();
-  Serial.println("owRelease");
-  Serial.println(t);
-//  Serial.println(a);
 
+void ow_ActionFinished();
+void ow_Send();
+
+void ow_Send_pulse3()
+{
+  sei();
+
+    if(owStatus.bit>=8)
+    {
+      owStatus.currentByte++;
+      if(owStatus.currentByte<owStatus.nByte)
+      {
+        owStatus.bit=0;
+  Serial.print("Send: ");
+  Serial.println(owStatus.data[owStatus.currentByte], HEX);
+        ow_Send();
+      }else
+      {
+        ow_ActionFinished();
+      }
+    }else
+    {
+      ow_Send();
+    }
+}
+
+void ow_Send_pulse2()
+{
   OW_RELEASE();
-  TIMER_TRIGGER(30, owReset_read);
+  TIMER_TRIGGER(10, ow_Send_pulse3);
 }
 
-void owReset()
+void ow_Send_pulse1()
+{
+  if(owStatus.data[owStatus.currentByte]&1)
+  {
+    OW_RELEASE();
+  }
+  owStatus.data[owStatus.currentByte]>>=1;
+  owStatus.bit++;
+  TIMER_TRIGGER(80, ow_Send_pulse2);
+}
+void ow_Send()
+{
+  OW_LOW();
+  TIMER_TRIGGER(2, ow_Send_pulse1);
+/*  
+  for(int i=0;i<8;++i)
+  {
+    if(data&0x01)
+    {
+      pinMode(OWIRE_DATA, OUTPUT);
+      digitalWrite(OWIRE_DATA, LOW);
+      delayMicroseconds(2); // 1<T<15 us
+      pinMode(OWIRE_DATA, INPUT);
+      digitalWrite(OWIRE_DATA, LOW);
+      delayMicroseconds(15+15+30); // Recovery 1us<T
+    }
+    else
+    {
+      pinMode(OWIRE_DATA, OUTPUT);
+      digitalWrite(OWIRE_DATA, LOW);
+      delayMicroseconds(90); // 60<T<120 us
+      pinMode(OWIRE_DATA, INPUT);
+      digitalWrite(OWIRE_DATA, LOW);
+      delayMicroseconds(10); // Recovery 1us<T
+    }
+    data>>=1;
+  }
+*/
+}
+
+void ow_Read_pulse3()
 {
   sei();
- // Serial.println("owReset");
-//  Serial.println(((int16_t)480*16));
-  
-  owStatus=0;
+  if(owStatus.bit<8)
+  {
+    ow_Read();
+  }else
+  {
+//    Serial.print("Received: ");
+//    Serial.println(owStatus.data[owStatus.currentByte]);
+    owStatus.currentByte++;
+    if(owStatus.currentByte<owStatus.nByte)
+    {
+      owStatus.bit=0;
+      ow_Read();
+    }else
+    {
+      ow_ActionFinished();
+    }
+  }
+}
+
+/*void ow_Read_pulse2()
+{
+  uint8_t sample=OW_READ();
+  owStatus.data[owStatus.currentByte]>>=1;
+  owStatus.data[owStatus.currentByte]|=sample?(uint8_t)0x80:0;
+  owStatus.bit++;
+  TIMER_TRIGGER(60, ow_Read_pulse3);
+}
+*/
+
+/*void ow_Read_pulse1()
+{
+  OW_RELEASE();  
+  TIMER_TRIGGER(2, ow_Read_pulse2);
+}
+*/
+
+void ow_Read()
+{
   OW_LOW();
-  t=micros();
-  TIMER_TRIGGER(1, owReset_release);  
+//  TIMER_TRIGGER(2, ow_Read_pulse1);
+// TODO this part is best executed without interrupts - by hand timing
+
+  OW_RELEASE();  
+  uint8_t sample=OW_READ();
+  owStatus.data[owStatus.currentByte]>>=1;
+  owStatus.data[owStatus.currentByte]|=sample?(uint8_t)0x80:0;
+  owStatus.bit++;
+  TIMER_TRIGGER(60, ow_Read_pulse3);
+}
+void ow_SendAll()
+{
+  owStatus.bit=0;
+  owStatus.currentByte=0;
+  Serial.print("Send: ");
+  Serial.println(owStatus.data[owStatus.currentByte], HEX);
+  ow_Send();
+}
+void ow_ReadAll()
+{
+  for(uint8_t i=0;i<owStatus.nByte;++i)
+  {
+    owStatus.data[i]=0;
+  }
+  owStatus.bit=0;
+  owStatus.currentByte=0;
+  ow_Read();
+}
+boolean ow_CheckCRC()
+{
+  uint8_t crc=owireCRC(0,1);
+  for(uint8_t i=0;i<owStatus.nByte-1;++i)
+  {
+    Serial.print(owStatus.data[i], HEX);
+    Serial.print(", ");
+    crc=owireCRC(owStatus.data[i],0);
+  }
+  Serial.print("CRC ");
+  Serial.print(crc, HEX);
+  Serial.print(" ");
+  Serial.println(owStatus.data[owStatus.nByte-1], HEX);
+  return crc!=owStatus.data[owStatus.nByte-1];
+}
+void ow_ActionFinished()
+{
+  sei();
+    Serial.print("OW state: ");
+  Serial.println(owStatus.istate);
+  if(owStatus.istate<0)
+  {
+    // ERRORS
+    owStatus.state=owStatus.istate;
+        owStatus.initialized=0;
+  }else
+  {
+    switch(owStatus.istate)
+    {
+      case OW_STEP_RESET_READ_ROM:
+        if(!owStatus.presence)
+        {
+          owStatus.state=OW_ERROR_PRESENCE;
+          break;
+        }else
+        {
+          owStatus.data[0]=0x33;
+          owStatus.nByte=1;
+          owStatus.istate=OW_STEP_READ_ROM;
+          ow_SendAll();
+          break;
+        }
+      case OW_STEP_RESET_CONVERSION:
+        if(!owStatus.presence)
+        {
+          owStatus.state=OW_ERROR_PRESENCE;
+          break;
+        }else
+        {
+          if(!owStatus.initialized)
+          {
+            owStatus.istate=OW_STEP_INITIALIZE;
+            owStatus.data[0]=0xCC; // Skip ROM command - we have only one sensor on the line.
+            owStatus.data[1]=0x4E; // Write scratchpad - Configure the device
+            owStatus.data[2]=0;
+            owStatus.data[3]=0;
+            owStatus.data[4]=B01100000;
+            owStatus.nByte=5;
+            owStatus.initialized=1;
+            ow_SendAll();
+          }else
+          {
+            owStatus.data[0]=0xCC;
+            owStatus.data[1]=0x44; // Convert temperature
+            owStatus.nByte=2;
+            owStatus.istate=OW_STEP_START_CONVERSION;
+            ow_SendAll();
+          }
+        }
+        break;
+      case OW_STEP_READ_ROM:
+          owStatus.nByte=8;
+          owStatus.istate=OW_STEP_CHECK_ROM;
+          ow_ReadAll();
+        break;
+      case OW_STEP_START_CONVERSION:
+          Serial.println("Wait a lot of time!");
+          // Wait 1sec (minimum by spec: 750 ms)
+        owStatus.istate=OW_STEP_READ_SCRATCHPAD_REQ_RESET;
+        TIMER_TRIGGER_MS(1000, ow_ActionFinished);      
+        break;
+      case OW_STEP_READ_SCRATCHPAD_REQ_RESET:
+        owStatus.istate=OW_STEP_READ_SCRATCHPAD_RESET;
+        ow_Reset();
+        break;
+      case OW_STEP_READ_SCRATCHPAD_RESET:
+        if(!owStatus.presence)
+        {
+          owStatus.state=OW_ERROR_PRESENCE;
+          break;
+        }else
+        {
+            owStatus.data[0]=0xCC;
+            owStatus.data[1]=0xBE; // Read Scratchpad
+            owStatus.nByte=2;
+            owStatus.istate=OW_STEP_READ_SCRATCHPAD;
+            ow_SendAll();
+        }
+        break;
+      case OW_STEP_READ_SCRATCHPAD:
+         owStatus.nByte=9;
+         owStatus.istate=OW_STEP_CHECK_SCRATCHPAD;
+         ow_ReadAll();
+        break;
+      case OW_STEP_CHECK_ROM:
+      {
+        boolean err=ow_CheckCRC();
+        Serial.println(err);
+        owStatus.state=err?OW_ERROR_CRC:6;
+        break;
+      }
+      case OW_STEP_CHECK_SCRATCHPAD:
+      {
+        boolean err=ow_CheckCRC();
+        Serial.println(err);
+        if(!err)
+        {
+          uint16_t data=owStatus.data[1]&B00000111;
+          uint8_t signum=owStatus.data[1]&B11111000;
+          data<<=8;
+          data|=owStatus.data[0];
+          if(signum)
+          {
+            data=-data;
+          }
+          owStatus.tempM16=data;
+        }
+        owStatus.state=err?OW_ERROR_CRC:5;
+        break;
+      }
+      case OW_STEP_INITIALIZE:
+        // TODO check initialized state by re-reading configuration.
+        owStatus.istate=OW_STEP_RESET_CONVERSION;
+        ow_Reset();
+        break;
+      default:
+        owStatus.initialized=0;
+        owStatus.state=OW_ERROR_UNKNOWN;
+        break;
+    }
+  }
+}
+
+void ow_Reset_read()
+{
+  uint8_t presence=OW_READ();
+  owStatus.presence=!presence;
+  TIMER_TRIGGER(450, ow_ActionFinished);
+}
+void ow_Reset_release()
+{
+  OW_RELEASE();
+  TIMER_TRIGGER(30, ow_Reset_read);
+}
+
+void ow_Reset()
+{
+  OW_LOW();
+  TIMER_TRIGGER(480, ow_Reset_release);  
+}
+
+void owReadThermo()
+{
+   owStatus.state=0;
+   owStatus.istate=OW_STEP_RESET_CONVERSION;
+   ow_Reset();
+}
+
+void owReadROM()
+{
+   owStatus.state=0;
+   owStatus.istate=OW_STEP_RESET_READ_ROM;
+   ow_Reset();
 }
 
 uint8_t sensorState=0;
@@ -245,6 +550,7 @@ void setup() {
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
   timer1_init();
+  owInit();
 }
 
 void handle_println()
@@ -338,14 +644,23 @@ void loop() {
   }
   */
 //  Serial.println(tot_overflow);
-static uint32_t t;
-uint32_t a=micros();
-  Serial.println(a-t);
-  t=a;
-  owReset();
-  while(owStatus==0);
-//  Serial.print("Presence: ");
-//  Serial.println(owStatus);
-//  TIMER_TRIGGER(1000, handle_println);
+//static uint32_t t;
+//uint32_t a=micros();
+ // Serial.println(a-t);
+  //t=a;
+  owReadROM();
+  while(owStatus.state==0);
+  Serial.print("OW read ROM return code: ");
+  Serial.println(owStatus.state);
+  owReadThermo();
+  while(owStatus.state==0);
+  Serial.print("OW read thermo return code: ");
+  Serial.println(owStatus.state);
+  if(owStatus.state>0)
+  {
+    float valueT=((float)owStatus.tempM16)/16.0f;
+    Serial.print("Temperature read successfully: ");
+    Serial.println(valueT);
+  }
   delay(1000);
 }
