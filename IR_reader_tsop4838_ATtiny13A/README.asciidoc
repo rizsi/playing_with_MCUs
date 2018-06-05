@@ -1,0 +1,134 @@
+= ATTiny implementation of IR receiver
+
+Clock: 4.8 or 9.6 MHz
+
+Input capture:
+ * Input patterns are length:
+ ** 4500 micros initialize signal write
+ ** 600/1600 micros: bits 0 and 1
+ ** In some controllers there are 500/600 micros in the T table but they may not bring information differentiating 4-700 VS 1400-1700 could be enough
+
+8MHz system clock means that 1 CLK is 1/8 micros
+
+Interrupt based time read should work with interrupt based counter update.
+
+Configuration:
+
+== Oscillator
+
+http://becomingmaker.com/tuning-attiny-oscillator/
+
+Should be accurate enough to send debug messages to PC - only required in debug mode
+
+"Using a delta adjustment of the factory calibrated value can be better than baking in the actual OSCCAL value if you don’t want to tune each chip individually.
+
+For example I know that Atmel did a good job calibrating the oscillator at 3V, but I will be running at 5V so the oscillator will run slightly slower at that voltage. If adding 3 to OSCCAL works for one chip, it will probably work reasonably well for every chip."
+
+OSCCAL += 3;
+
+== PWM
+
+Original PWM on UNO was 31250Hz
+
+Timer prescale options:
+
+f CLK_I/O /8, f CLK_I/O /64,
+f CLK_I/O /256, or f CLK_I/O /1024
+
+timer is prescaled by 256:
+
+One count is 32 micros. That is enough to detect the patterns
+
+== overflow interrupt
+
+Set up to count time. Overflows+current counter together is queried to get time.
+
+== Input chage interrupt
+
+Is used to detect input patterns
+
+== Serial out
+
+When recording patterns serial output is used on the original program.
+
+This can be totally avoided or serial output as to be implemented by software.
+
+9600 baud: 833 CLK per baud
+
+
+== IR data encoding
+
+Version 1 only measures the times between the edges and saves the patterns. This works but uses much RAM which is not present in ATTiny. Signaling must be better understood.
+
+Signaling reverse-engineered:
+
+(time is in micro seconds)
+
+* Idle state of receiver outout is low.
+* 1 period is: High->Low (->high this is the start of the next period) low time encodes the bit:
+* START period: HIGH: (4500) LOW: 4500
+* bit 0: HIGH: 600, LOW: 600
+* bit 1: HIGH: 600, LOW: 1650
+* Stop: HIGH: 600, LOW: 47000 (idle until next transfer)
+
+Other controller:
+
+* START: HIGH 9000, LOW 4500
+* bit 0: 620, 550
+* bit 1: 620, 1630
+* STOP: 9000, 2212
+* STOP2: HIGH 600 then idle
+* There is no repeat here just send the 32 bit once
+
+One command is 32 bit. Samsung ak59_00149a repeats the command just after ~47000 idle - repeat within 50ms should be omitted (version 1 of the receiver requires both signals to be detected! It is not necessary) (there is also a possible double press omit in the Arduino code)
+
+Each period - rise and falling edge
+
+== Memory map
+
+It is not possible to store the exact pattern values in SRAM.
+
+State to be stored:
+
+32 received value (shift in)
+
+Receiver state:
+
+ * IDLE
+ * START_HIGH
+ * START_LOW
+ * bit X high
+ * bit X low
+ * STOP HIGH
+ * STOP LOW
+ * STOP2 HIGH
+ * STOP2 LOW
+ * ERROR - In case of transmission decode problem. - SAME as IDLE?
+
+Biggest value to ever measure is 9000 micros - 9 millis that is about 86400 cycles with 9.6MHz (internal clock of selected attiny). If the third byte (one values 65536 cycles) increases 3 then receiver state must be sent to IDLE
+
+
+Receiver last pin change time (4 byte)
+
+timer overflow counter (4 byte)
+
+stack: main loop+ISR (pin change or timer overflow)+gettime
+
+Stack sizes:
+overflow ISR 5
+main: 0
+prolog: 5
+pin change: 
+timeGetTicks: 0! (return address! 2 or 3 bytes)
+
+3+8+8+3 - 22 bytes!!!
+
+ASM only solution is required :-)
+
+ASM version:
+
+ * overflow ~7 byte
+ * pcint ~7 byte
+ * getTime 2 byte
+
+

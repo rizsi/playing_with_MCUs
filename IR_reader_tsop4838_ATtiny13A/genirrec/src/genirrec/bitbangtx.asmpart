@@ -1,0 +1,33 @@
+This may fit the ATTiny flash:
+
+Source: https://www.avrfreaks.net/forum/codeasmattiny-bit-bang-uart-and-debugging-routines
+
+
+txchar:				;transmit character in regA out the port bit
+	cbi	PORTB,3		;begin start bit
+	rcall	txrxbd		;bit time delay
+	ldi	loopC,8		;8 data bits, no parity
+txc1:	ror	regA		;rotate bit 0 into carry
+	brcs	txc2		;branch if bit is high
+	cbi	PORTB,3
+	rjmp	txc3
+txc2:	sbi	PORTB,3
+txc3:	rcall	txrxbd		;bit time delay
+	dec	loopC
+	brne	txc1		;loop until all bits done
+	sbi	PORTB,3		;begin the stop bit
+	rcall	txrxbd		;bit time delay
+				;wait another bit time before next character
+				;(sends 2 stop bits)
+	rcall	txrxbd		;bit time delay
+	ret
+
+;--------------------
+				;bit delay, common to tx and rx routines
+txrxbd:	mov	loopA,bdHI	;coarse bit timing value
+txrx5:	mov	loopB,bdLO	;fine bit timing value
+txrx4:	dec	loopB		;inner loop
+	brne	txrx4
+	dec	loopA		;outer loop
+	brne	txrx5
+	ret

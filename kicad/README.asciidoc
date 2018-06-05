@@ -1,0 +1,19 @@
+= KiCAD PCB power line unmask processor
+
+Extracts all power lines from the PCB design plan and copies them to the mask layers.
+
+Can be used so that the power lines are not covered with mask and so they can be strenghten by adding some solder to their surface.
+
+== Usage
+
+Start the com.rizsi.kicad.KicadProcessor class as a main entry point.
+
+First parameter must be the path .kicad_pcb file.
+
+Best practice is to put the KiCAD desig files into version control and check the result of the program in a diff view.
+
+Copies all traces with 1.5mm width from F.Cu and B.Cu to the F.Mask and B.Mask layers. Also removes all other 1.5mm traces form the F.Mask and B.Mask layers so a single run updates this layer totally.
+
+If you want to use it with different filter parameters then you have to adopt the source code.
+
+

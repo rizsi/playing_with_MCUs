@@ -1,0 +1,12 @@
+{
+    "name": "rizsi DRAW",
+    "keywords": "display draw",
+    "description": "Library to draw into a framebuffer",
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/rizsi/Arduino-IR-decoder.git"
+    },
+    "frameworks": "arduino",
+    "platforms": "*"
+}

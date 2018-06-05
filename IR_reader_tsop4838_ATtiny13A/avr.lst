@@ -1,0 +1,66 @@
+GAS LISTING /tmp/ccXnnpot.s 			page 1
+
+
+   1               		.file	"example.cpp"
+   2               	__SP_H__ = 0x3e
+   3               	__SP_L__ = 0x3d
+   4               	__SREG__ = 0x3f
+   5               	__tmp_reg__ = 0
+   6               	__zero_reg__ = 1
+   7               		.text
+   8               	.global	__vector_15
+   9               		.type	__vector_15, @function
+  10               	__vector_15:
+  11 0000 1F92      		push r1
+  12 0002 0F92      		push r0
+  13 0004 0FB6      		in r0,__SREG__
+  14 0006 0F92      		push r0
+  15 0008 1124      		clr __zero_reg__
+  16 000a 8F93      		push r24
+  17 000c 9F93      		push r25
+  18               	/* prologue: Signal */
+  19               	/* frame size = 0 */
+  20               	/* stack size = 5 */
+  21               	.L__stack_usage = 5
+  22 000e 8091 0000 		lds r24,overflowCounter
+  23 0012 9091 0000 		lds r25,overflowCounter+1
+  24 0016 0196      		adiw r24,1
+  25 0018 9093 0000 		sts overflowCounter+1,r25
+  26 001c 8093 0000 		sts overflowCounter,r24
+  27               	/* epilogue start */
+  28 0020 9F91      		pop r25
+  29 0022 8F91      		pop r24
+  30 0024 0F90      		pop r0
+  31 0026 0FBE      		out __SREG__,r0
+  32 0028 0F90      		pop r0
+  33 002a 1F90      		pop r1
+  34 002c 1895      		reti
+  35               		.size	__vector_15, .-__vector_15
+  36               		.section	.text.startup,"ax",@progbits
+  37               	.global	main
+  38               		.type	main, @function
+  39               	main:
+  40               	/* prologue: function */
+  41               	/* frame size = 0 */
+  42               	/* stack size = 0 */
+  43               	.L__stack_usage = 0
+  44 0000 E6E6      		ldi r30,lo8(102)
+  45 0002 F0E0      		ldi r31,0
+  46 0004 8081      		ld r24,Z
+  47 0006 8D5F      		subi r24,lo8(-(3))
+  48 0008 8083      		st Z,r24
+  49 000a 80E0      		ldi r24,0
+  50 000c 90E0      		ldi r25,0
+  51 000e 0895      		ret
+  52               		.size	main, .-main
+  53               	.global	overflowCounter
+  54               		.section .bss
+  55               		.type	overflowCounter, @object
+  56               		.size	overflowCounter, 2
+  57               	overflowCounter:
+GAS LISTING /tmp/ccXnnpot.s 			page 2
+
+
+  58 0000 0000      		.zero	2
+  59               		.ident	"GCC: (GNU) 4.9.2"
+  60               	.global __do_clear_bss

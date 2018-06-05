@@ -1,0 +1,12 @@
+{
+    "name": "rizsi One Wire Digital Thermometer",
+    "keywords": "One Wire Digital Thermometer DS18B20 DS1822",
+    "description": "Library for One Wire Digital Thermometer",
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/rizsi/Arduino-IR-decoder.git"
+    },
+    "frameworks": "arduino",
+    "platforms": "*"
+}
