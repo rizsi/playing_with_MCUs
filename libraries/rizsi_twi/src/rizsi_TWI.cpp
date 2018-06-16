@@ -96,7 +96,6 @@ static uint8_t waitEvent(uint8_t waitValue, uint8_t requiredState, uint8_t requi
       Serial.print(" ");
       Serial.println(twiLastStatus, HEX);
       delay(1000);
-      while(1);
       return errCode;
     }
   }
@@ -176,12 +175,12 @@ void twiBeginRead(uint8_t sla)
     // Send start condition
   TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN); //| _BV(TWIE);
   // while(1);
-  WAIT_TWCR2(_BV(TWINT), TW_START, TW_REP_START, 100);
+  WAIT_TWCR2(_BV(TWINT), TW_START, TW_REP_START, 103);
 
   // Send TWI Address
   TWDR = (sla<<1) | TW_READ;
   TWCR = _BV(TWINT) | _BV(TWEN);
-  WAIT_TWCR2(_BV(TWINT), TW_MT_SLA_ACK,  TW_MT_SLA_ACK, 101);
+  WAIT_TWCR2(_BV(TWINT), TW_MR_SLA_ACK,  TW_MR_SLA_ACK, 104);
 }
 uint16_t twiRead(uint8_t lastByte)
 {
