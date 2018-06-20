@@ -1,10 +1,5 @@
 #include <Arduino.h>
-
-#define OWIRE_GND 3
-#define OWIRE_DATA 4
-#define OWIRE_VCC 5
-
-
+#include <util/atomic.h>
 
 
 // 1 us: 16 instruction cycles
@@ -31,9 +26,11 @@
 /// Trigger timer ms - prescaler: 1024
 #define TIMER_TRIGGER_MS(ms, handler) timer_handler=handler; TCCR1B &=~(B00000111 <<CS10); TCCR1B |= (B00000101 << CS10); TCNT1=-(int16_t)((int32_t)ms*16*1000/1024); TIFR1|=_BV(TOV1); TIMSK1 |= _BV(TOIE1)
 
-#define OW_LOW()  pinMode(OWIRE_DATA, OUTPUT)
-#define OW_RELEASE() pinMode(OWIRE_DATA, INPUT)
-#define OW_READ() digitalRead(OWIRE_DATA)
+#define OW_LOW()  pinMode(owPin, OUTPUT)
+#define OW_RELEASE() pinMode(owPin, INPUT)
+#define OW_READ() digitalRead(owPin)
+
+static uint8_t owPin;
 
 
 
@@ -101,20 +98,20 @@ void owireSend(uint8_t data)
   {
     if(data&0x01)
     {
-      pinMode(OWIRE_DATA, OUTPUT);
-      digitalWrite(OWIRE_DATA, LOW);
+      pinMode(owPin, OUTPUT);
+      digitalWrite(owPin, LOW);
       delayMicroseconds(2); // 1<T<15 us
-      pinMode(OWIRE_DATA, INPUT);
-      digitalWrite(OWIRE_DATA, LOW);
+      pinMode(owPin, INPUT);
+      digitalWrite(owPin, LOW);
       delayMicroseconds(15+15+30); // Recovery 1us<T
     }
     else
     {
-      pinMode(OWIRE_DATA, OUTPUT);
-      digitalWrite(OWIRE_DATA, LOW);
+      pinMode(owPin, OUTPUT);
+      digitalWrite(owPin, LOW);
       delayMicroseconds(90); // 60<T<120 us
-      pinMode(OWIRE_DATA, INPUT);
-      digitalWrite(OWIRE_DATA, LOW);
+      pinMode(owPin, INPUT);
+      digitalWrite(owPin, LOW);
       delayMicroseconds(10); // Recovery 1us<T
     }
     data>>=1;
@@ -123,15 +120,15 @@ void owireSend(uint8_t data)
 
 uint8_t owireReceiveBit()
 {
-    pinMode(OWIRE_DATA, OUTPUT);
-    digitalWrite(OWIRE_DATA, LOW);
+    pinMode(owPin, OUTPUT);
+    digitalWrite(owPin, LOW);
     delayMicroseconds(2); // 1<T<15 us
-    pinMode(OWIRE_DATA, INPUT);
-    digitalWrite(OWIRE_DATA, LOW);
+    pinMode(owPin, INPUT);
+    digitalWrite(owPin, LOW);
     
     delayMicroseconds(2); //  58>T>13us
     
-    uint8_t sample=digitalRead(OWIRE_DATA);
+    uint8_t sample=digitalRead(owPin);
     
     delayMicroseconds(60); // T>45us
   return sample;
@@ -156,10 +153,13 @@ boolean owireReceiveBytes(uint8_t * tgBuffer, uint8_t nByte)
      tgBuffer[i]=owireReceive();
   }
   uint8_t crc=owireCRC(0, 1);
+  Serial.print("T: ");
   for(uint8_t i=0;i<nByte-1;++i)
   {
+  	Serial.print(tgBuffer[i], DEC);
     crc=owireCRC(tgBuffer[i], 0);
   }
+  Serial.println();
   return crc==tgBuffer[nByte-1];
 }
 
@@ -203,18 +203,12 @@ struct
   int16_t tempM16;
 } owStatus;
 
-void owInit()
+void owInit(uint8_t pin)
 {
-  digitalWrite(OWIRE_GND, LOW);
-  pinMode(OWIRE_GND, OUTPUT);
-  digitalWrite(OWIRE_GND, LOW);
+  owPin=pin;
+  pinMode(owPin, INPUT);
+  digitalWrite(owPin, LOW);
   
-  pinMode(OWIRE_DATA, INPUT);
-  digitalWrite(OWIRE_DATA, LOW);
-  
-  pinMode(OWIRE_VCC, OUTPUT);
-  digitalWrite(OWIRE_VCC, HIGH);
-
   timer1_init();
   owStatus.initialized=0;
   owStatus.state=OW_ERROR_UNINITIALIZED;
@@ -291,11 +285,15 @@ void ow_Read_pulse3()
 
 void ow_Read()
 {
-  OW_LOW();
-// TODO this part is best executed without interrupts - by hand timing. Hand timing could be refined
-
-  OW_RELEASE();  
-  uint8_t sample=OW_READ();
+  uint8_t sample;
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+  {
+	  OW_LOW();
+	// TODO this part is best executed without interrupts - by hand timing. Hand timing could be refined
+	
+	  OW_RELEASE();  
+	  sample=OW_READ();
+  }
   owStatus.data[owStatus.currentByte]>>=1;
   owStatus.data[owStatus.currentByte]|=sample?(uint8_t)0x80:0;
   owStatus.bit++;
@@ -320,10 +318,20 @@ void ow_ReadAll()
 boolean ow_CheckCRC()
 {
   uint8_t crc=owireCRC(0,1);
+#ifdef DEBUG_OW
+  Serial.print("T: ");
+#endif
   for(uint8_t i=0;i<owStatus.nByte-1;++i)
   {
+#ifdef DEBUG_OW
+  	Serial.print(owStatus.data[i], DEC);
+  	Serial.print(", ");
+#endif
     crc=owireCRC(owStatus.data[i],0);
   }
+#ifdef DEBUG_OW
+  Serial.println();
+#endif
   return crc!=owStatus.data[owStatus.nByte-1];
 }
 void ow_ActionFinished()

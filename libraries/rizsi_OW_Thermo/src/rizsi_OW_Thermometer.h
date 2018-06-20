@@ -2,7 +2,7 @@
  * Initialize One Wire library.
  * Must be called once before averything else.
  */
-void owInit();
+void owInit(uint8_t pin);
 
 /**
  * Is last query finished? True may mean error code!
@@ -36,6 +36,7 @@ void owReadThermo();
 
 /**
  * Get the current error code of the OW state.
+ * @return negative numbers sign an error
  */
 int8_t owErrorCode();
 

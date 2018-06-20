@@ -114,36 +114,90 @@ void RD_drawString(const char * str)
     }
   }
 }
+char digitToChar(uint8_t digit, uint8_t base)
+{
+	if(digit<10)
+	{
+		return '0'+digit;
+	}else
+	{
+		return 'A'+digit-10;
+	}
+}
 
+uint8_t fillLeftToWidth(char * tg, uint8_t width, uint8_t reqWidth, char fill)
+{
+	if(width<reqWidth)
+	{
+		uint8_t diff=reqWidth-width;
+		for(uint8_t i=1;i<=width;++i)
+		{
+			tg[reqWidth-i]=tg[width-i];
+		}
+		for(uint8_t i=0;i<diff;++i)
+		{
+			tg[i]=fill;
+		}
+		return diff;
+	}
+	return 0;
+}
+
+void reverseChars(char * tg, uint8_t length)
+{
+	uint8_t n=length/2;
+	for(uint8_t i=0;i<n;++i)
+	{
+		uint8_t x=tg[i];
+		tg[i]=tg[length-i-1];
+		tg[length-i-1]=x;
+	}
+}
+
+uint8_t numToBuffer(char * tg, uint32_t n, uint8_t minWidth, uint8_t base)
+{
+	uint8_t at=0;
+	while(n>0)
+	{
+		uint8_t digit=n%base;
+		tg[at]=digitToChar(digit, base);
+		at++;
+		n=n/base;
+	}
+	reverseChars(tg, at);
+	at+=fillLeftToWidth(tg, at, minWidth, '0');
+	return at;
+}
 void RD_drawNumber(int32_t value, uint8_t base)
 {
 	char buffer[33];
-	snprintf(buffer, 33, "%d", value);
+	uint8_t at=numToBuffer(buffer, value, 1, base);
+	buffer[at]='\0';
+//	snprintf(buffer, 33, "%d", value);
 	RD_drawString(buffer);
 }
 void RD_drawFloat(float value, uint8_t width, uint8_t precision)
 {
 	char buffer[33];
-	snprintf(buffer, 33, "%.1f", value);
-// TODO precision!
-//	dtostrf(value, width, precision, buffer);
+	uint32_t partsMultiplier=10;
+	for(int i=1;i<precision;++i)
+	{
+		partsMultiplier*=10;
+	}
+	uint8_t ptr=0;
+	if(value<0)
+	{
+		buffer[0]='-';
+		ptr++;
+		value=-value;
+	}
+	uint32_t whole=(uint32_t)value;
+	uint32_t part=(uint32_t)((value-whole)*partsMultiplier);
+	ptr+=numToBuffer(&buffer[ptr], whole, width, 10);
+	buffer[ptr]=',';
+	ptr++;
+	ptr+=numToBuffer(&buffer[ptr], part, precision, 10);
+	buffer[ptr]='\0';
 	RD_drawString(buffer);
 }
-void RD_drawFixPoint(uint32_t whole, uint32_t partial, uint8_t precision, bool neg)
-{
-	char buffer[33];
-	char * b=buffer;
-	if(neg)
-	{
-		*b='-';
-		b++;
-	}
-//	itoa(whole,b,10);
-	*b=',';
-	b++;
-//	itoa(partial,b,10);	
-}
-
-
-
 

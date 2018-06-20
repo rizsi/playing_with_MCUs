@@ -56,7 +56,7 @@ bool rtcRead(rtcState * dst)
 	uint8_t monthCentury=decodeBcd(twiRead(0));
 	rtc_sim_state.month=decodeBcd(monthCentury&0B01111111);
 	monthCentury&=0B10000000;
-	rtc_sim_state.year=decodeBcd(decodeBcd(twiRead(1)))+(monthCentury?2100:2000); // Possible to go to the 2100's :-) This program will outlive me!
+	rtc_sim_state.year=decodeBcd(twiRead(1))+(monthCentury?2100:2000); // Possible to go to the 2100's :-) This program will outlive me!
 	
 	twiEndTransmission();
 	

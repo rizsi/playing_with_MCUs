@@ -22,7 +22,7 @@ extern void RD_clearScreen();
 extern void RD_drawString(const char * str);
 
 extern void RD_drawNumber(int32_t value, uint8_t base);
-extern void RD_drawFloat(float value, uint8_t width, uint8_t precision);
+extern void RD_drawFloat(float value, uint8_t wholeWidth, uint8_t precision);
 
 /**
  * Set blink state to true/false. When true then all drawn characters are blinking.

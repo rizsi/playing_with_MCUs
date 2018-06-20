@@ -1,0 +1,12 @@
+{
+    "name": "rizsi sdcard logger",
+    "keywords": "sdcard sd card logger",
+    "description": "Library to write logs to an SD card",
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/rizsi/Arduino-IR-decoder.git"
+    },
+    "frameworks": "arduino",
+    "platforms": "*"
+}
