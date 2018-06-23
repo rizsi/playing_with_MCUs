@@ -16,3 +16,7 @@ bool rtcRead(rtcState * dst);
 
 
 bool rtcWrite(rtcState * src);
+/**
+ * Get the low bits of a counter that can be used as a quasi random number.
+ */
+uint8_t rtcGetTimeLowBits();

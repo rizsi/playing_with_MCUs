@@ -28,8 +28,9 @@ typedef void (*sdBlockWriter) (uint8_t data, void * param);
 /**
  * Initialize the SD card subsystem.
  * Does not communicate to the card yet only sets up the IO pins and initializes the internal data structures.
+ * @return chipSelectNeg index of pin used to select the chip
  */
-uint8_t sdInit();
+uint8_t sdInit(int chipSelectNeg);
 
 /**
  * Write a block of data to an SD card.

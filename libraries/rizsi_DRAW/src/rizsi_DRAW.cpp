@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <avr/pgmspace.h>
+#include <rizsi_DRAW.h>
 #include "characters.h"
 
 #define OLED_WIDTH 128
@@ -38,17 +39,34 @@ void RD_chechNextCharPosition()
 /** Write to framebuffer but avoid overflow */
 #define putFrame(index, value) if(((uint16_t)(index))<1024){RD_frame[(uint16_t)index]=value;}
 #define getFrame(index) ((((uint16_t)(index))<1024)?RD_frame[(uint16_t)index]:0);
-void RD_drawString(const char * str)
+
+typedef char (*charGetter) (uint8_t at);
+
+static uint8_t strncmppgm(charGetter get, uint8_t at, const PROGMEM uint8_t * ptr, uint8_t lc)
 {
-  char temp[3];
-  uint8_t l=strlen(str);
+	for(uint8_t i=0;i<lc;++i)
+	{
+		char c0=get(at+i);
+		char c1=pgm_read_byte_near(ptr+i);
+		if(c0!=c1)
+		{
+			return c0-c1;
+		}
+	}
+	return 0;
+}
+
+static void RD_drawString2(charGetter get, int l)
+{
+//  char temp[3];
+  uint8_t at=0;
   uint8_t prevl=0;
   while(l>0)
   {
-    if(*str=='\n')
+    if(get(at)=='\n')
     {
       l--;
-      str++;
+      at++;
       RD_charY++;
       RD_charX=0;
       continue;
@@ -60,14 +78,14 @@ void RD_drawString(const char * str)
     prevl=l;
     for(uint8_t i=0;i<N_CHARS;++i)
     {
-      int j=0;
-      for(j=0;j<CHAR_LENGTH;++j)
-      {
-        temp[j]=pgm_read_byte_near(values+i*CHAR_LENGTH+j);
-      }
-      temp[j]=0;
+//      int j=0;
+//      for(j=0;j<CHAR_LENGTH;++j)
+//      {
+//        temp[j]=pgm_read_byte_near(values+i*CHAR_LENGTH+j);
+//      }
+//      temp[j]=0;
       uint8_t lc=pgm_read_byte_near(char_lengths+i);
-      if(lc<3 && strncmp(str, temp, lc)==0)
+      if(lc<3 && strncmppgm(get, at, values+i*CHAR_LENGTH, lc)==0)
       {
         RD_chechNextCharPosition();
 	uint16_t ycoo=RD_charY*CHAR_HEIGHT;
@@ -109,11 +127,50 @@ void RD_drawString(const char * str)
         }
         i=N_CHARS;
         l-=lc;
-        str+=lc;
+        at+=lc;
       }
     }
   }
 }
+
+
+#ifdef __AVR__
+static uint32_t strProgmemPtr;
+uint16_t strlenpgm(uint32_t strPgm)
+{
+	for(uint16_t i=0;i<16000;++i)
+	{
+		if(pgm_read_byte_near(strPgm+i)==0)
+		{
+			return i;
+		}
+	}
+	return 0;
+}
+char strGetterPgm(uint8_t ptr)
+{
+	return pgm_read_byte_near(strProgmemPtr+ptr);
+}
+void RD_drawStringPgm(uint32_t strPgm)
+{
+	strProgmemPtr=strPgm;
+	RD_drawString2(strGetterPgm, strlenpgm(strPgm));
+}
+#endif
+
+
+static const char * strPtr;
+char strGetter(uint8_t ptr)
+{
+return strPtr[ptr];
+}
+
+void RD_drawString(const char * str)
+{
+	strPtr=str;
+	RD_drawString2(strGetter, strlen(str));
+}
+
 char digitToChar(uint8_t digit, uint8_t base)
 {
 	if(digit<10)
@@ -168,17 +225,21 @@ uint8_t numToBuffer(char * tg, uint32_t n, uint8_t minWidth, uint8_t base)
 	at+=fillLeftToWidth(tg, at, minWidth, '0');
 	return at;
 }
+
 void RD_drawNumber(int32_t value, uint8_t base)
+{
+	RD_drawNumber(value, base, 1);
+}
+void RD_drawNumber(int32_t value, uint8_t base, uint8_t minWidth)
 {
 	char buffer[33];
 	uint8_t at=numToBuffer(buffer, value, 1, base);
+	at+=fillLeftToWidth(buffer, at, minWidth, '0');
 	buffer[at]='\0';
-//	snprintf(buffer, 33, "%d", value);
 	RD_drawString(buffer);
 }
-void RD_drawFloat(float value, uint8_t width, uint8_t precision)
+uint8_t RD_formatFloat(char* buffer, uint8_t dtsSize, float value, uint8_t width, uint8_t precision)
 {
-	char buffer[33];
 	uint32_t partsMultiplier=10;
 	for(int i=1;i<precision;++i)
 	{
@@ -198,6 +259,13 @@ void RD_drawFloat(float value, uint8_t width, uint8_t precision)
 	ptr++;
 	ptr+=numToBuffer(&buffer[ptr], part, precision, 10);
 	buffer[ptr]='\0';
+	return ptr;
+}
+
+void RD_drawFloat(float value, uint8_t width, uint8_t precision)
+{
+	char buffer[33];
+	RD_formatFloat(buffer, 33, value, width, precision);
 	RD_drawString(buffer);
 }
 

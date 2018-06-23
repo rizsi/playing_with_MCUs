@@ -1,22 +1,24 @@
 #include <Arduino.h>
 
 #include <rizsi_sdcard.h>
+#include <SPI.h>
+#include <Sd2Card.h>
 
-uint8_t sdInit()
+Sd2Card card;
+
+uint8_t sdInit(int _activatorPin)
 {
-return 0;
+  // we'll use the initialization code from the utility libraries
+  // since we're just testing if the card is working!
+  return !card.init(SPI_HALF_SPEED, _activatorPin);
 }
 
 uint8_t sdWriteBlock(uint32_t blockIndex, sdBlockReader reader, void * param)
 {
-return 0;
+	return !card.writeBlock(blockIndex, reader, param);
 }
 
 uint8_t sdReadBlock(uint32_t blockIndex, sdBlockWriter writer, void * param)
 {
-for(int i=0;i<512;++i)
-{
-	writer(param, 0);
-}
-return 0;
+	return !card.readBlock(blockIndex, writer, param);
 }

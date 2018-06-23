@@ -102,3 +102,8 @@ bool rtcWrite(rtcState * src)
 	twiEndTransmission();
 	return false;
 }
+
+uint8_t rtcGetTimeLowBits()
+{
+	return TCNT0;
+}
