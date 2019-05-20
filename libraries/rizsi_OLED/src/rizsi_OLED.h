@@ -17,7 +17,7 @@ extern void oledTest();
 /**
  * Query whether the last frame is already written to the device.
  * 
- * (Befure the first frame is sent it also returns true.)
+ * (Before the first frame is sent it also returns true.)
  * @return true means that the last frame is written to the device.
  */
 extern bool oledFinished();
