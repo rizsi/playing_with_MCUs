@@ -2,5 +2,12 @@
 
 This is the first working example that blinks a LED. One thread turns it on the other turns it off.
 
+Builds with current avr-gcc: see Makefile
 
+Works on Controllino MAXI.
 
+HW dependent settings: 
+ 
+ * CPU Freq (UART debug line baud rate depends on it)
+ * Port where LED is present in main.c
+ * RAM sizes and exact pointers, pushAll, popAll ASM commands implemented as macros in multithreading-hwavr2560.h
