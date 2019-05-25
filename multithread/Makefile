@@ -1,10 +1,10 @@
 .PHONY: all
 all: a.hex
 
-a.out: main.c multithreading.c multithreading.h multithreading-hwavr2560.h debug.h debug.c
+a.out: main.c multithreading.c multithreading.h multithreading-hwavr2560.h debug.h debug.c ../../sha1/sha1.c
 	avr-gcc  -mmcu=atmega2560  \
 	-Wl,-Map,a.map \
-	multithreading.c main.c debug.c
+	multithreading.c main.c debug.c ../../sha1/sha1.c
 	avr-gcc -c -S -mmcu=atmega2560  \
 	multithreading.c main.c debug.c
 

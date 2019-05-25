@@ -10,6 +10,8 @@
 #include "debug.h"
 #include "multithreading.h"
 
+#include "../../sha1/sha1.h"
+
 void threadFun();
 
 static void wait1s();
@@ -20,6 +22,8 @@ void main()
 	thread_t otherThread;
 	thread_system_init();
 	thread_create(&otherThread, threadFun, 1024);
+	char hash_out[20];
+	SHA1(hash_out, "almakorteszilva", 16);
 	while(1)
 	{
 		// Turn LED on
