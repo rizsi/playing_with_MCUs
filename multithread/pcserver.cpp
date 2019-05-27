@@ -20,7 +20,7 @@ typedef struct {
 	pthread_t t;
 	int client_fd;
 	char line[LINE_MAX];
-	char calculatedKey[29];
+	char calculatedKey[30]; // Includes \n !
 	uint8_t linePtr;
 } CLIENT;
 
@@ -41,8 +41,23 @@ int16_t readChar(CLIENT * c)
 		return -1;
 	}else
 	{
-		return ret;
+//		printf("%c", ret); 
+		return (uint8_t)ret;
 	}
+}
+int16_t readFullChar(CLIENT * c)
+{
+	int16_t v=readChar(c);
+	while(v<0)
+	{
+		if(v<-1)
+		{
+			return v;
+		}
+		usleep(10000);
+		v=readChar(c);
+	}
+	return v;
 }
 uint8_t writeChar(CLIENT * c, uint8_t ch)
 {
@@ -120,17 +135,71 @@ uint8_t sendAll(CLIENT * c, const char * data, int n)
 void writeString(CLIENT * c, const char * str)
 {
 	sendAll(c, str, strlen(str));
-	usleep(5000000);
+//	usleep(5000000);
+}
+void protoAssert(CLIENT * c, uint8_t v)
+{
+	if(!v)
+	{
+		printf("PROTOCOL ERROR\n");
+		fflush(stdout);
+	}
 }
 void serveWS(CLIENT * c)
 {
+/*
+ 	while (1) {
+		readLine(c);
+		printf("WS line: %s\n",c->line);
+		if(c->linePtr==0)
+		{
+			break;
+		}
+	}
+*/
+	printf("All lines received!\n");
+//	usleep(5000000);
+//	printf("Send line 1 node\n");
+//	fflush(stdout);
+//	usleep(5000000);
+	printf("Send reply!\n");
 	writeString(c, "HTTP/1.1 101 WebSocket Protocol Handshake\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: ");
 	writeString(c, c->calculatedKey);
-	writeString(c, "\n\n");
+	writeString(c, "\n");
+	writeChar(c, 0b10000001);
+	writeChar(c, 0b00000001);
+	writeChar(c, 'A');
+	writeChar(c, 0b10000001);
+	writeChar(c, 0b00000001);
+	writeChar(c, 'B');
+	printf("Payload value:\n");
+	fflush(stdout);
+ 	uint8_t c0=readFullChar(c);
+	protoAssert(c, c0 & 0b10000000); // Must be finish frame: each message is single frame
+	protoAssert(c, c0 & 0b01110000 == 0); // These bits must be 0
+	uint8_t opcode=c0 & 0b00001111;
+	protoAssert(c, opcode==1); // Must be a text message
+ 	uint8_t c1=readFullChar(c);
+	protoAssert(c, c1 & 0b10000000); // Must be masked because this is a client message
+	uint8_t size0=c1 & 0b01111111;
+	protoAssert(c, size0!=126); // Extended size is not handled yet by this server
+	protoAssert(c, size0!=127); // Extended size is not handled yet by this server
+	printf("Size: %d\n",size0);
+	uint8_t mask[4];
+	for(int i=0;i<4;++i)
+	{
+		mask[i]=readFullChar(c);
+	}
+	for(int i=0;i<size0;++i)
+	{
+		uint8_t c0=readFullChar(c);
+		uint8_t c1=c0^mask[i%4];
+		printf(" %c %x", c1,(int)c1);
+	}
 }
 void serveHtml(CLIENT * c)
 {
-	writeString(c, "HTTP/1.1 200 OK\n\n<!DOCTYPE html>\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n<link rel=\"icon\" href=\"data:;base64,iVBORw0KGgo=\">\n<script>\nwindow.addEventListener(\"load\", function(){\n\tconsole.info(\"Loaded!\");\n\tvar ws = new WebSocket(\"ws://localhost:8888/echo\");\n\t         ws.onopen = function() {\n                  \n                  // Web Socket is connected, send data using send()\n                  ws.send(\"Message to send\\ncica\\nmica\");\n                  alert(\"Message is sent...\");\n               };\n\t\t\t\t\n               ws.onmessage = function (evt) { \n                  var received_msg = evt.data;\n                  alert(\"Message is received...\");\n               };\n\t\t\t\t\n               ws.onclose = function() { \n                  \n                  // websocket is closed.\n                  alert(\"Connection is closed...\"); \n               };\n}, false);\n\n</script>\n</head>\n<body>tartalom\n</body></html>\n\n");
+	writeString(c, "HTTP/1.1 200 OK\n\n<!DOCTYPE html>\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n<link rel=\"icon\" href=\"data:;base64,iVBORw0KGgo=\">\n<script>\nwindow.addEventListener(\"load\", function(){\n\tconsole.info(\"Loaded!\");\n\tvar ws = new WebSocket(\"ws://localhost:8888/echo\");\n\t         ws.onopen = function() {\n                  \n                  // Web Socket is connected, send data using send()\n                  ws.send(\"ALMA\");\n                  console.info(\"Message is sent...\");\n               };\n\t\t\t\t\n               ws.onmessage = function (evt) { \n                  var received_msg = evt.data;\n                  console.info(\"Message is received...\"+received_msg+\"REALLY\");\n               };\n\t\t\t\t\n               ws.onclose = function() { \n                  \n                  // websocket is closed.\n                  console.info(\"Connection is closed...\"); \n               };\n}, false);\n\n</script>\n</head>\n<body>tartalom\n</body></html>\n\n");
 
 }
 char mark[]="258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -168,8 +237,9 @@ void * serve_client(void * p)
 			size_t out_len;
 			unsigned char * based=base64_encode(hash_out, 20, &out_len);
 			strcpy(c->calculatedKey, (char *)based);
-			printf("%s\n", based);
+			printf("%s linePtr: %d\n", based, c->linePtr);
 			free(based);
+			isWS=1;
 		}
 		if(c->linePtr==0)
 		{

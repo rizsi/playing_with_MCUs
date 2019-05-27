@@ -3,3 +3,8 @@
 /a.map
 /*.s
 /*.o
+/atmega.hex
+/atmega.map
+/atmega.out
+/pcserver
+
