@@ -1,0 +1,8 @@
+# Web Server example
+
+Minimal web server example copied from Arduino libs and minimally modified:
+
+ * Build using plain Makefile instead of Arduino
+ * rtemplate compatible Web template using program memory to store template strings.
+
+
