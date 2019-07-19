@@ -7,6 +7,8 @@
 
 // This interrupt vector is used for context switching
 #define CONTEXT_SWITCH_INTERRUPT TIMER2_OVF_vect
+// Check if this interrupt is a HW interrupt or a SW one
+#define INTERRUPT_OVERFLOW_CHECK TIFR2&_BV(TOV2)
 
 #include "multithreading-platform.h"
 #include "multithreading.h"
@@ -57,10 +59,14 @@ ISR(CONTEXT_SWITCH_INTERRUPT, ISR_NAKED)
 		toStart=NULL;
 	}else if(nextThread!=NULL)
 	{
-		// SW interrupt to switch to an other thread
-	}else if(TIFR1&_BV(TOV1))	// HW interrupt
+		// SW interrupt to switch to an other thread - switching will be handled below
+	}else if(INTERRUPT_OVERFLOW_CHECK)	// HW interrupt - timed switch of threads
 	{
 		nextThread=scheduler();
+		if(nextThread==currentThread)
+		{
+			nextThread=NULL;
+		}
 	}
 	if(nextThread!=NULL && !inCriticalSection)
 	{
@@ -76,17 +82,23 @@ ISR(CONTEXT_SWITCH_INTERRUPT, ISR_NAKED)
 	reti();
 }
 
-void thread_system_init(schedulerFunction myscheduler)
+void thread_system_init()
 {
-	scheduler=myscheduler;
+	scheduler=thread_get_main;
 	currentThread=&mainThread;
 
-//  TCCR2A = 0;
-//  TCCR2B = 0;
-//  TCNT2  = 0;
-//  TCCR2A |= (1 << WGM21);
-//  TCCR2B |= (1 << CS22)| (1<<CS20);   // /128 prescaler - about 488 overflows per second
-//  TIMSK2 |= (1 << TOIE2);	// Enable overflow
+  TCCR2A = 0;
+  TCCR2B = 0;
+  TCNT2  = 0;
+  TCCR2A |= (1 << WGM21);
+  TCCR2B |= (1 << CS22)| (1<<CS20);   // /128 prescaler - about 488 overflows per second
+  TIMSK2 |= (1 << TOIE2);	// Enable overflow
+}
+void thread_set_scheduler(schedulerFunction myscheduler)
+{
+	cli();
+	scheduler=myscheduler;
+	sei();
 }
 void thread_create(thread_t * startThread, void (* fun) (), uint16_t stackOffset)
 {
@@ -101,8 +113,14 @@ void thread_create(thread_t * startThread, void (* fun) (), uint16_t stackOffset
 void thread_switch(thread_t * thread_to)
 {
 	cli();
-	nextThread=thread_to;
-	CONTEXT_SWITCH_INTERRUPT();
+	if(thread_to!=currentThread)
+	{
+		nextThread=thread_to;
+		CONTEXT_SWITCH_INTERRUPT();
+	}else
+	{
+		sei();
+	}
 }
 thread_t * thread_get_main()
 {

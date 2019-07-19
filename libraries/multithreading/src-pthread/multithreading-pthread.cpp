@@ -14,11 +14,15 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static thread_t mainThread;
 
 
-void thread_system_init(schedulerFunction myscheduler)
+void thread_system_init()
 {
 	// NOOP on pthread implementation
 }
 
+void thread_set_scheduler(schedulerFunction myscheduler)
+{
+	// NOOP on pthread implementation
+}
 static void * mythreadfunc(void * param)
 {
 	thread_t * t=(thread_t *)param;

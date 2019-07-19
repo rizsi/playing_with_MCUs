@@ -19,7 +19,12 @@ typedef thread_t *(* schedulerFunction )();
 /**
  * Initialize the threading subsystem before anything else.
  */
-extern void thread_system_init(schedulerFunction myscheduler);
+extern void thread_system_init();
+
+/**
+ * Set the scheduler algorithm. Will be called on each timer call.
+ */
+extern void thread_set_scheduler(schedulerFunction myscheduler);
 /**
  * Create a new thread.
  * @param startThread thread structure provided by caller.
