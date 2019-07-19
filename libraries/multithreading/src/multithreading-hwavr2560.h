@@ -1,4 +1,6 @@
 
+#define THREAD_PLATFORM_FIELDS
+
 #define SRAM_START ((uint16_t)0x200)
 #define SRAM_SIZE ((uint16_t)8192)
 #define ORIGINAL_STACK_TOP (SRAM_SIZE+SRAM_START-1)

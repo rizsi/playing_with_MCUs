@@ -1,0 +1,13 @@
+{
+    "name": "rizsi multithreading",
+    "keywords": "multithreading",
+    "description": "Library for multithreading",
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/rizsi/Arduino-IR-decoder.git"
+    },
+    "frameworks": "arduino",
+    "platforms": "*"
+}
+

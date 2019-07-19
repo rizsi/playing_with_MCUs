@@ -75,12 +75,14 @@ static uint8_t waitEvent(uint8_t waitValue, uint8_t requiredState, uint8_t requi
     ctr++;
     if(ctr>16000)
     {
+    /*
       Serial.print("TWI error - waitValue never received");
       Serial.print(errCode);
       Serial.print(" ");
       Serial.print(TWCR, HEX);
       Serial.print(" ");
       Serial.println(waitValue);
+      */
       digitalWrite(13,0);
       return 1;
     }
@@ -91,10 +93,12 @@ static uint8_t waitEvent(uint8_t waitValue, uint8_t requiredState, uint8_t requi
     if(twiLastStatus!=requiredState&&twiLastStatus!=requiredState2)
     {
         digitalWrite(13, 0);
+        /*
       Serial.print("TWI error!");
       Serial.print(errCode);
       Serial.print(" ");
       Serial.println(twiLastStatus, HEX);
+      */
       delay(1000);
       return errCode;
     }

@@ -35,6 +35,8 @@ extern void RD_drawNumber(int32_t value, uint8_t base, uint8_t minWidth);
 extern void RD_drawFloat(float value, uint8_t wholeWidth, uint8_t precision);
 extern uint8_t RD_formatFloat(char* buffer, uint8_t dtsSize, float value, uint8_t width, uint8_t precision);
 
+extern uint8_t numToBuffer(char * tg, uint32_t n, uint8_t minWidth, uint8_t base);
+
 /**
  * Set blink state to true/false. When true then all drawn characters are blinking.
  */

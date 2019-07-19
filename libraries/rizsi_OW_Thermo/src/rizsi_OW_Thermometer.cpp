@@ -146,7 +146,7 @@ uint8_t owireReceive()
   return ret;
 }
 
-boolean owireReceiveBytes(uint8_t * tgBuffer, uint8_t nByte)
+static boolean owireReceiveBytes(uint8_t * tgBuffer, uint8_t nByte)
 {
   for(uint8_t i=0;i<nByte;++i)
   {

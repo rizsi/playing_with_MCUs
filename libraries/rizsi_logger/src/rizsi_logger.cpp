@@ -23,6 +23,8 @@ static uint32_t ptrWithinBlock;
 static uint64_t logId;
 
 static uint8_t logger_block_unused;
+static uint8_t logger_block_unused_byte;
+static uint8_t logger_block_close_byte;
 static uint16_t logger_ptr;
 
 
@@ -46,6 +48,10 @@ uint64_t logGetId()
 
 uint64_t logGetCurrentLength()
 {
+	if(currentBlock==STATE_RESET)
+	{
+		return 0;
+	}
 	return ((uint64_t)currentBlock)*SD_BLOCK_SIZE+ptrWithinBlock;
 }
 
@@ -95,7 +101,7 @@ static void logger_setup_buffer()
 	logger_ptr=0;
 	for(uint16_t i=0;i<SD_BLOCK_SIZE-1;++i)
 	{
-		logger_buffer[i]=' ';
+		logger_buffer[i]=logger_block_unused_byte;
 	}
 	ptrWithinBlock=0;
 	for(;ptrWithinBlock<sizeof(pattern)-1;++ptrWithinBlock)
@@ -112,13 +118,16 @@ static void logger_setup_buffer()
 	ptrWithinBlock+=16;
 	logger_buffer[ptrWithinBlock]='\n';
 	ptrWithinBlock+=1;
-	logger_buffer[SD_BLOCK_SIZE-1]='\n';
+	logger_buffer[SD_BLOCK_SIZE-1]=logger_block_close_byte;
 	
 	logger_ptr=0;
 }
 
-void loggerSetup()
+void loggerSetup(uint8_t block_unused_byte, uint8_t block_close_byte)
 {
+	logger_block_unused_byte=block_unused_byte;
+	logger_block_close_byte=block_close_byte;
+
 	logId=0;
 	logger_buffer=NULL;
 	loggerReset();
@@ -135,7 +144,7 @@ uint8_t isUnused(uint32_t block)
 	return logger_block_unused;
 }
 
-uint8_t loggerLoop(uint8_t* buffer, uint16_t bufferSize, logContentProvider p, uint16_t requiredLength, uint8_t sdChipSelectNegPin)
+uint8_t loggerLazyInit(uint8_t* buffer, uint16_t bufferSize, uint8_t sdChipSelectNegPin)
 {
 	if(logId==0)
 	{
@@ -185,6 +194,16 @@ uint8_t loggerLoop(uint8_t* buffer, uint16_t bufferSize, logContentProvider p, u
 		// Card is full
 		return ERR_FULL;
 	}
+	return 0;
+}
+
+uint8_t loggerLoop(uint8_t* buffer, uint16_t bufferSize, logContentProvider p, uint16_t requiredLength, uint8_t sdChipSelectNegPin)
+{
+	uint8_t err=loggerLazyInit(buffer, bufferSize, sdChipSelectNegPin);
+	if(err!=0)
+	{
+		return err;
+	}
 	if(bufferSize<SD_BLOCK_SIZE)
 	{
 		return ERR_BUFFER_SMALL;
@@ -229,14 +248,14 @@ uint8_t loggerLoop(uint8_t* buffer, uint16_t bufferSize, logContentProvider p, u
 void rizsi_println(uint32_t ptr)
 {
 	rizsi_print(ptr);
-	Serial.println();
+//	Serial.println();
 }
 void rizsi_print(uint32_t ptr)
 {
 	char ch=pgm_read_byte(ptr);
 	while(ch !=0)
 	{
-		Serial.print(ch);
+//		Serial.print(ch);
 		ptr++;
 		ch=pgm_read_byte(ptr);
 	}

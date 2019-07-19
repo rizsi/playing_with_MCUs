@@ -182,7 +182,7 @@ char digitToChar(uint8_t digit, uint8_t base)
 	}
 }
 
-uint8_t fillLeftToWidth(char * tg, uint8_t width, uint8_t reqWidth, char fill)
+static uint8_t fillLeftToWidth(char * tg, uint8_t width, uint8_t reqWidth, char fill)
 {
 	if(width<reqWidth)
 	{
@@ -200,7 +200,7 @@ uint8_t fillLeftToWidth(char * tg, uint8_t width, uint8_t reqWidth, char fill)
 	return 0;
 }
 
-void reverseChars(char * tg, uint8_t length)
+static void reverseChars(char * tg, uint8_t length)
 {
 	uint8_t n=length/2;
 	for(uint8_t i=0;i<n;++i)

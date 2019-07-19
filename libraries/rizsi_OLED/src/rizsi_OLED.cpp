@@ -231,12 +231,12 @@ void oledStatus()
 
 void oledTest()
 {
-  Serial.println("Wait for boot...");
+  // Serial.println("Wait for boot...");
   delay(1000);
-  Serial.println("Send first command");
+  // Serial.println("Send first command");
   delay(100);
   oledCommand(0xaf); // Circuits on
-  Serial.println("Circuits on");
+  // Serial.println("Circuits on");
   oledCommand(0xa5); // Entire display (each pixel) on
   delay(250);
   oledCommand(0xae); // Circuits OFF

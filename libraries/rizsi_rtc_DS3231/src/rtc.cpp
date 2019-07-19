@@ -60,14 +60,6 @@ bool rtcRead(rtcState * dst)
 	
 	twiEndTransmission();
 	
-	/*
-	Serial.println(rtc_sim_state.year);
-	Serial.println(rtc_sim_state.month);
-	Serial.println(rtc_sim_state.day);
-	Serial.println(rtc_sim_state.hour);
-	Serial.println(rtc_sim_state.minute);
-	Serial.println(rtc_sim_state.second);
-	*/
 	// Normalize out of range values in case of a mis-initialized RTC
 	rtc_sim_state.second%=60;
 	rtc_sim_state.minute%=60;
