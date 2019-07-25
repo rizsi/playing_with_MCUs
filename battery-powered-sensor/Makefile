@@ -7,7 +7,7 @@ sensor.hex: sensor.elf
 sensor.elf: sensor.cpp
 	avr-g++ -mmcu=attiny2313 sensor.cpp -Os -o sensor.elf
 
-burn:
+burn: sensor.hex
 	avrdude -c usbtiny -p attiny2313 -U flash:w:sensor.hex
 
 clean:

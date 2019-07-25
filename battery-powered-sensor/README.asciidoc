@@ -1,0 +1,14 @@
+= Low power wireless thermometer
+
+This is a half baked project - this document logs the trials.
+
+
+== Initial measurement of Attiny power usage
+
+In sleep mode I measured 4uA at 3.13V from a lab DC power supply. This value is close to the low limit of my cheap tool so it may not be accurate. This value matches the datasheet.
+
+== Simple radio
+
+Works by pulsing on the send side and it is received on the other side but it also has some noise in my lab environment.
+
+
