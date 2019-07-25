@@ -11,8 +11,20 @@
 //  ** On watchdog wake up the loop restarts
 
 
+#define F_CPU 1000000
+#include <avr/io.h>
+#include <util/delay.h>
+
+
 int main(void)
 {
-	while(1);
+	DDRB=0xff;
+	while(1)
+	{
+		PORTB=0xff;
+		_delay_ms(500);
+		PORTB=0x0;
+		_delay_ms(500);
+	}
 }
 
