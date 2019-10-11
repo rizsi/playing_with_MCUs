@@ -1,4 +1,8 @@
-# Baby care lamp with IR remote control
+# Arduino and Atmel AVR projects
+
+This repository stores my Arduino, Atmel AVR and electronics related projects. These are not finished and polished projects but as-is. If you reuse something from here then use it with care!
+
+## Baby care lamp with IR remote control
 
 This is the software and hardware design of an Arduino based IR remote control baby care lamp.
 
