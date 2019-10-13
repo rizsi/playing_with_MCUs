@@ -3,7 +3,6 @@
 MCU = attiny2313
 MCU_DUDE = t2313
 BINARYNAME = wirelessensor
-AVRDUDEADDITIONAL = -P /dev/ttyACM0
 
 all:
 	avr-gcc -mmcu=$(MCU) -Os -c -g -Wa,-a,-ad $(BINARYNAME).c >$(BINARYNAME).list.txt

@@ -49,7 +49,14 @@ void main ()
 	// All pins set to pullup
 	DDRB=0b00000000;
 	PORTB=0b11111111;
-
-	_delay_ms(1000);	// Wait some after boot so that all pins have stable values
+	while(1)
+	{
+		_delay_ms(1000);	// Wait some after boot so that all pins have stable values
+		DDRB&=~1;
+		PORTB|=1;
+		_delay_ms(1000);	// Wait some after boot so that all pins have stable values
+		PORTB&=~1;
+		DDRB|=1;
+	}
 }
 
