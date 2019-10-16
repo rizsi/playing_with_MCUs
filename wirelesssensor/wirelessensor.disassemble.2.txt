@@ -1,0 +1,745 @@
+
+wirelessensor.elf:     file format elf32-avr
+
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	12 c0       	rjmp	.+36     	; 0x26 <__ctors_end>
+   2:	1f c0       	rjmp	.+62     	; 0x42 <__bad_interrupt>
+   4:	1e c0       	rjmp	.+60     	; 0x42 <__bad_interrupt>
+   6:	1d c0       	rjmp	.+58     	; 0x42 <__bad_interrupt>
+   8:	1c c0       	rjmp	.+56     	; 0x42 <__bad_interrupt>
+   a:	1b c0       	rjmp	.+54     	; 0x42 <__bad_interrupt>
+   c:	1a c0       	rjmp	.+52     	; 0x42 <__bad_interrupt>
+   e:	19 c0       	rjmp	.+50     	; 0x42 <__bad_interrupt>
+  10:	18 c0       	rjmp	.+48     	; 0x42 <__bad_interrupt>
+  12:	17 c0       	rjmp	.+46     	; 0x42 <__bad_interrupt>
+  14:	16 c0       	rjmp	.+44     	; 0x42 <__bad_interrupt>
+  16:	15 c0       	rjmp	.+42     	; 0x42 <__bad_interrupt>
+  18:	14 c0       	rjmp	.+40     	; 0x42 <__bad_interrupt>
+  1a:	13 c0       	rjmp	.+38     	; 0x42 <__bad_interrupt>
+  1c:	12 c0       	rjmp	.+36     	; 0x42 <__bad_interrupt>
+  1e:	11 c0       	rjmp	.+34     	; 0x42 <__bad_interrupt>
+  20:	10 c0       	rjmp	.+32     	; 0x42 <__bad_interrupt>
+  22:	0f c0       	rjmp	.+30     	; 0x42 <__bad_interrupt>
+  24:	92 c1       	rjmp	.+804    	; 0x34a <__vector_18>
+
+00000026 <__ctors_end>:
+  26:	11 24       	eor	r1, r1
+  28:	1f be       	out	0x3f, r1	; 63
+  2a:	cf ed       	ldi	r28, 0xDF	; 223
+  2c:	cd bf       	out	0x3d, r28	; 61
+
+0000002e <__do_clear_bss>:
+  2e:	20 e0       	ldi	r18, 0x00	; 0
+  30:	a0 e6       	ldi	r26, 0x60	; 96
+  32:	b0 e0       	ldi	r27, 0x00	; 0
+  34:	01 c0       	rjmp	.+2      	; 0x38 <.do_clear_bss_start>
+
+00000036 <.do_clear_bss_loop>:
+  36:	1d 92       	st	X+, r1
+
+00000038 <.do_clear_bss_start>:
+  38:	aa 36       	cpi	r26, 0x6A	; 106
+  3a:	b2 07       	cpc	r27, r18
+  3c:	e1 f7       	brne	.-8      	; 0x36 <.do_clear_bss_loop>
+  3e:	36 d2       	rcall	.+1132   	; 0x4ac <main>
+  40:	95 c2       	rjmp	.+1322   	; 0x56c <_exit>
+
+00000042 <__bad_interrupt>:
+  42:	de cf       	rjmp	.-68     	; 0x0 <__vectors>
+
+00000044 <_ZL8owireCRChh>:
+  44:	98 e0       	ldi	r25, 0x08	; 8
+  46:	2c e0       	ldi	r18, 0x0C	; 12
+  48:	38 2f       	mov	r19, r24
+  4a:	36 27       	eor	r19, r22
+  4c:	80 fb       	bst	r24, 0
+  4e:	87 95       	ror	r24
+  50:	87 f9       	bld	r24, 7
+  52:	30 fd       	sbrc	r19, 0
+  54:	82 27       	eor	r24, r18
+  56:	60 fd       	sbrc	r22, 0
+  58:	80 58       	subi	r24, 0x80	; 128
+  5a:	66 95       	lsr	r22
+  5c:	91 50       	subi	r25, 0x01	; 1
+  5e:	a1 f7       	brne	.-24     	; 0x48 <_ZL8owireCRChh+0x4>
+  60:	08 95       	ret
+
+00000062 <_ZL9owireSendh>:
+  62:	28 e0       	ldi	r18, 0x08	; 8
+  64:	30 e0       	ldi	r19, 0x00	; 0
+  66:	d0 9a       	sbi	0x1a, 0	; 26
+  68:	d8 98       	cbi	0x1b, 0	; 27
+  6a:	80 ff       	sbrs	r24, 0
+  6c:	09 c0       	rjmp	.+18     	; 0x80 <_ZL9owireSendh+0x1e>
+  6e:	92 e0       	ldi	r25, 0x02	; 2
+  70:	9a 95       	dec	r25
+  72:	f1 f7       	brne	.-4      	; 0x70 <_ZL9owireSendh+0xe>
+  74:	d0 98       	cbi	0x1a, 0	; 26
+  76:	d8 9a       	sbi	0x1b, 0	; 27
+  78:	95 e1       	ldi	r25, 0x15	; 21
+  7a:	9a 95       	dec	r25
+  7c:	f1 f7       	brne	.-4      	; 0x7a <_ZL9owireSendh+0x18>
+  7e:	08 c0       	rjmp	.+16     	; 0x90 <_ZL9owireSendh+0x2e>
+  80:	94 e1       	ldi	r25, 0x14	; 20
+  82:	9a 95       	dec	r25
+  84:	f1 f7       	brne	.-4      	; 0x82 <_ZL9owireSendh+0x20>
+  86:	d0 98       	cbi	0x1a, 0	; 26
+  88:	d8 9a       	sbi	0x1b, 0	; 27
+  8a:	93 e0       	ldi	r25, 0x03	; 3
+  8c:	9a 95       	dec	r25
+  8e:	f1 f7       	brne	.-4      	; 0x8c <_ZL9owireSendh+0x2a>
+  90:	00 00       	nop
+  92:	86 95       	lsr	r24
+  94:	21 50       	subi	r18, 0x01	; 1
+  96:	31 09       	sbc	r19, r1
+  98:	31 f7       	brne	.-52     	; 0x66 <_ZL9owireSendh+0x4>
+  9a:	08 95       	ret
+
+0000009c <_ZL12owireReceivev>:
+  9c:	28 e0       	ldi	r18, 0x08	; 8
+  9e:	30 e0       	ldi	r19, 0x00	; 0
+  a0:	80 e0       	ldi	r24, 0x00	; 0
+  a2:	d0 9a       	sbi	0x1a, 0	; 26
+  a4:	d8 98       	cbi	0x1b, 0	; 27
+  a6:	92 e0       	ldi	r25, 0x02	; 2
+  a8:	9a 95       	dec	r25
+  aa:	f1 f7       	brne	.-4      	; 0xa8 <_ZL12owireReceivev+0xc>
+  ac:	d0 98       	cbi	0x1a, 0	; 26
+  ae:	d8 9a       	sbi	0x1b, 0	; 27
+  b0:	00 c0       	rjmp	.+0      	; 0xb2 <_ZL12owireReceivev+0x16>
+  b2:	00 00       	nop
+  b4:	49 b3       	in	r20, 0x19	; 25
+  b6:	9a e1       	ldi	r25, 0x1A	; 26
+  b8:	9a 95       	dec	r25
+  ba:	f1 f7       	brne	.-4      	; 0xb8 <_ZL12owireReceivev+0x1c>
+  bc:	00 c0       	rjmp	.+0      	; 0xbe <_ZL12owireReceivev+0x22>
+  be:	90 e0       	ldi	r25, 0x00	; 0
+  c0:	95 95       	asr	r25
+  c2:	87 95       	ror	r24
+  c4:	40 fd       	sbrc	r20, 0
+  c6:	02 c0       	rjmp	.+4      	; 0xcc <_ZL12owireReceivev+0x30>
+  c8:	40 e0       	ldi	r20, 0x00	; 0
+  ca:	01 c0       	rjmp	.+2      	; 0xce <_ZL12owireReceivev+0x32>
+  cc:	40 e8       	ldi	r20, 0x80	; 128
+  ce:	84 2b       	or	r24, r20
+  d0:	21 50       	subi	r18, 0x01	; 1
+  d2:	31 09       	sbc	r19, r1
+  d4:	31 f7       	brne	.-52     	; 0xa2 <_ZL12owireReceivev+0x6>
+  d6:	08 95       	ret
+
+000000d8 <_ZL10owireResetv>:
+  d8:	d0 9a       	sbi	0x1a, 0	; 26
+  da:	d8 98       	cbi	0x1b, 0	; 27
+  dc:	80 ea       	ldi	r24, 0xA0	; 160
+  de:	8a 95       	dec	r24
+  e0:	f1 f7       	brne	.-4      	; 0xde <_ZL10owireResetv+0x6>
+  e2:	d0 98       	cbi	0x1a, 0	; 26
+  e4:	d8 9a       	sbi	0x1b, 0	; 27
+  e6:	97 e1       	ldi	r25, 0x17	; 23
+  e8:	9a 95       	dec	r25
+  ea:	f1 f7       	brne	.-4      	; 0xe8 <__stack+0x9>
+  ec:	00 00       	nop
+  ee:	89 b3       	in	r24, 0x19	; 25
+  f0:	96 e9       	ldi	r25, 0x96	; 150
+  f2:	9a 95       	dec	r25
+  f4:	f1 f7       	brne	.-4      	; 0xf2 <__stack+0x13>
+  f6:	80 95       	com	r24
+  f8:	81 70       	andi	r24, 0x01	; 1
+  fa:	08 95       	ret
+
+000000fc <_Z12owInitializev>:
+  fc:	cf 93       	push	r28
+  fe:	ec df       	rcall	.-40     	; 0xd8 <_ZL10owireResetv>
+ 100:	81 11       	cpse	r24, r1
+ 102:	02 c0       	rjmp	.+4      	; 0x108 <_Z12owInitializev+0xc>
+ 104:	c0 e0       	ldi	r28, 0x00	; 0
+ 106:	12 c0       	rjmp	.+36     	; 0x12c <_Z12owInitializev+0x30>
+ 108:	81 e6       	ldi	r24, 0x61	; 97
+ 10a:	43 d1       	rcall	.+646    	; 0x392 <_Z14USART_sendCharc>
+ 10c:	8c ec       	ldi	r24, 0xCC	; 204
+ 10e:	a9 df       	rcall	.-174    	; 0x62 <_ZL9owireSendh>
+ 110:	8e e4       	ldi	r24, 0x4E	; 78
+ 112:	a7 df       	rcall	.-178    	; 0x62 <_ZL9owireSendh>
+ 114:	80 e0       	ldi	r24, 0x00	; 0
+ 116:	a5 df       	rcall	.-182    	; 0x62 <_ZL9owireSendh>
+ 118:	80 e0       	ldi	r24, 0x00	; 0
+ 11a:	a3 df       	rcall	.-186    	; 0x62 <_ZL9owireSendh>
+ 11c:	80 e6       	ldi	r24, 0x60	; 96
+ 11e:	a1 df       	rcall	.-190    	; 0x62 <_ZL9owireSendh>
+ 120:	db df       	rcall	.-74     	; 0xd8 <_ZL10owireResetv>
+ 122:	c8 2f       	mov	r28, r24
+ 124:	88 23       	and	r24, r24
+ 126:	71 f3       	breq	.-36     	; 0x104 <_Z12owInitializev+0x8>
+ 128:	82 e6       	ldi	r24, 0x62	; 98
+ 12a:	33 d1       	rcall	.+614    	; 0x392 <_Z14USART_sendCharc>
+ 12c:	8c 2f       	mov	r24, r28
+ 12e:	cf 91       	pop	r28
+ 130:	08 95       	ret
+
+00000132 <_Z10owReadTempv>:
+ 132:	ef 92       	push	r14
+ 134:	ff 92       	push	r15
+ 136:	0f 93       	push	r16
+ 138:	1f 93       	push	r17
+ 13a:	cf 93       	push	r28
+ 13c:	df 93       	push	r29
+ 13e:	cc df       	rcall	.-104    	; 0xd8 <_ZL10owireResetv>
+ 140:	88 23       	and	r24, r24
+ 142:	09 f4       	brne	.+2      	; 0x146 <_Z10owReadTempv+0x14>
+ 144:	77 c0       	rjmp	.+238    	; 0x234 <_Z10owReadTempv+0x102>
+ 146:	83 e6       	ldi	r24, 0x63	; 99
+ 148:	24 d1       	rcall	.+584    	; 0x392 <_Z14USART_sendCharc>
+ 14a:	d3 e0       	ldi	r29, 0x03	; 3
+ 14c:	8c ec       	ldi	r24, 0xCC	; 204
+ 14e:	89 df       	rcall	.-238    	; 0x62 <_ZL9owireSendh>
+ 150:	84 e4       	ldi	r24, 0x44	; 68
+ 152:	87 df       	rcall	.-242    	; 0x62 <_ZL9owireSendh>
+ 154:	2f ee       	ldi	r18, 0xEF	; 239
+ 156:	89 e4       	ldi	r24, 0x49	; 73
+ 158:	92 e0       	ldi	r25, 0x02	; 2
+ 15a:	21 50       	subi	r18, 0x01	; 1
+ 15c:	80 40       	sbci	r24, 0x00	; 0
+ 15e:	90 40       	sbci	r25, 0x00	; 0
+ 160:	e1 f7       	brne	.-8      	; 0x15a <_Z10owReadTempv+0x28>
+ 162:	00 c0       	rjmp	.+0      	; 0x164 <_Z10owReadTempv+0x32>
+ 164:	00 00       	nop
+ 166:	b8 df       	rcall	.-144    	; 0xd8 <_ZL10owireResetv>
+ 168:	88 23       	and	r24, r24
+ 16a:	09 f4       	brne	.+2      	; 0x16e <_Z10owReadTempv+0x3c>
+ 16c:	63 c0       	rjmp	.+198    	; 0x234 <_Z10owReadTempv+0x102>
+ 16e:	84 e6       	ldi	r24, 0x64	; 100
+ 170:	10 d1       	rcall	.+544    	; 0x392 <_Z14USART_sendCharc>
+ 172:	8c ec       	ldi	r24, 0xCC	; 204
+ 174:	76 df       	rcall	.-276    	; 0x62 <_ZL9owireSendh>
+ 176:	8e eb       	ldi	r24, 0xBE	; 190
+ 178:	74 df       	rcall	.-280    	; 0x62 <_ZL9owireSendh>
+ 17a:	60 e0       	ldi	r22, 0x00	; 0
+ 17c:	80 e0       	ldi	r24, 0x00	; 0
+ 17e:	62 df       	rcall	.-316    	; 0x44 <_ZL8owireCRChh>
+ 180:	18 2f       	mov	r17, r24
+ 182:	8c df       	rcall	.-232    	; 0x9c <_ZL12owireReceivev>
+ 184:	c8 2f       	mov	r28, r24
+ 186:	68 2f       	mov	r22, r24
+ 188:	81 2f       	mov	r24, r17
+ 18a:	5c df       	rcall	.-328    	; 0x44 <_ZL8owireCRChh>
+ 18c:	18 2f       	mov	r17, r24
+ 18e:	86 df       	rcall	.-244    	; 0x9c <_ZL12owireReceivev>
+ 190:	f8 2e       	mov	r15, r24
+ 192:	68 2f       	mov	r22, r24
+ 194:	81 2f       	mov	r24, r17
+ 196:	56 df       	rcall	.-340    	; 0x44 <_ZL8owireCRChh>
+ 198:	18 2f       	mov	r17, r24
+ 19a:	80 df       	rcall	.-256    	; 0x9c <_ZL12owireReceivev>
+ 19c:	68 2f       	mov	r22, r24
+ 19e:	81 2f       	mov	r24, r17
+ 1a0:	51 df       	rcall	.-350    	; 0x44 <_ZL8owireCRChh>
+ 1a2:	18 2f       	mov	r17, r24
+ 1a4:	7b df       	rcall	.-266    	; 0x9c <_ZL12owireReceivev>
+ 1a6:	68 2f       	mov	r22, r24
+ 1a8:	81 2f       	mov	r24, r17
+ 1aa:	4c df       	rcall	.-360    	; 0x44 <_ZL8owireCRChh>
+ 1ac:	18 2f       	mov	r17, r24
+ 1ae:	76 df       	rcall	.-276    	; 0x9c <_ZL12owireReceivev>
+ 1b0:	68 2f       	mov	r22, r24
+ 1b2:	81 2f       	mov	r24, r17
+ 1b4:	47 df       	rcall	.-370    	; 0x44 <_ZL8owireCRChh>
+ 1b6:	18 2f       	mov	r17, r24
+ 1b8:	71 df       	rcall	.-286    	; 0x9c <_ZL12owireReceivev>
+ 1ba:	68 2f       	mov	r22, r24
+ 1bc:	81 2f       	mov	r24, r17
+ 1be:	42 df       	rcall	.-380    	; 0x44 <_ZL8owireCRChh>
+ 1c0:	18 2f       	mov	r17, r24
+ 1c2:	6c df       	rcall	.-296    	; 0x9c <_ZL12owireReceivev>
+ 1c4:	68 2f       	mov	r22, r24
+ 1c6:	81 2f       	mov	r24, r17
+ 1c8:	3d df       	rcall	.-390    	; 0x44 <_ZL8owireCRChh>
+ 1ca:	18 2f       	mov	r17, r24
+ 1cc:	67 df       	rcall	.-306    	; 0x9c <_ZL12owireReceivev>
+ 1ce:	68 2f       	mov	r22, r24
+ 1d0:	81 2f       	mov	r24, r17
+ 1d2:	38 df       	rcall	.-400    	; 0x44 <_ZL8owireCRChh>
+ 1d4:	18 2f       	mov	r17, r24
+ 1d6:	62 df       	rcall	.-316    	; 0x9c <_ZL12owireReceivev>
+ 1d8:	e8 2e       	mov	r14, r24
+ 1da:	85 e6       	ldi	r24, 0x65	; 101
+ 1dc:	da d0       	rcall	.+436    	; 0x392 <_Z14USART_sendCharc>
+ 1de:	7c df       	rcall	.-264    	; 0xd8 <_ZL10owireResetv>
+ 1e0:	88 23       	and	r24, r24
+ 1e2:	41 f1       	breq	.+80     	; 0x234 <_Z10owReadTempv+0x102>
+ 1e4:	86 e6       	ldi	r24, 0x66	; 102
+ 1e6:	d5 d0       	rcall	.+426    	; 0x392 <_Z14USART_sendCharc>
+ 1e8:	1e 11       	cpse	r17, r14
+ 1ea:	1d c0       	rjmp	.+58     	; 0x226 <_Z10owReadTempv+0xf4>
+ 1ec:	d0 e0       	ldi	r29, 0x00	; 0
+ 1ee:	8f 2d       	mov	r24, r15
+ 1f0:	87 70       	andi	r24, 0x07	; 7
+ 1f2:	8e 01       	movw	r16, r28
+ 1f4:	18 2b       	or	r17, r24
+ 1f6:	8f 2d       	mov	r24, r15
+ 1f8:	88 7f       	andi	r24, 0xF8	; 248
+ 1fa:	19 f0       	breq	.+6      	; 0x202 <_Z10owReadTempv+0xd0>
+ 1fc:	11 95       	neg	r17
+ 1fe:	01 95       	neg	r16
+ 200:	11 09       	sbc	r17, r1
+ 202:	89 e6       	ldi	r24, 0x69	; 105
+ 204:	c6 d0       	rcall	.+396    	; 0x392 <_Z14USART_sendCharc>
+ 206:	8e 2d       	mov	r24, r14
+ 208:	90 e0       	ldi	r25, 0x00	; 0
+ 20a:	1a d1       	rcall	.+564    	; 0x440 <_Z12debugDecimalj>
+ 20c:	80 e2       	ldi	r24, 0x20	; 32
+ 20e:	c1 d0       	rcall	.+386    	; 0x392 <_Z14USART_sendCharc>
+ 210:	ce 01       	movw	r24, r28
+ 212:	16 d1       	rcall	.+556    	; 0x440 <_Z12debugDecimalj>
+ 214:	80 e2       	ldi	r24, 0x20	; 32
+ 216:	bd d0       	rcall	.+378    	; 0x392 <_Z14USART_sendCharc>
+ 218:	8f 2d       	mov	r24, r15
+ 21a:	90 e0       	ldi	r25, 0x00	; 0
+ 21c:	11 d1       	rcall	.+546    	; 0x440 <_Z12debugDecimalj>
+ 21e:	8a e0       	ldi	r24, 0x0A	; 10
+ 220:	b8 d0       	rcall	.+368    	; 0x392 <_Z14USART_sendCharc>
+ 222:	c8 01       	movw	r24, r16
+ 224:	09 c0       	rjmp	.+18     	; 0x238 <_Z10owReadTempv+0x106>
+ 226:	87 e6       	ldi	r24, 0x67	; 103
+ 228:	b4 d0       	rcall	.+360    	; 0x392 <_Z14USART_sendCharc>
+ 22a:	d1 50       	subi	r29, 0x01	; 1
+ 22c:	09 f0       	breq	.+2      	; 0x230 <_Z10owReadTempv+0xfe>
+ 22e:	8e cf       	rjmp	.-228    	; 0x14c <_Z10owReadTempv+0x1a>
+ 230:	88 e6       	ldi	r24, 0x68	; 104
+ 232:	af d0       	rcall	.+350    	; 0x392 <_Z14USART_sendCharc>
+ 234:	80 e0       	ldi	r24, 0x00	; 0
+ 236:	90 e0       	ldi	r25, 0x00	; 0
+ 238:	df 91       	pop	r29
+ 23a:	cf 91       	pop	r28
+ 23c:	1f 91       	pop	r17
+ 23e:	0f 91       	pop	r16
+ 240:	ff 90       	pop	r15
+ 242:	ef 90       	pop	r14
+ 244:	08 95       	ret
+
+00000246 <_Z16owReadROMAddressPh>:
+ 246:	8f 92       	push	r8
+ 248:	9f 92       	push	r9
+ 24a:	af 92       	push	r10
+ 24c:	bf 92       	push	r11
+ 24e:	cf 92       	push	r12
+ 250:	df 92       	push	r13
+ 252:	ef 92       	push	r14
+ 254:	ff 92       	push	r15
+ 256:	0f 93       	push	r16
+ 258:	1f 93       	push	r17
+ 25a:	cf 93       	push	r28
+ 25c:	df 93       	push	r29
+ 25e:	ec 01       	movw	r28, r24
+ 260:	3b df       	rcall	.-394    	; 0xd8 <_ZL10owireResetv>
+ 262:	9e 01       	movw	r18, r28
+ 264:	28 5f       	subi	r18, 0xF8	; 248
+ 266:	3f 4f       	sbci	r19, 0xFF	; 255
+ 268:	79 01       	movw	r14, r18
+ 26a:	81 11       	cpse	r24, r1
+ 26c:	05 c0       	rjmp	.+10     	; 0x278 <_Z16owReadROMAddressPh+0x32>
+ 26e:	19 92       	st	Y+, r1
+ 270:	ce 15       	cp	r28, r14
+ 272:	df 05       	cpc	r29, r15
+ 274:	e1 f7       	brne	.-8      	; 0x26e <_Z16owReadROMAddressPh+0x28>
+ 276:	5c c0       	rjmp	.+184    	; 0x330 <_Z16owReadROMAddressPh+0xea>
+ 278:	83 e3       	ldi	r24, 0x33	; 51
+ 27a:	f3 de       	rcall	.-538    	; 0x62 <_ZL9owireSendh>
+ 27c:	6e 01       	movw	r12, r28
+ 27e:	8e 01       	movw	r16, r28
+ 280:	0d df       	rcall	.-486    	; 0x9c <_ZL12owireReceivev>
+ 282:	f8 01       	movw	r30, r16
+ 284:	81 93       	st	Z+, r24
+ 286:	8f 01       	movw	r16, r30
+ 288:	ee 15       	cp	r30, r14
+ 28a:	ff 05       	cpc	r31, r15
+ 28c:	c9 f7       	brne	.-14     	; 0x280 <_Z16owReadROMAddressPh+0x3a>
+ 28e:	60 e0       	ldi	r22, 0x00	; 0
+ 290:	80 e0       	ldi	r24, 0x00	; 0
+ 292:	d8 de       	rcall	.-592    	; 0x44 <_ZL8owireCRChh>
+ 294:	18 2f       	mov	r17, r24
+ 296:	4e 01       	movw	r8, r28
+ 298:	00 e0       	ldi	r16, 0x00	; 0
+ 29a:	54 01       	movw	r10, r8
+ 29c:	f4 01       	movw	r30, r8
+ 29e:	61 91       	ld	r22, Z+
+ 2a0:	4f 01       	movw	r8, r30
+ 2a2:	81 2f       	mov	r24, r17
+ 2a4:	cf de       	rcall	.-610    	; 0x44 <_ZL8owireCRChh>
+ 2a6:	18 2f       	mov	r17, r24
+ 2a8:	8b e4       	ldi	r24, 0x4B	; 75
+ 2aa:	73 d0       	rcall	.+230    	; 0x392 <_Z14USART_sendCharc>
+ 2ac:	f5 01       	movw	r30, r10
+ 2ae:	80 81       	ld	r24, Z
+ 2b0:	90 e0       	ldi	r25, 0x00	; 0
+ 2b2:	c6 d0       	rcall	.+396    	; 0x440 <_Z12debugDecimalj>
+ 2b4:	0f 5f       	subi	r16, 0xFF	; 255
+ 2b6:	07 30       	cpi	r16, 0x07	; 7
+ 2b8:	81 f7       	brne	.-32     	; 0x29a <_Z16owReadROMAddressPh+0x54>
+ 2ba:	ff e5       	ldi	r31, 0x5F	; 95
+ 2bc:	2a ee       	ldi	r18, 0xEA	; 234
+ 2be:	30 e0       	ldi	r19, 0x00	; 0
+ 2c0:	f1 50       	subi	r31, 0x01	; 1
+ 2c2:	20 40       	sbci	r18, 0x00	; 0
+ 2c4:	30 40       	sbci	r19, 0x00	; 0
+ 2c6:	e1 f7       	brne	.-8      	; 0x2c0 <_Z16owReadROMAddressPh+0x7a>
+ 2c8:	00 c0       	rjmp	.+0      	; 0x2ca <_Z16owReadROMAddressPh+0x84>
+ 2ca:	00 00       	nop
+ 2cc:	8c e4       	ldi	r24, 0x4C	; 76
+ 2ce:	61 d0       	rcall	.+194    	; 0x392 <_Z14USART_sendCharc>
+ 2d0:	80 e2       	ldi	r24, 0x20	; 32
+ 2d2:	5f d0       	rcall	.+190    	; 0x392 <_Z14USART_sendCharc>
+ 2d4:	81 2f       	mov	r24, r17
+ 2d6:	90 e0       	ldi	r25, 0x00	; 0
+ 2d8:	b3 d0       	rcall	.+358    	; 0x440 <_Z12debugDecimalj>
+ 2da:	80 e2       	ldi	r24, 0x20	; 32
+ 2dc:	5a d0       	rcall	.+180    	; 0x392 <_Z14USART_sendCharc>
+ 2de:	8f 81       	ldd	r24, Y+7	; 0x07
+ 2e0:	90 e0       	ldi	r25, 0x00	; 0
+ 2e2:	ae d0       	rcall	.+348    	; 0x440 <_Z12debugDecimalj>
+ 2e4:	80 e2       	ldi	r24, 0x20	; 32
+ 2e6:	55 d0       	rcall	.+170    	; 0x392 <_Z14USART_sendCharc>
+ 2e8:	88 e0       	ldi	r24, 0x08	; 8
+ 2ea:	90 e0       	ldi	r25, 0x00	; 0
+ 2ec:	a9 d0       	rcall	.+338    	; 0x440 <_Z12debugDecimalj>
+ 2ee:	80 e2       	ldi	r24, 0x20	; 32
+ 2f0:	50 d0       	rcall	.+160    	; 0x392 <_Z14USART_sendCharc>
+ 2f2:	8c e4       	ldi	r24, 0x4C	; 76
+ 2f4:	4e d0       	rcall	.+156    	; 0x392 <_Z14USART_sendCharc>
+ 2f6:	8f 81       	ldd	r24, Y+7	; 0x07
+ 2f8:	18 13       	cpse	r17, r24
+ 2fa:	10 c0       	rjmp	.+32     	; 0x31c <_Z16owReadROMAddressPh+0xd6>
+ 2fc:	8f e4       	ldi	r24, 0x4F	; 79
+ 2fe:	49 d0       	rcall	.+146    	; 0x392 <_Z14USART_sendCharc>
+ 300:	8a e0       	ldi	r24, 0x0A	; 10
+ 302:	df 91       	pop	r29
+ 304:	cf 91       	pop	r28
+ 306:	1f 91       	pop	r17
+ 308:	0f 91       	pop	r16
+ 30a:	ff 90       	pop	r15
+ 30c:	ef 90       	pop	r14
+ 30e:	df 90       	pop	r13
+ 310:	cf 90       	pop	r12
+ 312:	bf 90       	pop	r11
+ 314:	af 90       	pop	r10
+ 316:	9f 90       	pop	r9
+ 318:	8f 90       	pop	r8
+ 31a:	3b c0       	rjmp	.+118    	; 0x392 <_Z14USART_sendCharc>
+ 31c:	83 e4       	ldi	r24, 0x43	; 67
+ 31e:	39 d0       	rcall	.+114    	; 0x392 <_Z14USART_sendCharc>
+ 320:	8a e0       	ldi	r24, 0x0A	; 10
+ 322:	37 d0       	rcall	.+110    	; 0x392 <_Z14USART_sendCharc>
+ 324:	f6 01       	movw	r30, r12
+ 326:	11 92       	st	Z+, r1
+ 328:	6f 01       	movw	r12, r30
+ 32a:	ee 15       	cp	r30, r14
+ 32c:	ff 05       	cpc	r31, r15
+ 32e:	d1 f7       	brne	.-12     	; 0x324 <_Z16owReadROMAddressPh+0xde>
+ 330:	df 91       	pop	r29
+ 332:	cf 91       	pop	r28
+ 334:	1f 91       	pop	r17
+ 336:	0f 91       	pop	r16
+ 338:	ff 90       	pop	r15
+ 33a:	ef 90       	pop	r14
+ 33c:	df 90       	pop	r13
+ 33e:	cf 90       	pop	r12
+ 340:	bf 90       	pop	r11
+ 342:	af 90       	pop	r10
+ 344:	9f 90       	pop	r9
+ 346:	8f 90       	pop	r8
+ 348:	08 95       	ret
+
+0000034a <__vector_18>:
+ 34a:	1f 92       	push	r1
+ 34c:	0f 92       	push	r0
+ 34e:	0f b6       	in	r0, 0x3f	; 63
+ 350:	0f 92       	push	r0
+ 352:	11 24       	eor	r1, r1
+ 354:	0f 90       	pop	r0
+ 356:	0f be       	out	0x3f, r0	; 63
+ 358:	0f 90       	pop	r0
+ 35a:	1f 90       	pop	r1
+ 35c:	18 95       	reti
+
+0000035e <_Z8bsp_initv>:
+ 35e:	17 ba       	out	0x17, r1	; 23
+ 360:	8f ef       	ldi	r24, 0xFF	; 255
+ 362:	88 bb       	out	0x18, r24	; 24
+ 364:	1a ba       	out	0x1a, r1	; 26
+ 366:	8b bb       	out	0x1b, r24	; 27
+ 368:	82 e0       	ldi	r24, 0x02	; 2
+ 36a:	81 bb       	out	0x11, r24	; 17
+ 36c:	8d ef       	ldi	r24, 0xFD	; 253
+ 36e:	82 bb       	out	0x12, r24	; 18
+ 370:	14 be       	out	0x34, r1	; 52
+ 372:	0f b6       	in	r0, 0x3f	; 63
+ 374:	f8 94       	cli
+ 376:	a8 95       	wdr
+ 378:	81 b5       	in	r24, 0x21	; 33
+ 37a:	88 61       	ori	r24, 0x18	; 24
+ 37c:	81 bd       	out	0x21, r24	; 33
+ 37e:	11 bc       	out	0x21, r1	; 33
+ 380:	0f be       	out	0x3f, r0	; 63
+ 382:	12 b8       	out	0x02, r1	; 2
+ 384:	8c e0       	ldi	r24, 0x0C	; 12
+ 386:	89 b9       	out	0x09, r24	; 9
+ 388:	59 9a       	sbi	0x0b, 1	; 11
+ 38a:	88 e0       	ldi	r24, 0x08	; 8
+ 38c:	8a b9       	out	0x0a, r24	; 10
+ 38e:	47 9a       	sbi	0x08, 7	; 8
+ 390:	08 95       	ret
+
+00000392 <_Z14USART_sendCharc>:
+ 392:	5d 9b       	sbis	0x0b, 5	; 11
+ 394:	fe cf       	rjmp	.-4      	; 0x392 <_Z14USART_sendCharc>
+ 396:	8c b9       	out	0x0c, r24	; 12
+ 398:	08 95       	ret
+
+0000039a <_Z9deepSleepm>:
+ 39a:	f8 94       	cli
+ 39c:	a8 95       	wdr
+ 39e:	9e e0       	ldi	r25, 0x0E	; 14
+ 3a0:	88 e1       	ldi	r24, 0x18	; 24
+ 3a2:	0f b6       	in	r0, 0x3f	; 63
+ 3a4:	f8 94       	cli
+ 3a6:	a8 95       	wdr
+ 3a8:	81 bd       	out	0x21, r24	; 33
+ 3aa:	0f be       	out	0x3f, r0	; 63
+ 3ac:	91 bd       	out	0x21, r25	; 33
+ 3ae:	81 b5       	in	r24, 0x21	; 33
+ 3b0:	88 61       	ori	r24, 0x18	; 24
+ 3b2:	81 bd       	out	0x21, r24	; 33
+ 3b4:	81 b5       	in	r24, 0x21	; 33
+ 3b6:	80 64       	ori	r24, 0x40	; 64
+ 3b8:	81 bd       	out	0x21, r24	; 33
+ 3ba:	b3 9b       	sbis	0x16, 3	; 22
+ 3bc:	1a c0       	rjmp	.+52     	; 0x3f2 <_Z9deepSleepm+0x58>
+ 3be:	85 b7       	in	r24, 0x35	; 53
+ 3c0:	80 65       	ori	r24, 0x50	; 80
+ 3c2:	85 bf       	out	0x35, r24	; 53
+ 3c4:	85 b7       	in	r24, 0x35	; 53
+ 3c6:	80 62       	ori	r24, 0x20	; 32
+ 3c8:	85 bf       	out	0x35, r24	; 53
+ 3ca:	78 94       	sei
+ 3cc:	85 b7       	in	r24, 0x35	; 53
+ 3ce:	80 62       	ori	r24, 0x20	; 32
+ 3d0:	85 bf       	out	0x35, r24	; 53
+ 3d2:	88 95       	sleep
+ 3d4:	85 b7       	in	r24, 0x35	; 53
+ 3d6:	8f 7d       	andi	r24, 0xDF	; 223
+ 3d8:	85 bf       	out	0x35, r24	; 53
+ 3da:	85 b7       	in	r24, 0x35	; 53
+ 3dc:	8f 7d       	andi	r24, 0xDF	; 223
+ 3de:	85 bf       	out	0x35, r24	; 53
+ 3e0:	0f b6       	in	r0, 0x3f	; 63
+ 3e2:	f8 94       	cli
+ 3e4:	a8 95       	wdr
+ 3e6:	81 b5       	in	r24, 0x21	; 33
+ 3e8:	88 61       	ori	r24, 0x18	; 24
+ 3ea:	81 bd       	out	0x21, r24	; 33
+ 3ec:	11 bc       	out	0x21, r1	; 33
+ 3ee:	0f be       	out	0x3f, r0	; 63
+ 3f0:	08 95       	ret
+ 3f2:	0f b6       	in	r0, 0x3f	; 63
+ 3f4:	f8 94       	cli
+ 3f6:	a8 95       	wdr
+ 3f8:	81 b5       	in	r24, 0x21	; 33
+ 3fa:	88 61       	ori	r24, 0x18	; 24
+ 3fc:	81 bd       	out	0x21, r24	; 33
+ 3fe:	11 bc       	out	0x21, r1	; 33
+ 400:	0f be       	out	0x3f, r0	; 63
+ 402:	8a e0       	ldi	r24, 0x0A	; 10
+ 404:	90 e0       	ldi	r25, 0x00	; 0
+ 406:	b8 9a       	sbi	0x17, 0	; 23
+ 408:	c0 98       	cbi	0x18, 0	; 24
+ 40a:	8e 9a       	sbi	0x11, 6	; 17
+ 40c:	96 98       	cbi	0x12, 6	; 18
+ 40e:	2f e5       	ldi	r18, 0x5F	; 95
+ 410:	3a ee       	ldi	r19, 0xEA	; 234
+ 412:	40 e0       	ldi	r20, 0x00	; 0
+ 414:	21 50       	subi	r18, 0x01	; 1
+ 416:	30 40       	sbci	r19, 0x00	; 0
+ 418:	40 40       	sbci	r20, 0x00	; 0
+ 41a:	e1 f7       	brne	.-8      	; 0x414 <__LOCK_REGION_LENGTH__+0x14>
+ 41c:	00 c0       	rjmp	.+0      	; 0x41e <__LOCK_REGION_LENGTH__+0x1e>
+ 41e:	00 00       	nop
+ 420:	b8 98       	cbi	0x17, 0	; 23
+ 422:	c0 9a       	sbi	0x18, 0	; 24
+ 424:	8e 98       	cbi	0x11, 6	; 17
+ 426:	96 9a       	sbi	0x12, 6	; 18
+ 428:	2f e5       	ldi	r18, 0x5F	; 95
+ 42a:	3a ee       	ldi	r19, 0xEA	; 234
+ 42c:	40 e0       	ldi	r20, 0x00	; 0
+ 42e:	21 50       	subi	r18, 0x01	; 1
+ 430:	30 40       	sbci	r19, 0x00	; 0
+ 432:	40 40       	sbci	r20, 0x00	; 0
+ 434:	e1 f7       	brne	.-8      	; 0x42e <__LOCK_REGION_LENGTH__+0x2e>
+ 436:	00 c0       	rjmp	.+0      	; 0x438 <__LOCK_REGION_LENGTH__+0x38>
+ 438:	00 00       	nop
+ 43a:	01 97       	sbiw	r24, 0x01	; 1
+ 43c:	21 f7       	brne	.-56     	; 0x406 <__LOCK_REGION_LENGTH__+0x6>
+ 43e:	bf cf       	rjmp	.-130    	; 0x3be <_Z9deepSleepm+0x24>
+
+00000440 <_Z12debugDecimalj>:
+ 440:	0f 93       	push	r16
+ 442:	1f 93       	push	r17
+ 444:	cf 93       	push	r28
+ 446:	df 93       	push	r29
+ 448:	cd b7       	in	r28, 0x3d	; 61
+ 44a:	dd 27       	eor	r29, r29
+ 44c:	c8 50       	subi	r28, 0x08	; 8
+ 44e:	cd bf       	out	0x3d, r28	; 61
+ 450:	20 e0       	ldi	r18, 0x00	; 0
+ 452:	0a e0       	ldi	r16, 0x0A	; 10
+ 454:	10 e0       	ldi	r17, 0x00	; 0
+ 456:	00 97       	sbiw	r24, 0x00	; 0
+ 458:	69 f0       	breq	.+26     	; 0x474 <_Z12debugDecimalj+0x34>
+ 45a:	e1 e0       	ldi	r30, 0x01	; 1
+ 45c:	f0 e0       	ldi	r31, 0x00	; 0
+ 45e:	ec 0f       	add	r30, r28
+ 460:	fd 1f       	adc	r31, r29
+ 462:	e2 0f       	add	r30, r18
+ 464:	f1 1d       	adc	r31, r1
+ 466:	b8 01       	movw	r22, r16
+ 468:	6d d0       	rcall	.+218    	; 0x544 <__udivmodhi4>
+ 46a:	80 5d       	subi	r24, 0xD0	; 208
+ 46c:	80 83       	st	Z, r24
+ 46e:	cb 01       	movw	r24, r22
+ 470:	2f 5f       	subi	r18, 0xFF	; 255
+ 472:	f1 cf       	rjmp	.-30     	; 0x456 <_Z12debugDecimalj+0x16>
+ 474:	21 11       	cpse	r18, r1
+ 476:	03 c0       	rjmp	.+6      	; 0x47e <_Z12debugDecimalj+0x3e>
+ 478:	80 e3       	ldi	r24, 0x30	; 48
+ 47a:	89 83       	std	Y+1, r24	; 0x01
+ 47c:	21 e0       	ldi	r18, 0x01	; 1
+ 47e:	1f ef       	ldi	r17, 0xFF	; 255
+ 480:	12 0f       	add	r17, r18
+ 482:	17 fd       	sbrc	r17, 7
+ 484:	0c c0       	rjmp	.+24     	; 0x49e <_Z12debugDecimalj+0x5e>
+ 486:	e1 e0       	ldi	r30, 0x01	; 1
+ 488:	f0 e0       	ldi	r31, 0x00	; 0
+ 48a:	ec 0f       	add	r30, r28
+ 48c:	fd 1f       	adc	r31, r29
+ 48e:	e1 0f       	add	r30, r17
+ 490:	f1 1d       	adc	r31, r1
+ 492:	17 fd       	sbrc	r17, 7
+ 494:	fa 95       	dec	r31
+ 496:	80 81       	ld	r24, Z
+ 498:	7c df       	rcall	.-264    	; 0x392 <_Z14USART_sendCharc>
+ 49a:	11 50       	subi	r17, 0x01	; 1
+ 49c:	f2 cf       	rjmp	.-28     	; 0x482 <_Z12debugDecimalj+0x42>
+ 49e:	c8 5f       	subi	r28, 0xF8	; 248
+ 4a0:	cd bf       	out	0x3d, r28	; 61
+ 4a2:	df 91       	pop	r29
+ 4a4:	cf 91       	pop	r28
+ 4a6:	1f 91       	pop	r17
+ 4a8:	0f 91       	pop	r16
+ 4aa:	08 95       	ret
+
+000004ac <main>:
+ 4ac:	58 df       	rcall	.-336    	; 0x35e <_Z8bsp_initv>
+ 4ae:	68 ee       	ldi	r22, 0xE8	; 232
+ 4b0:	73 e0       	ldi	r23, 0x03	; 3
+ 4b2:	80 e0       	ldi	r24, 0x00	; 0
+ 4b4:	90 e0       	ldi	r25, 0x00	; 0
+ 4b6:	71 df       	rcall	.-286    	; 0x39a <_Z9deepSleepm>
+ 4b8:	8a 9a       	sbi	0x11, 2	; 17
+ 4ba:	92 98       	cbi	0x12, 2	; 18
+ 4bc:	d1 9a       	sbi	0x1a, 1	; 26
+ 4be:	d9 9a       	sbi	0x1b, 1	; 27
+ 4c0:	82 e6       	ldi	r24, 0x62	; 98
+ 4c2:	90 e0       	ldi	r25, 0x00	; 0
+ 4c4:	c0 de       	rcall	.-640    	; 0x246 <_Z16owReadROMAddressPh>
+ 4c6:	8a 98       	cbi	0x11, 2	; 17
+ 4c8:	92 9a       	sbi	0x12, 2	; 18
+ 4ca:	d1 98       	cbi	0x1a, 1	; 26
+ 4cc:	8d b7       	in	r24, 0x3d	; 61
+ 4ce:	87 e5       	ldi	r24, 0x57	; 87
+ 4d0:	60 df       	rcall	.-320    	; 0x392 <_Z14USART_sendCharc>
+ 4d2:	8a e0       	ldi	r24, 0x0A	; 10
+ 4d4:	5e df       	rcall	.-324    	; 0x392 <_Z14USART_sendCharc>
+ 4d6:	8a 9a       	sbi	0x11, 2	; 17
+ 4d8:	92 98       	cbi	0x12, 2	; 18
+ 4da:	d1 9a       	sbi	0x1a, 1	; 26
+ 4dc:	d9 9a       	sbi	0x1b, 1	; 27
+ 4de:	82 e6       	ldi	r24, 0x62	; 98
+ 4e0:	90 e0       	ldi	r25, 0x00	; 0
+ 4e2:	b1 de       	rcall	.-670    	; 0x246 <_Z16owReadROMAddressPh>
+ 4e4:	c2 e6       	ldi	r28, 0x62	; 98
+ 4e6:	d0 e0       	ldi	r29, 0x00	; 0
+ 4e8:	89 91       	ld	r24, Y+
+ 4ea:	90 e0       	ldi	r25, 0x00	; 0
+ 4ec:	a9 df       	rcall	.-174    	; 0x440 <_Z12debugDecimalj>
+ 4ee:	80 e2       	ldi	r24, 0x20	; 32
+ 4f0:	50 df       	rcall	.-352    	; 0x392 <_Z14USART_sendCharc>
+ 4f2:	80 e0       	ldi	r24, 0x00	; 0
+ 4f4:	ca 36       	cpi	r28, 0x6A	; 106
+ 4f6:	d8 07       	cpc	r29, r24
+ 4f8:	b9 f7       	brne	.-18     	; 0x4e8 <main+0x3c>
+ 4fa:	00 de       	rcall	.-1024   	; 0xfc <_Z12owInitializev>
+ 4fc:	1a de       	rcall	.-972    	; 0x132 <_Z10owReadTempv>
+ 4fe:	90 93 61 00 	sts	0x0061, r25	; 0x800061 <_edata+0x1>
+ 502:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+ 506:	89 e5       	ldi	r24, 0x59	; 89
+ 508:	44 df       	rcall	.-376    	; 0x392 <_Z14USART_sendCharc>
+ 50a:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+ 50e:	90 91 61 00 	lds	r25, 0x0061	; 0x800061 <_edata+0x1>
+ 512:	96 df       	rcall	.-212    	; 0x440 <_Z12debugDecimalj>
+ 514:	89 e5       	ldi	r24, 0x59	; 89
+ 516:	3d df       	rcall	.-390    	; 0x392 <_Z14USART_sendCharc>
+ 518:	8e 9a       	sbi	0x11, 6	; 17
+ 51a:	96 98       	cbi	0x12, 6	; 18
+ 51c:	b8 9a       	sbi	0x17, 0	; 23
+ 51e:	c0 98       	cbi	0x18, 0	; 24
+ 520:	8e 9a       	sbi	0x11, 6	; 17
+ 522:	96 98       	cbi	0x12, 6	; 18
+ 524:	87 ea       	ldi	r24, 0xA7	; 167
+ 526:	91 e6       	ldi	r25, 0x61	; 97
+ 528:	01 97       	sbiw	r24, 0x01	; 1
+ 52a:	f1 f7       	brne	.-4      	; 0x528 <main+0x7c>
+ 52c:	00 c0       	rjmp	.+0      	; 0x52e <main+0x82>
+ 52e:	00 00       	nop
+ 530:	b8 98       	cbi	0x17, 0	; 23
+ 532:	c0 9a       	sbi	0x18, 0	; 24
+ 534:	8e 98       	cbi	0x11, 6	; 17
+ 536:	96 9a       	sbi	0x12, 6	; 18
+ 538:	68 ee       	ldi	r22, 0xE8	; 232
+ 53a:	73 e0       	ldi	r23, 0x03	; 3
+ 53c:	80 e0       	ldi	r24, 0x00	; 0
+ 53e:	90 e0       	ldi	r25, 0x00	; 0
+ 540:	2c df       	rcall	.-424    	; 0x39a <_Z9deepSleepm>
+ 542:	c4 cf       	rjmp	.-120    	; 0x4cc <main+0x20>
+
+00000544 <__udivmodhi4>:
+ 544:	aa 1b       	sub	r26, r26
+ 546:	bb 1b       	sub	r27, r27
+ 548:	51 e1       	ldi	r21, 0x11	; 17
+ 54a:	07 c0       	rjmp	.+14     	; 0x55a <__udivmodhi4_ep>
+
+0000054c <__udivmodhi4_loop>:
+ 54c:	aa 1f       	adc	r26, r26
+ 54e:	bb 1f       	adc	r27, r27
+ 550:	a6 17       	cp	r26, r22
+ 552:	b7 07       	cpc	r27, r23
+ 554:	10 f0       	brcs	.+4      	; 0x55a <__udivmodhi4_ep>
+ 556:	a6 1b       	sub	r26, r22
+ 558:	b7 0b       	sbc	r27, r23
+
+0000055a <__udivmodhi4_ep>:
+ 55a:	88 1f       	adc	r24, r24
+ 55c:	99 1f       	adc	r25, r25
+ 55e:	5a 95       	dec	r21
+ 560:	a9 f7       	brne	.-22     	; 0x54c <__udivmodhi4_loop>
+ 562:	80 95       	com	r24
+ 564:	90 95       	com	r25
+ 566:	bc 01       	movw	r22, r24
+ 568:	cd 01       	movw	r24, r26
+ 56a:	08 95       	ret
+
+0000056c <_exit>:
+ 56c:	f8 94       	cli
+
+0000056e <__stop_program>:
+ 56e:	ff cf       	rjmp	.-2      	; 0x56e <__stop_program>

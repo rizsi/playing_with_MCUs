@@ -2,5 +2,8 @@
 /wirelessensor.elf
 /wirelessensor.o
 /wirelessensor.disassemble.txt
+/wirelessensor.map
 /wirelessensor.hex
+/onewire.list.txt
+/onewire.o
 

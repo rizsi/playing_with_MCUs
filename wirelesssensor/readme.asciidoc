@@ -1,5 +1,26 @@
-= Project "How Dare You"
+= Project Wireless sensor
 
-Watch music clip: G.T - How Dare You https://www.youtube.com/watch?v=rbrdRcwZE6Q
+== Battery life
 
-How Dare You????
+=== CR2032
+
+3V - 220 mAh
+
+Pro: no power regulation is required
+
+Radio power usage: transmit 7-11mA
+RX: settling 8.4mA, max 12mA
+
+Approx 10h of constant transmit. We transmit 1/1000 second every minute then it is comparable to the sleep power
+
+Sleep:
+
+Attiny 2uA Mérés: 5uA
+radio 900nA (could be powered down but it is not necessary)
+Thermo 1000nA (can be easily powered off)
+
+Together: 3uA
+
+Sleep Battery life: 220 mAh/3uA = 220/3 * 1000 h = 73.333h = 3055 days ~= 8 years
+
+
