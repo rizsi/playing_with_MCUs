@@ -1,7 +1,21 @@
 /**
  * Board support package for Wireless Temperature sensor project.
 
-9 general purpose pins are used (ATtiny24 could be enough). 8 is enough if parasitic power is used for the temp sensor.
+11 general purpose pins are used (ATtiny24 could be enough). 10 is enough if parasitic power is used for the temp sensor.
+
+From the 11 1 is ADC input for battery sensing.
+
+ * MISO MOSI SCL, CE, SNC (IRQ) - 5 (6) radio
+ * red, green LEDs                2
+ * One wire GND, DQ 2 temp (1?)   2
+ * Debug TX                       1
+ * VCC measure activate           1
+ * VCC measure in (ADC)           1
+ * Button input?		  1
+
+14 pins
+
+ * RESET, GND, VCC - 3
 
  * MCU: ATtiny2313
 

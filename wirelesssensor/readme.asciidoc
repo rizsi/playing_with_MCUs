@@ -2,6 +2,99 @@
 
 == Battery life
 
+=== Links about low power AVR systems
+
+http://www.gammon.com.au/forum/?id=11497
+
+According to this the pins should be driven to low or pulled by external resistor. <- measurement must be done
+
+Power Reduction Register should be used. Though it only helps while the chip is not sleeping.
+
+Also good link about low power Arduino:
+
+http://www.home-automation-community.com/arduino-low-power-how-to-run-atmega328p-for-a-year-on-coin-cell-battery/
+
+=== Low power Arduino with radio
+
+https://lowpowerlab.com/guide/moteino/
+
+With LORA radio: $25.90
+With cheaper radio: $20
+
+About 6000 Huf
+
+=== Chip selector
+
+ * 2k Flash
+ * EEPROM is good to have
+ * 13-14 IO PINS (less may be enough. Sparable features: radio IRQ, parasitic temp sensor power, LED, debug tx, )
+ * ADC
+
+ATTINY20-SSU - 14 láb, 135 Ft https://hu.farnell.com/microchip/attiny20-ssu/mcu-8bit-avr-2k-flash-14soic/dp/1972143
+
+ATTINY24A-PU 303Ft 14 láb
+11 IO PINS
+
+=== PINS
+
+Best case:
+
+ * MISO MOSI SCL, CE, NCS (IRQ) - 5 (6) radio
+ * red, green LEDs                2
+ * One wire GND, DQ 2 temp (1?)   2
+ * Debug TX                       1
+ * VCC measure activate           1
+ * VCC measure in (ADC)           1
+ * Button input?		  1
+
+14 pins
+
+Alternative case:
+
+ * MISO MOSI SCL, CE, NCS (IRQ) - 5 (6) radio
+ * One wire DQ                    1
+ * Button input+LED               1
+ * VCC measurement is done measuring internal 1.1V compared to VCC - no pins needed
+
+7 pins (+RESET, GND, VCC) = 10
+
+No button/LED: 6 pins - possible if reset is not used
+
+Furhter PIN reducing:
+
+One of the Radio pins could also be used as DQ of temp sensor when CE is not enabled.
+
+Maybe the CE pin because that is only used for short signals to the radio.
+Or SCL because that is irrelevant to the radio when NCS in not active. And it is always fast
+
+Sum:
+
+ * MISO, MOSI, SCL+DQ, CE, NCS 5 pins!
+
+More features on so little pins:
+
+Debug:
+
+* MISO+MOSI can also be used to put out debug data if it is only used when NCS is inactive
+
+Button:
+
+* button can be connected through a resistor to CE pin:
+** When radio is not active at all the CE pin can be on pullup and can sense button.
+** When radio is TX then button does not ruin this signal due to weak pull towards 0
+** When radion is active but not CE then PINout=0 does not ruin the signal
+
+LED:
+
+* When CE is active then we do not communicate through SPI: MISO can be put to high
+** Connect LED to CE high+MISO low. This never happens normally but will not cause problem when radio is in off mode.
+
+
+=== BOM
+
+DS18 369Ft
+
+
 === CR2032
 
 3V - 220 mAh
@@ -23,4 +116,16 @@ Together: 3uA
 
 Sleep Battery life: 220 mAh/3uA = 220/3 * 1000 h = 73.333h = 3055 days ~= 8 years
 
+=== 18650
+
+This is rechargable but may have high discharge (read from forums not a measurement). The capacity is more than enough though.
+
+Voltage must be regulated. 4.2V fully charged voltage is too much for the radio. (It is possible to only regulate the VCC of the radio and only turn on its power when used so the constant drain of the regulator is not so much.)
+
+=== possible Regulator
+Regulator: https://www.microchip.com/wwwproducts/en/MCP1703A
+
+2.0 µA Quiescent Current (Typical)
+
+Or this is also a similar variant and very cheap: MCP1702T-3302E/CB
 

@@ -1,0 +1,72 @@
+= Measure deep sleep power usage of AVR MCU
+
+Internet knowledge and datasheet of AVR MCUs are not in sync. Datasheet says it is good to pullup pins when sleeping and Internet urban legends say the pullup drains current.
+
+Time to find the truth for myself.
+
+Conclusion:
+
+ * Measurement must be repeated with better multimeter which measures below 0.1uA
+ * AVCC must be properly connected to VCC. Otherwise current is drained
+ * Internal pullup only drains current when AVCC is not connected (though the measurements are at the limit of the meter)
+ * Reducing Clock speed below 1MHz is somewhat useful if long active waits are present in the application.
+
+
+== Measurements
+
+Chip: ATMEGA328P
+Power voltage: 3.30V - bench DC power supply
+No other connections (Missing capacitor on GND/VCC and AVCC not connected - this turned out to be a problem)
+
+Multimeter is connected in serial into the power.
+
+Clock: internal 8MHz div8 -> 1MHz
+
+=== All pins floating
+
+while(1); -> 1.39mA
+
+
+clock divider<-256   while(1); ->1.00mA (142.8kHz main clock)
+
+avrdude -B 100 must be used to reprogram the chip - for some reason this clock setting affects the programmer.
+
+
+=== Pins pulled up by MCU internal pullup
+
+clock divider<-256   while(1); ->0.24mA (142.8kHz main clock)
+(deepsleeptest.03.cpp)
+
+clock divider<-256  ACSR|=_BV(ACD); // Turn Analog comparator off to spare some power!
+	PRR=0xff; // All power save features on
+   while(1); ->0.10mA (142.8kHz main clock)
+(deepsleeptest.04.cpp)
+
+
+Deep sleep: 0.9 uA  (deepsleeptest.05.cpp)
+
+Connect AVCC to VCC: 0.9uA -> 0.1uA !! This is important to connect to VCC
+(Also added a capacitor to GND/VCC but it seemed not change the amps)
+
+
+=== PINS pulled active low by MCU
+
+Deep sleep: 0.3 uA  (deepsleeptest.06.cpp)
+
+=== PINS pulled active high by MCU
+
+Deep sleep: 1.2 uA  (deepsleeptest.07.cpp)
+
+=== PINS floating by MCU and not connected to anything
+
+Deep sleep: 0.3 uA  (deepsleeptest.08.cpp)
+
+Connect AVCC to VCC: 0.3uA -> 0.1uA !! This is important to connect to VCC
+(Also added a capacitor to GND/VCC but it seemed not change the amps)
+
+=== 9 external pullups
+
+No change is measured. It stays 0.1uA
+
+Further measurements: multimeter with better accuracy at small values is needed
+
