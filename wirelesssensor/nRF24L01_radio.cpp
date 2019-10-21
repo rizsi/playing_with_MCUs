@@ -37,11 +37,16 @@ static uint8_t processStatus(uint16_t fifostatus)
   uint8_t ret=0;
   if(low(fifostatus)!=0b00001110)
   {
+	RADIO_DEBUG_CH('\n');
 	RADIO_DEBUG_CH('S');
 	RADIO_DEBUG_BIN(high(fifostatus));
 	RADIO_DEBUG_CH(' ');
 	RADIO_DEBUG_BIN(low(fifostatus));
 	RADIO_DEBUG_CH('\n');
+  }
+  if((low(fifostatus)&0b00010000) !=0)
+  {
+      writeReg(REG_STATUS, 0b00010000); // Clear IRQ
   }
   if((low(fifostatus)&0b01000000) !=0)
   {
@@ -70,12 +75,26 @@ static uint8_t processStatus(uint16_t fifostatus)
   }
   if((low(fifostatus)&0b00100000)!=0)
   {
+    RADIO_DEBUG_CH('%');
+//    RADIO_DEBUG_CH('%');
+//    RADIO_DEBUG_CH('%');
+ //   RADIO_DEBUG_CH('%');
+//    RADIO_DEBUG_CH('%');
     // Radio send done
     writeReg(REG_STATUS, 0b00100000); // Clear IRQ
-    RADIO_SET_ENABLED(0); // Moves the state machine back to 
-    // Data in TX was sent - back to the requested mode
-    radioActivateMode();
-    ret|=RADIO_RET_SENT;
+    if((high(fifostatus) & 0b00010000)!=0)
+    {
+      // TX FIFO emptyu
+      RADIO_SET_ENABLED(0); // Moves the state machine back to 
+      // Data in TX was sent - back to the requested mode
+      radioActivateMode();
+      ret|=RADIO_RET_SENT;
+    }else{
+       // Send one more data
+       RADIO_SET_ENABLED(1);
+	_delay_us(10);
+       RADIO_SET_ENABLED(0);
+    }
   }
   return ret;
 }
@@ -121,55 +140,71 @@ static void writeRegCheck(uint8_t reg, uint8_t value)
 }
 void radioReadData()
 {
-  RADIO_BEGIN();
+    uint8_t data[9];
+//  RADIO_BEGIN();
   uint8_t initialAddress=0;
 //  {
 //    uint8_t ret=SPI.transfer(initialAddress);
 //  }
-  RADIO_END();
+//  RADIO_END();
   for(uint8_t i=0;i<8;++i)
   {
     RADIO_BEGIN();
-    uint8_t ret=RADIO_SPI(initialAddress+i);
+    uint8_t ret0=RADIO_SPI(initialAddress+i);
+    uint8_t ret1=RADIO_SPI(0);
+	data[i]=ret1;
     if(i==0)
     {
-      RADIO_DEBUG_CH('s');
-      RADIO_DEBUG_BIN(ret);
+      data[8]=ret0;
     }
-    ret=RADIO_SPI(0);
     RADIO_END();
+  }
+
+  RADIO_DEBUG_CH('\n');
+  RADIO_DEBUG_CH('s');
+  RADIO_DEBUG_BIN(data[8]);
+  for(uint8_t i=0;i<8;++i)
+  {
     RADIO_DEBUG_CH('r');
     RADIO_DEBUG_DEC(i);
     RADIO_DEBUG_CH(' ');
-    RADIO_DEBUG_BIN(ret);
+    RADIO_DEBUG_BIN(data[i]);
     RADIO_DEBUG_CH('\n');
   }
   for(uint8_t i=0;i<7;++i)
   {
-    RADIO_DEBUG_CH('r');
-    RADIO_DEBUG_CH('x');
-    RADIO_DEBUG_DEC(i);
-    RADIO_DEBUG_CH(' ');
     RADIO_BEGIN();
     uint8_t ret=RADIO_SPI(0xa+i);
     for(uint8_t j=0;j<5;++j)
     {
-      ret=RADIO_SPI(0);
-      RADIO_DEBUG_HEX(ret);
+      data[i]=RADIO_SPI(0);
+    }
+    RADIO_END();
+    RADIO_DEBUG_CH('\n');
+    RADIO_DEBUG_CH('r');
+    RADIO_DEBUG_CH('x');
+    RADIO_DEBUG_DEC(i);
+    RADIO_DEBUG_CH(' ');
+    for(uint8_t j=0;j<5;++j)
+    {
+      RADIO_DEBUG_HEX(data[i]);
     }
     RADIO_DEBUG_CH('\n');
+  }
+  for(uint8_t i=0;i<6;++i)
+  {
+    RADIO_BEGIN();
+    uint8_t ret=RADIO_SPI(0x11+i);
+	data[i]=RADIO_SPI(0);
     RADIO_END();
   }
+    RADIO_DEBUG_CH('\n');
   for(uint8_t i=0;i<6;++i)
   {
     RADIO_DEBUG_CH('d');
     RADIO_DEBUG_DEC(i);
-    RADIO_BEGIN();
-    uint8_t ret=RADIO_SPI(0x11+i);
-    ret=RADIO_SPI(0);
-    RADIO_END();
     RADIO_DEBUG_CH(' ');
-    RADIO_DEBUG_DEC(ret);
+    RADIO_DEBUG_DEC(data[i]);
     RADIO_DEBUG_CH('\n');
   }
 }
@@ -240,6 +275,8 @@ void radioSend(uint8_t * data, uint8_t nByte, uint8_t modeAfter)
     }
     RADIO_END();
   RADIO_SET_ENABLED(1);
+	_delay_us(10);
+  RADIO_SET_ENABLED(0);
 }
 
 
@@ -265,6 +302,9 @@ void radioPinsInit()
 
 uint8_t radioLoop()
 {
+	USART_sendChar('\n');
+	USART_sendChar('z');
+	USART_sendChar('\n');
     uint16_t ret=readFifoStatus();
 //    Serial.println(ret, BIN);
     return processStatus(ret);

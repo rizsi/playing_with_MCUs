@@ -40,6 +40,16 @@ ACSR|=_BV(ACD); // Turn Analog comparator off to spare some power!
 // uint32_t v=random(); // This is how a random value must be queried
 }
 
+
+bool bspButton1Pressed()
+{
+	return 0;
+}
+/** Clear the pressed state of button1 */
+void bspButton1Clear()
+{
+}
+
 void USART_sendChar(char data)
 {
 	while ( !( UCSRA & (1<<UDRE)) );
@@ -149,7 +159,7 @@ void debugString(const char * str)
 
 void RADIO_PINS_INIT()
 {
-	DDRB&=~_BV(6); PORTB&=~_BV(6); // data in to input
+	DDRB&=~_BV(6); PORTB|=_BV(6); // data in to input, pullup
 	DDRB|=_BV(5); PORTB|=_BV(5); // data out to high
 	DDRB|=_BV(7); PORTB&=~_BV(7); // Clock to high
 }

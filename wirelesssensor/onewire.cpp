@@ -3,6 +3,8 @@
 #include <onewire_bsp.h>
 #include <onewire.h>
 
+#define T_INVALID 0b1000000000000000
+
 // Max conversion time:
 // R1 R0 (configuration bits)
 // 0  0  9 bits 93.75ms
@@ -64,16 +66,19 @@ static void owireSend(uint8_t data)
   {
     if(data&0x01)
     {
-	BSP_OW_LOW();
-      owDelayMicroseconds(6); // 1<T<15 us
-	BSP_OW_PULLUP();
+	CLI_BLOCK()
+	{
+		BSP_OW_LOW();
+		owDelayMicroseconds(6); // 1<T<15 us
+	        BSP_OW_HIGH();
+	}
       owDelayMicroseconds(64); // Wait for the whole timeframe
     }
     else
     {
 	BSP_OW_LOW();
       owDelayMicroseconds(60); // 60<T<120 us
-	BSP_OW_PULLUP();
+        BSP_OW_HIGH();
       owDelayMicroseconds(10); // Recovery 1us<T
     }
     data>>=1;
@@ -85,17 +90,24 @@ static void owireSend(uint8_t data)
  */
 static uint8_t owireReceiveBit()
 {
-	BSP_OW_LOW();
-	asm("nop");
+	uint8_t sample;
+	CLI_BLOCK()
+	{
+		BSP_OW_LOW();
+//		asm("nop");
 //	asm("nop");
 //	asm("nop");
 //	asm("nop");
 //	asm("nop");
 //	asm("nop");
-    owDelayMicroseconds(1); // 1<T<15 us
-	BSP_OW_PULLUP();
+		owDelayMicroseconds(1); // 1<T<15 us
+		BSP_OW_PULLUP();
+		owDelayMicroseconds(3); // 1<T<15 us
+		sample=BSP_OW_READ();
+		owDelayMicroseconds(60); // T>45us
+		BSP_OW_HIGH(); // Parasitic power is on
+	}
 
-    owDelayMicroseconds(3); // 1<T<15 us
 //	asm("nop");
 //	asm("nop");
 //	asm("nop");
@@ -103,11 +115,7 @@ static uint8_t owireReceiveBit()
 //	DEBUG_PIN_SIGNAL(1);   
 //    owDelayMicroseconds(3); //  9+15
 //    owDelayMicroseconds(24); //  9+15
-//	DEBUG_PIN_SIGNAL(0);
-    
-    uint8_t sample=BSP_OW_READ();
-    
-    owDelayMicroseconds(60); // T>45us
+//	DEBUG_PIN_SIGNAL(0);    
 /*	if(sample)
 	{
 		BSP_OW_LOG_CH('H');
@@ -176,12 +184,17 @@ static bool owireReceiveBytes(uint8_t * tgBuffer, uint8_t nByte)
  */
 static bool owireReset()
 {
+  uint8_t presence;
   BSP_OW_LOW();
   owDelayMicroseconds(480);
-  BSP_OW_PULLUP();
-  owDelayMicroseconds(70);
-  uint8_t presence=BSP_OW_READ();
+  CLI_BLOCK()
+  {
+    BSP_OW_PULLUP();
+    owDelayMicroseconds(70);
+    presence=BSP_OW_READ();
+  }
   owDelayMicroseconds(450);
+  BSP_OW_HIGH(); // Parasitic power is on
   return !presence;
 }
 
@@ -198,10 +211,10 @@ bool owInitialize()
 	owireSend(0x0);
 	owireSend(0x0);
 	owireSend(0b01100000);
-	if(!owireReset())
-	{
-		return 0;
-	}
+//	if(!owireReset())
+//	{
+//		return 0;
+//	}
 	BSP_OW_LOG_CH('b');
 	return 1;
 }
@@ -209,7 +222,7 @@ uint16_t owReadTemp()
 {
 	if(!owireReset())
 	{
-		return 0;
+		return T_INVALID;
 	}
 	BSP_OW_LOG_CH('c');
 	uint8_t retryCounter=0;
@@ -221,7 +234,7 @@ uint16_t owReadTemp()
 		deepSleepConversionTime();
 		if(!owireReset())
 		{
-			return 0;
+			return T_INVALID;
 		}
 		BSP_OW_LOG_CH('d');
 		owireSend(0xCC);// Skip ROM command - we have only one sensor on the line.
@@ -252,19 +265,14 @@ uint16_t owReadTemp()
 		BSP_OW_LOG_CH('e');
 		if(!owireReset())
 		{
-			return 0;
+			return T_INVALID;
 		}
 		BSP_OW_LOG_CH('f');
 		if(crc==crccheck)
 		{
-			  uint16_t data=thigh&0b00000111;
-			  uint8_t signum=thigh&0b11111000;
+			  uint16_t data=thigh;
 			  data<<=8;
 			  data|=tlow;
-			  if(signum)
-			  {
-			    data=-data;
-			  }
 
 			BSP_OW_LOG_CH('i');
 			BSP_OW_LOG_NUM(crc);
@@ -278,7 +286,7 @@ uint16_t owReadTemp()
 		BSP_OW_LOG_CH('g');
 	}
 	BSP_OW_LOG_CH('h');
-	return 0;
+	return T_INVALID;
 }
 
 static void clearAddress(uint8_t * address)

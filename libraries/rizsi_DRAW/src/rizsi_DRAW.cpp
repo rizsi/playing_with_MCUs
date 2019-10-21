@@ -42,7 +42,8 @@ void RD_chechNextCharPosition()
 
 typedef char (*charGetter) (uint8_t at);
 
-static uint8_t strncmppgm(charGetter get, uint8_t at, const PROGMEM uint8_t * ptr, uint8_t lc)
+/// ptr is progmem pointer!
+static uint8_t strncmppgm(charGetter get, uint8_t at, const uint8_t * ptr, uint8_t lc)
 {
 	for(uint8_t i=0;i<lc;++i)
 	{

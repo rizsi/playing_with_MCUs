@@ -47,6 +47,20 @@ GREEN LED - shows that battery is ok
 // Deep sleep at min 750 ms - wait for conversion of the temperature sensor
 #define deepSleepConversionTime() deepSleep(WDTO_1S)
 
+/**
+ * On this hardware this feature is not used:
+ * Mark the BSP subsystem that radio communication is beginning.
+ * (In case the same line is used for temp sensor as SPI CLK then make sure that the temp sensor is in inactive state.)
+ */
+#define radioSessionBegin()
+/**
+ * On this hardware this feature is not used:
+ * Mark the BSP subsystem that radio communication has ended.
+ * (In case the same line is used for temp sensor then temp CLK must be turned low to spare amps.)
+ */
+#define radioSessionEnd()
+
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
@@ -65,6 +79,11 @@ extern void USART_sendChar(char data);
 extern void debugDecimal(uint16_t n);
 extern void debugBinary(uint8_t n);
 extern void debugString(const char * str);
+
+/** Button 1 was pressed since last clear of the state */
+extern bool bspButton1Pressed();
+/** Clear the pressed state of button1 */
+extern void bspButton1Clear();
 
 /**
  * Deep sleep for a given time. Deep sleep uses very small power.
@@ -85,6 +104,9 @@ extern void deepSleep(uint8_t wdto_value);
 
 // PD5
 #define DEBUG_PIN_SIGNAL(x) if(x){DDRD|=_BV(5); PORTD&=~_BV(5);}else {PORTD|=_BV(5);}
+
+// Get voltage does not work on this chip because it has no ADC
+#define bspGetVoltage() 0xffff
 
 // DDRD&=~_BV(5);
 

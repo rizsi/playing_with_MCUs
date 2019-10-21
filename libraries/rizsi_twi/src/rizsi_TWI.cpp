@@ -20,7 +20,7 @@ static uint8_t twiInited=0;
 static uint8_t twiLastStatus;
 static twiFillCommand twiFeed;
 static uint8_t twiLength;
-static uint8_t * twiData;
+static const uint8_t * twiData;
 static uint8_t twiAt=0;
 static uint8_t twiAddress;
 static uint8_t twiCommand;
@@ -145,7 +145,7 @@ void twiEndTransmission()
 }
 
 
-void twiBeginTransmission(uint8_t sla)
+uint8_t twiBeginTransmission(uint8_t sla)
 {
   while(_BV(TWSTO)& TWCR)
   {
@@ -163,13 +163,13 @@ void twiBeginTransmission(uint8_t sla)
   WAIT_TWCR2(_BV(TWINT), TW_MT_SLA_ACK,  TW_MT_SLA_ACK, 101);
 }
 
-void twiWrite(uint8_t data)
+uint8_t twiWrite(uint8_t data)
 {
     TWDR = data;
     TWCR = _BV(TWINT) | _BV(TWEN);
     WAIT_TWCR2(_BV(TWINT), TW_MT_DATA_ACK, TW_MT_DATA_ACK, 1);
 }
-void twiBeginRead(uint8_t sla)
+uint8_t twiBeginRead(uint8_t sla)
 {
   while(_BV(TWSTO)& TWCR)
   {

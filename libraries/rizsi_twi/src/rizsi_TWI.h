@@ -9,16 +9,16 @@
  * Callback method to provide TWI task to the IT callback based tWI communicator.
  * @param address NULL means there was an error and send was cancelled
 */
-typedef uint8_t (*twiFillCommand)(uint8_t * address, uint8_t ** getData, uint8_t *command);
+typedef uint8_t (*twiFillCommand)(uint8_t * address, const uint8_t ** getData, uint8_t *command);
 
 extern void twiInit();
 extern void twiStop();
 extern void twiEndTransmission();
 /// @param sla - slave address without shifting left one and write bit cleared
-extern void twiBeginTransmission(uint8_t sla);
+extern uint8_t twiBeginTransmission(uint8_t sla);
 /// @param sla - slave address without shifting left one and read bit set
-extern void twiBeginRead(uint8_t sla);
-extern void twiWrite(uint8_t data);
+extern uint8_t twiBeginRead(uint8_t sla);
+extern uint8_t twiWrite(uint8_t data);
 /// Read 1 byte of data
 /// @param lastByte means this is the last byte of the transfer so ask for an acknowledgement from the
 /// slave

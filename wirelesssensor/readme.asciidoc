@@ -1,5 +1,15 @@
 = Project Wireless sensor
 
+== Board support package features
+
+ * RESET is connected to a button. After reset the main function restarts
+ * A second button is possible to be sensed
+ * The press of the second button wakes up the sleep period
+ * The press of the second button is stored while sleeping or temp sensing is done -> button press event is not lost
+ * The press of the second button does not cancel the ongoing temp sensing or radio sending but is only processed after
+ * Interrupts are disabled except while sleeping
+ * Current Battery voltage can be read out on query or during temperature conversion. Temperature conversion is best because that uses most amps and the MCU is already sleeping why not use this time to read out battery value.
+
 == Battery life
 
 === Links about low power AVR systems

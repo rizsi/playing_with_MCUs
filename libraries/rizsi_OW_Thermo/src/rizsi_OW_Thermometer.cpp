@@ -290,8 +290,7 @@ void ow_Read()
   {
 	  OW_LOW();
 	// TODO this part is best executed without interrupts - by hand timing. Hand timing could be refined
-	
-	  OW_RELEASE();  
+	  OW_RELEASE();
 	  sample=OW_READ();
   }
   owStatus.data[owStatus.currentByte]>>=1;
@@ -431,14 +430,9 @@ void ow_ActionFinished()
         boolean err=ow_CheckCRC();
         if(!err)
         {
-          uint16_t data=owStatus.data[1]&B00000111;
-          uint8_t signum=owStatus.data[1]&B11111000;
+          uint16_t data=owStatus.data[1];
           data<<=8;
           data|=owStatus.data[0];
-          if(signum)
-          {
-            data=-data;
-          }
           owStatus.tempM16=data;
         }
         owStatus.state=err?OW_ERROR_CRC:5;

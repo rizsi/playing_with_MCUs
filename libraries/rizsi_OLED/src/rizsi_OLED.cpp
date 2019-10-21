@@ -5,6 +5,8 @@
 #include "characters.h"
 #include <rizsi_TWI.h>
 
+/// SOLOMON SYSTECH   SSD1306
+
 #define MAIN_ADDRESS 0B0111100
 
 #define OLED_I2C_ADDRESS (MAIN_ADDRESS)
@@ -12,7 +14,7 @@
 
 
 
-uint8_t * oledFramebuffer;
+const uint8_t * oledFramebuffer;
 
 
 void oledCommand(uint8_t command)
@@ -69,7 +71,7 @@ uint16_t oledPagePointer;
  * @param [out] command Command to send - first byte sent on TWI
  * @return size of data bytes 0 means nothing to send
  */
-uint8_t fillCommand(uint8_t * address, uint8_t ** getData, uint8_t *command)
+uint8_t fillCommand(uint8_t * address, const uint8_t ** getData, uint8_t *command)
 {
   static uint8_t data[4];
   *address=OLED_I2C_ADDRESS;
@@ -114,7 +116,7 @@ uint8_t fillCommand(uint8_t * address, uint8_t ** getData, uint8_t *command)
       return 2;
     case 4:
       data[0]=0x20;
-      data[1]=0xB00000010;
+      data[1]=0b00000010;
       oledState=5;
       oledPage=0;
       oledPagePointer=0;
