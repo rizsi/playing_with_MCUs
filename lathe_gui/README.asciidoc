@@ -1,0 +1,27 @@
+= Lathe GUI project
+
+The goal of the project is to measure 2 quadrature encoders and show their values on 7-digit displays. The project also has a few additional features.
+
+The project is implemented on 2 ATTiny25 and 1 ATMega328 chip.
+
+== ATTiny25 Quadrature decoder
+
+This is a program written in AVR assembler and optimized as far as possible so that it measures as high frequency as possible.
+
+== GUI
+
+This is the main program. It is written in portable C and against a thin HAL layer. So it is possible to simulate on PC.
+
+=== ATMega328 port
+
+The HAL of the GUI is implemented on ATMega328:
+
+ * digits are driven using shift registers
+ * Single buttons are implemented using input shift registers.
+ * 12 button pinpad is implemented using resistor mesh and ADC.
+ * Quad decoder value is read from ATTiny25s through SPI
+
+=== Emscripten port
+
+The HAL of the GUI is implemented using Emscripten and a small HTML page. The portable implementation of the GUI is compiled against this Emscripten based HAL and the result is a Web Assembly that can be executed in a browser.
+

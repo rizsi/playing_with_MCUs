@@ -1,0 +1,191 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Eszterga DEMO</title>
+	<style>
+.solid {border-style: solid;}
+.fullwidth {width: 100%;}
+.row {
+  display: flex;
+}
+.led-off{
+ background-color: #222222;
+ color: #FFFFFF;
+}
+.led-on{
+ background-color: #FF0000;
+}
+
+.column {
+  flex: 50%;
+}
+.title {
+  font-weight: bold;
+}
+	</style>
+  </head>
+  <body>
+    <div id="eszterga">
+	<div class="solid">
+	<div class="title">
+		Bemenetek:
+	</div>
+Kereszt érzékelő:
+<input class="fullwidth" id="inputKereszt" type="range"
+ min="0" max="2000" step="1" value="1000"/>
+Hossz érzékelő:
+<input class="fullwidth" id="inputHossz" type="range"
+ min="0" max="2000" step="1" value="1000" />
+	</div>
+  <div class="row">
+	<div class="solid column">
+		<div class="title">Ütköztetés Kereszt</div>
+		  <div style="flex: 20%">
+			<button id="keresztBevitel">értékbevitel</button><br/>
+			<button id="keresztActivalas">aktiválás</button>
+		  </div>
+		    <span id="digitsUtkoztetesKereszt"></span>
+		    <button id="ledUtkoztetesKereszt" class="led-off">&nbsp;</button>
+		<button id="ledTransistorKereszt" class="led-off">TRANZISZTOR</button>
+	</div>
+	<div class="solid column">
+		<div class="title">Ütköztetés Hossz</div>
+		  <div style="flex: 20%">
+			<button id="hosszBevitel">értékbevitel</button><br/>
+			<button id="hosszActivalas">aktiválás</button>
+		  </div>
+		<span id="digitsUtkoztetesHossz"></span>
+		<button id="ledUtkoztetesHossz" class="led-off">&nbsp;</button>
+		<button id="ledTransistorHossz" class="led-off">TRANZISZTOR</button>
+	</div>
+  </div>
+  <div class="row">
+	<div class="solid" style="flex: 40%">
+		<button id="bevitelKeresztMert">értékbevitel</button><br/>
+		<div class="title">Mért Kereszt</div>
+		<span id="digitsKereszt"></span>
+	</div>
+	<div class="solid" style="flex: 20%">
+		<button id="button-select">MODE</button>
+		<span id="digitMode"></span>
+	</div>
+	<div class="solid" style="flex: 40%">
+		<button id="bevitelHosszMert">értékbevitel</button><br/>
+		<div class="title">Mért Hossz</div>
+		<span id="digitsHossz"></span>
+	</div>
+  </div>
+	<div class="row">
+	<div class="column">
+		<div><button id="pad-left-1">1</button><button id="pad-left-2">2</button><button id="pad-left-3">3</button></div>
+		<div><button id="pad-left-4">4</button><button id="pad-left-5">5</button><button id="pad-left-6">6</button></div>
+		<div><button id="pad-left-7">7</button><button id="pad-left-8">8</button><button id="pad-left-9">9</button></div>
+		<div><button id="pad-left-*">*</button><button id="pad-left-0">0</button><button id="pad-left-#">#</button></div>
+	</div>
+	<div class="column">
+		<div><button id="pad-right-1">1</button><button id="pad-right-2">2</button><button id="pad-right-3">3</button></div>
+		<div><button id="pad-right-4">4</button><button id="pad-right-5">5</button><button id="pad-right-6">6</button></div>
+		<div><button id="pad-right-7">7</button><button id="pad-right-8">8</button><button id="pad-right-9">9</button></div>
+		<div><button id="pad-right-*">*</button><button id="pad-right-0">0</button><button id="pad-right-#">#</button></div>
+	</div>
+	</div>
+    </div>
+
+<div class="title">Debug Logs:</div>
+<!-- Emscripten log(debug) and canvas(unused) windows. -->
+    <textarea class="emscripten" id="output" rows="20"></textarea>
+    <div id="canvas"></div>
+
+<!-- Scripts that drive the UI -->
+    <script type="text/javascript" src="sevensegment.js"></script>
+    <script type="text/javascript" src="helpers.js"></script>
+    <script type="text/javascript">
+	var digits = [];
+	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesKereszt"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesHossz"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitsKereszt"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitsHossz"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitMode"), 50,100, 1, digits);
+	digits.push(new Led(document.getElementById("ledUtkoztetesKereszt")));
+	digits.push(new Led(document.getElementById("ledUtkoztetesHossz")));
+	digits.push(new Led(document.getElementById("ledTransistorKereszt")));
+	digits.push(new Led(document.getElementById("ledTransistorHossz")));
+
+	buttonHandler("pad-left-1", 1);
+	buttonHandler("pad-left-2", 2);
+	buttonHandler("pad-left-3", 3);
+	buttonHandler("pad-left-4", 4);
+	buttonHandler("pad-left-5", 5);
+	buttonHandler("pad-left-6", 6);
+	buttonHandler("pad-left-7", 7);
+	buttonHandler("pad-left-8", 8);
+	buttonHandler("pad-left-9", 9);
+	buttonHandler("pad-left-0", 0);
+	buttonHandler("pad-left-*", 10);
+	buttonHandler("pad-left-#", 11);
+
+	buttonHandler("pad-right-1", 101);
+	buttonHandler("pad-right-2", 102);
+	buttonHandler("pad-right-3", 103);
+	buttonHandler("pad-right-4", 104);
+	buttonHandler("pad-right-5", 105);
+	buttonHandler("pad-right-6", 106);
+	buttonHandler("pad-right-7", 107);
+	buttonHandler("pad-right-8", 108);
+	buttonHandler("pad-right-9", 109);
+	buttonHandler("pad-right-0", 100);
+	buttonHandler("pad-right-*", 110);
+	buttonHandler("pad-right-#", 111);
+
+	buttonHandler("button-select", 200);
+	buttonHandler("keresztBevitel", 201);
+	buttonHandler("keresztActivalas", 202);
+	buttonHandler("hosszBevitel", 203);
+	buttonHandler("hosszActivalas", 204);
+
+ // Minimal embed code for emscript
+ var Module = {
+    print: (function() {
+      var element = document.getElementById('output');
+      return function(text) {
+        element.innerHTML += text.replace('\n', '<br/>', 'g') + '<br/>';
+      };
+    })(),
+    canvas: document.getElementById('canvas'),
+  };
+
+  // This is called by CPP/main after that was initialized.
+  // If cwrap is used before main has returned then that causes an error
+  // This is a predictable way to call into emscript from JS
+  function jsSetup()
+  {
+    var setup = Module.cwrap('setup', null);
+    loop = Module.cwrap('loop', null);
+    getSegmentValues = Module.cwrap('getSegmentValues', 'number', ['number']);
+    setInput = Module.cwrap('setInput', null, ['number', 'number']);
+    buttonPressed = Module.cwrap('buttonPressed', null, ['number']);
+    updateTime = Module.cwrap('updateTime', null, ['number']);
+    setup();
+    setInterval(jsLoop, 50);
+  }
+  function jsLoop()
+  {
+	var inputKereszt=document.getElementById("inputKereszt").value;
+	var inputHossz=document.getElementById("inputHossz").value;
+	setInput(0, inputKereszt);
+	setInput(1, inputHossz);
+	updateTime(new Date().getTime());
+	loop();
+	for(var i=0; i<digits.length;++i)
+	{
+		digits[i].setPattern(getSegmentValues(i));
+	}
+  }
+    </script>
+    <script type="text/javascript" src="gui_port_emscripten.js"></script>
+  </body>
+</html>
+
+
