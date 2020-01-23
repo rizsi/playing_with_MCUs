@@ -58,7 +58,6 @@ Hossz érzékelő:
 		  </div>
 		<span id="digitsUtkoztetesHossz"></span>
 		<button id="ledUtkoztetesHossz" class="led-off">&nbsp;</button>
-		<button id="ledTransistorHossz" class="led-off">TRANZISZTOR</button>
 	</div>
   </div>
   <div class="row">
@@ -66,6 +65,7 @@ Hossz érzékelő:
 		<button id="bevitelKeresztMert">értékbevitel</button><br/>
 		<div class="title">Mért Kereszt</div>
 		<span id="digitsKereszt"></span>
+		<button id="ledInputKereszt" class="led-off">&nbsp;</button>
 	</div>
 	<div class="solid" style="flex: 20%">
 		<button id="button-select">MODE</button>
@@ -75,21 +75,16 @@ Hossz érzékelő:
 		<button id="bevitelHosszMert">értékbevitel</button><br/>
 		<div class="title">Mért Hossz</div>
 		<span id="digitsHossz"></span>
+		<button id="ledInputHossz" class="led-off">&nbsp;</button>
 	</div>
   </div>
 	<div class="row">
-	<div class="column">
+	 <div class="column">
 		<div><button id="pad-left-1">1</button><button id="pad-left-2">2</button><button id="pad-left-3">3</button></div>
 		<div><button id="pad-left-4">4</button><button id="pad-left-5">5</button><button id="pad-left-6">6</button></div>
 		<div><button id="pad-left-7">7</button><button id="pad-left-8">8</button><button id="pad-left-9">9</button></div>
 		<div><button id="pad-left-*">*</button><button id="pad-left-0">0</button><button id="pad-left-#">#</button></div>
-	</div>
-	<div class="column">
-		<div><button id="pad-right-1">1</button><button id="pad-right-2">2</button><button id="pad-right-3">3</button></div>
-		<div><button id="pad-right-4">4</button><button id="pad-right-5">5</button><button id="pad-right-6">6</button></div>
-		<div><button id="pad-right-7">7</button><button id="pad-right-8">8</button><button id="pad-right-9">9</button></div>
-		<div><button id="pad-right-*">*</button><button id="pad-right-0">0</button><button id="pad-right-#">#</button></div>
-	</div>
+	 </div>
 	</div>
     </div>
 
@@ -111,7 +106,8 @@ Hossz érzékelő:
 	digits.push(new Led(document.getElementById("ledUtkoztetesKereszt")));
 	digits.push(new Led(document.getElementById("ledUtkoztetesHossz")));
 	digits.push(new Led(document.getElementById("ledTransistorKereszt")));
-	digits.push(new Led(document.getElementById("ledTransistorHossz")));
+	digits.push(new Led(document.getElementById("ledInputKereszt")));
+	digits.push(new Led(document.getElementById("ledInputHossz")));
 
 	buttonHandler("pad-left-1", 1);
 	buttonHandler("pad-left-2", 2);
@@ -126,24 +122,13 @@ Hossz érzékelő:
 	buttonHandler("pad-left-*", 10);
 	buttonHandler("pad-left-#", 11);
 
-	buttonHandler("pad-right-1", 101);
-	buttonHandler("pad-right-2", 102);
-	buttonHandler("pad-right-3", 103);
-	buttonHandler("pad-right-4", 104);
-	buttonHandler("pad-right-5", 105);
-	buttonHandler("pad-right-6", 106);
-	buttonHandler("pad-right-7", 107);
-	buttonHandler("pad-right-8", 108);
-	buttonHandler("pad-right-9", 109);
-	buttonHandler("pad-right-0", 100);
-	buttonHandler("pad-right-*", 110);
-	buttonHandler("pad-right-#", 111);
-
 	buttonHandler("button-select", 200);
 	buttonHandler("keresztBevitel", 201);
 	buttonHandler("keresztActivalas", 202);
 	buttonHandler("hosszBevitel", 203);
 	buttonHandler("hosszActivalas", 204);
+	buttonHandler("bevitelKeresztMert", 205);
+	buttonHandler("bevitelHosszMert", 206);
 
  // Minimal embed code for emscript
  var Module = {

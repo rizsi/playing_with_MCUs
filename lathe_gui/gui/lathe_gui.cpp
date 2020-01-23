@@ -1,12 +1,16 @@
 #include <lathe_gui.h>
 #include <bsp.h>
 
-utkozo_t utkozo[2];
-uint8_t segmentValues[4*NUMBER_DISPLAY_NDIGIT+5];
+utkozo_setup_t utkozo_setup[2];
+utkozo_active_t utkozo_active;
+
+uint8_t segmentValues[NUMBER_DISPLAY_ALLBYTES];
 int32_t inputValues[2];
 int32_t diffValues[2];
 uint8_t mode=1; // 0:d (*2) 1:r
 
+/** Index of the module that is currently edited. */
+static uint8_t editFocus=0;
 static int32_t counter=0;
 
 /**
@@ -33,24 +37,25 @@ static inline bool crossed(int32_t prev, int32_t next, int32_t value)
 		 (prev>value && next<value);
 }
 
+static void toggleEditFocus(uint8_t target);
+static void cancelEditFocus(uint8_t target);
+
 static void fireUtkozo(uint8_t index)
 {
-	utkozo[index].state=0;
-	utkozo[index].at=getCurrentTimeMillis();
-//	printf("Fire utkozo %d %llu\n", index, currentTimeMillis);
-	utkozo[index].transistor=true;
+	utkozo_setup[index].state=0;
+	utkozo_active.at=getCurrentTimeMillis();
+	utkozo_active.transistor=true;
 }
 
 void gui_init()
 {
-	utkozo[0].state=0;
-	utkozo[0].value=0;
-	utkozo[0].at=0;
-	utkozo[0].transistor=false;
-	utkozo[1].state=0;
-	utkozo[1].value=0;
-	utkozo[1].at=0;
-	utkozo[1].transistor=false;
+	utkozo_setup[0].state=0;
+	utkozo_setup[0].value=0;
+	utkozo_setup[1].state=0;
+	utkozo_setup[1].value=0;
+	utkozo_active.at=0;
+	utkozo_active.transistor=false;
+	editFocus=0;
 }
 
 void gui_setup()
@@ -63,8 +68,8 @@ void gui_loop(uint64_t currentTimeMillis)
 {
 	bool villogas=currentTimeMillis%256>128;
 	counter++;
-	showNumber(0, utkozo[0].value*(mode==0?2:1), 1<<2);
-	showNumber(1, utkozo[1].value, 1<<2);
+	showNumber(0, utkozo_setup[0].value*(mode==0?2:1), 1<<2);
+	showNumber(1, utkozo_setup[1].value, 1<<2);
 	int32_t value=inputValues[0]+diffValues[0];
 	if(mode==0)
 	{
@@ -76,31 +81,82 @@ void gui_loop(uint64_t currentTimeMillis)
 	}
 	showNumber(2, value, 1<<2);
 	showNumber(3, inputValues[1]+diffValues[1], 1<<2);
-	setDigit(4, 1, 'a', utkozo[0].state==0?false:(utkozo[0].state==1?villogas:true)); // LED kereszt
-	setDigit(4, 2, 'a', utkozo[1].state==0?false:(utkozo[1].state==1?villogas:true)); // LED hossz
-	if(utkozo[0].transistor && currentTimeMillis>utkozo[0].at+500)
+	setDigit(4, 1, 'a', utkozo_setup[0].state==1?true:(editFocus==EDIT_UTKOZO_KERESZT?villogas:false)); // LED kereszt
+	setDigit(4, 2, 'a', utkozo_setup[1].state==1?true:(editFocus==EDIT_UTKOZO_HOSSZ?villogas:false)); // LED hossz
+	if(utkozo_active.transistor && currentTimeMillis>utkozo_active.at+500)
 	{
-		//printf("Turn transistor off 0\n");
-		utkozo[0].transistor=false;
+		utkozo_active.transistor=false;
 	}
-	if(utkozo[1].transistor && currentTimeMillis>utkozo[1].at+500)
-	{
-		//printf("Turn transistor off 1\n");
-		utkozo[1].transistor=false;
-	}
-	setDigit(4, 3, 'a', utkozo[0].transistor); // transistor
-	setDigit(4, 4, 'a', utkozo[1].transistor); // transistor
+	setDigit(4, 3, 'a', utkozo_active.transistor); // transistor
+
+
+	setDigit(4, 4, 'a', editFocus==EDIT_MEASURED_KERESZT?villogas:false); // LED edit kereszt measured
+	setDigit(4, 5, 'a', editFocus==EDIT_MEASURED_HOSSZ?villogas:false); // LED edit kereszt measured
 }
+static void buttonPressedOff(uint8_t index)
+{
+	// Input focus not exists. Nothing to do.
+}
+static void buttonPressedUtkozo(uint8_t index)
+{
+	uint8_t utkozoIndex= (editFocus==EDIT_UTKOZO_KERESZT?0:1);
+	int32_t value=utkozo_setup[utkozoIndex].value;
+	if(utkozoIndex==0 && mode==0)
+	{
+		value*=2;
+	}
+	switch(index)
+	{
+		case 10:
+			setUtkozoValue(utkozoIndex, value/10);
+			break; // '*'
+		case 11: // '#'
+			setUtkozoValue(utkozoIndex, 0);
+			break;
+		default:
+			setUtkozoValue(utkozoIndex, value*10+index);
+			break;
+	}
+}
+static void buttonPressedMeasured(uint8_t index)
+{
+	uint8_t measuredIndex= (editFocus==EDIT_MEASURED_KERESZT?0:1);
+	int32_t value=inputValues[measuredIndex]+diffValues[measuredIndex];
+	if(measuredIndex==0 && mode==0)
+	{
+		value*=2;
+	}
+	switch(index)
+	{
+		case 10:
+			setValue(measuredIndex, value/10);
+			break; // '*'
+		case 11: // '#'
+			setValue(measuredIndex, 0);
+			break;
+		default:
+			setValue(measuredIndex, value*10+index);
+			break;
+	}
+}
+typedef void (*handler_t)(uint8_t index);
+
 void gui_buttonPressed(uint8_t index)
 {
-	int32_t leftValue=inputValues[0]+diffValues[0];
-	int32_t leftUtkozo=utkozo[0].value;
-	int32_t rightUtkozo=utkozo[1].value;
-	int32_t rightValue=inputValues[1]+diffValues[1];
-	if(mode==0)
+	handler_t handler;
+	switch(editFocus)
 	{
-		leftValue*=2;
-		leftUtkozo*=2;
+		case EDIT_MEASURED_KERESZT:
+		case EDIT_MEASURED_HOSSZ:
+			handler=buttonPressedMeasured;
+			break;
+		case EDIT_UTKOZO_KERESZT:
+		case EDIT_UTKOZO_HOSSZ:
+			handler=buttonPressedUtkozo;
+			break;
+		default:
+			handler=buttonPressedOff;
+			break;
 	}
 	switch(index)
 	{
@@ -115,89 +171,67 @@ void gui_buttonPressed(uint8_t index)
 		case 7:
 		case 8:
 		case 9:
-			// digit
-			if(utkozo[0].state==1)
-			{
-				setUtkozoValue(0, leftUtkozo*10+index);
-			}else
-			{
-				setValue(0, leftValue*10+index);
-			}
-			break;
 		case 10:
-			if(utkozo[0].state==1)
-			{
-				setUtkozoValue(0, leftUtkozo/10);
-			}else
-			{
-				setValue(0, leftValue/10);
-			}
-			break; // '*'
-		case 11: // '#'
-			if(utkozo[0].state==1)
-			{
-				setUtkozoValue(0, 0);
-			}else
-			{
-				setValue(0, 0);
-			}
-			break;
-		// Right pad:
-		case 100:
-		case 101:
-		case 102:
-		case 103:
-		case 104:
-		case 105:
-		case 106:
-		case 107:
-		case 108:
-		case 109: // digit
-			if(utkozo[1].state==1)
-			{
-				setUtkozoValue(1, rightUtkozo*10+(index-100));
-			}else
-			{
-				setValue(1, rightValue*10+(index-100));
-			}
-			break;
-		case 110: // '*'
-			if(utkozo[1].state==1)
-			{
-				setUtkozoValue(1, rightUtkozo/10);
-			}else
-			{
-				setValue(1, rightValue/10);
-			}
-			break;
-		case 111: // '#'
-			if(utkozo[1].state==1)
-			{
-				setUtkozoValue(1, 0);
-			}else
-			{
-				setValue(1, 0);
-			}
+		case 11:
+			handler(index);
 			break;
 		case 200: mode++; mode%=2; break;
 		case 201:
-			utkozo[0].state=utkozo[0].state==1?0:1; break;
+			toggleEditFocus(EDIT_UTKOZO_KERESZT);
+			break;
 		case 202:
-			utkozo[0].state=utkozo[0].state==2?0:2;
-			if(utkozo[1].state==2 && utkozo[0].state==2)
+			cancelEditFocus(EDIT_UTKOZO_KERESZT);
+			utkozo_setup[0].state=utkozo_setup[0].state==1?0:1;
+			if(utkozo_setup[1].state==1 && utkozo_setup[0].state==1)
 			{
-				utkozo[1].state=0;
+				utkozo_setup[1].state=0;
 			}
 			break;
 		case 203:
-			utkozo[1].state=utkozo[1].state==1?0:1; break;
+			toggleEditFocus(EDIT_UTKOZO_HOSSZ);
+			break;
 		case 204:
-			utkozo[1].state=utkozo[1].state==2?0:2;
-			if(utkozo[1].state==2 && utkozo[0].state==2)
+			cancelEditFocus(EDIT_UTKOZO_HOSSZ);
+			utkozo_setup[1].state=utkozo_setup[1].state==1?0:1;
+			if(utkozo_setup[1].state==1 && utkozo_setup[0].state==1)
 			{
-				utkozo[0].state=0;
+				utkozo_setup[0].state=0;
 			}
 			break;
+		case 205:
+			toggleEditFocus(EDIT_MEASURED_KERESZT);
+			// TODO Activate input for the kereszt measure
+			break;
+		case 206:
+			toggleEditFocus(EDIT_MEASURED_HOSSZ);
+			// TODO Activate input for the hossz measure
+			break;
+	}
+}
+static void cancelEditFocus(uint8_t target)
+{
+	if(editFocus==target)
+	{
+		editFocus=0;
+	}
+}
+static void toggleEditFocus(uint8_t target)
+{
+	if(editFocus==target)
+	{
+		editFocus=0;
+	}else
+	{
+		editFocus=target;
+		switch(editFocus)
+		{
+			case EDIT_UTKOZO_KERESZT:
+				utkozo_setup[0].state=0;
+				break;
+			case EDIT_UTKOZO_HOSSZ:
+				utkozo_setup[1].state=0;
+				break;
+		}
 	}
 }
 
@@ -205,11 +239,11 @@ void gui_updateInput(uint8_t index, int32_t value)
 {
 	int32_t prev=inputValues[index]+diffValues[index];
 	int32_t next=value+diffValues[index];
-	if(utkozo[index].state==2)
+	if(utkozo_setup[index].state==2)
 	{
-		int32_t value=utkozo[index].value;
+		int32_t value=utkozo_setup[index].value;
 		if(crossed(prev, next, value) ||
-			crossed(prev, next, -value)
+		   crossed(prev, next, -value)
 			)
 		{
 			fireUtkozo(index);
@@ -269,7 +303,7 @@ static void setUtkozoValue(uint8_t counterIndex, int32_t value)
 	{
 		value/=2;
 	}
-	utkozo[counterIndex].value=value;
+	utkozo_setup[counterIndex].value=value;
 }
 
 static void setValue(uint8_t counterIndex, int32_t value)

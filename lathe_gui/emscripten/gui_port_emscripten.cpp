@@ -59,7 +59,6 @@ void setInput(uint8_t index, int32_t value)
 void updateTime(uint64_t t)
 {
 	currentTimeMillis=t;
-//	printf("Time %llu\n", t);
 }
 /**
  * The button was pressed. In simulated mode this is called from JS.

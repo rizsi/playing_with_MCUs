@@ -1,17 +1,27 @@
 #include <stdint.h>
 
 #define NUMBER_DISPLAY_NDIGIT 6
+#define NUMBER_DISPLAY_ALLBYTES (4*NUMBER_DISPLAY_NDIGIT+7)
+
+#define EDIT_MEASURED_KERESZT 1
+#define EDIT_MEASURED_HOSSZ 2
+#define EDIT_UTKOZO_KERESZT 3
+#define EDIT_UTKOZO_HOSSZ 4
 
 typedef struct {
-	uint8_t state;
+	uint8_t state; // 0:not active, 1:active
 	int32_t value;
+} utkozo_setup_t;
+
+typedef struct {
 	bool transistor;
 	uint64_t at;
-} utkozo_t;
+} utkozo_active_t;
 
-extern utkozo_t utkozo[2];
+extern utkozo_setup_t utkozo_setup[2];
+extern utkozo_active_t utkozo_active;
 
-extern uint8_t segmentValues[4*NUMBER_DISPLAY_NDIGIT+5];
+extern uint8_t segmentValues[NUMBER_DISPLAY_ALLBYTES];
 extern int32_t inputValues[2];
 extern int32_t diffValues[2];
 extern uint8_t mode; // 0:d (*2) 1:r
