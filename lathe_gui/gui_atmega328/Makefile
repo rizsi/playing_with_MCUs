@@ -1,13 +1,17 @@
-# Wireless sensor makefile
+# Lathe gui makefile
+.PHONY: clean burn fuse
 
 MCU = atmega328p
 MCU_DUDE = m328p
-BINARYNAME = blinky
+BINARYNAME = lathe_atmega328
+
+SRCS = bsp_atmega328.cpp ../gui/lathe_gui.cpp timer1.cpp
+INCLUDES = -I. -I../gui/
 
 all: ${BINARYNAME}.hex
 
-${BINARYNAME}.hex:
-	avr-gcc -o $(BINARYNAME).elf -mmcu=$(MCU) -Os -I. -Wl,-Map,$(BINARYNAME).map $(BINARYNAME).cpp
+${BINARYNAME}.hex: ${SRCS}
+	avr-gcc -o $(BINARYNAME).elf -mmcu=$(MCU) -Os $(INCLUDES) -Wl,-Map,$(BINARYNAME).map $(SRCS)
 	avr-objdump -S --disassemble $(BINARYNAME).elf >$(BINARYNAME).disassemble.txt
 	avr-objcopy -j .text -j .data -O ihex $(BINARYNAME).elf $(BINARYNAME).hex
 	avr-size -C --mcu=$(MCU) $(BINARYNAME).elf

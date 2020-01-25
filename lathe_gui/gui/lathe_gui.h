@@ -14,8 +14,8 @@ typedef struct {
 } utkozo_setup_t;
 
 typedef struct {
-	bool transistor;
-	uint64_t at;
+	bool transistor; // Transistor is on?
+	uint32_t at; // Timestamp when transistor was turned on
 } utkozo_active_t;
 
 extern utkozo_setup_t utkozo_setup[2];
@@ -42,7 +42,7 @@ void gui_setup();
  * This must called in an endless loop by the main program.
  * @param currentTimeMillis
  */
-void gui_loop(uint64_t currentTimeMillis);
+void gui_loop(uint32_t currentTimeMillis);
 
 /**
  * This must be called from the main loop when a button was pressed.

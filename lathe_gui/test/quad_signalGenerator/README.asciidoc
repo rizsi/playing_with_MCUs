@@ -1,0 +1,6 @@
+= Quadrature signal generator
+
+The program generates Quadrature signal.
+The program runs on Arduino UNO.
+See code.
+

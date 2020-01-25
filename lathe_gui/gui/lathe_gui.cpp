@@ -64,7 +64,7 @@ void gui_setup()
 	diffValues[1]=0;
 }
 
-void gui_loop(uint64_t currentTimeMillis)
+void gui_loop(uint32_t currentTimeMillis)
 {
 	bool villogas=currentTimeMillis%256>128;
 	counter++;

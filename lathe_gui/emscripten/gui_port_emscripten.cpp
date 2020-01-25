@@ -8,9 +8,9 @@
 static uint64_t currentTimeMillis=0;
 
 
-uint64_t getCurrentTimeMillis()
+uint32_t getCurrentTimeMillis()
 {
-	return currentTimeMillis;
+	return (uint32_t)currentTimeMillis;
 }
 
 
@@ -30,7 +30,7 @@ void setup()
 }
 void loop()
 {
-	gui_loop(currentTimeMillis);
+	gui_loop((uint32_t)currentTimeMillis);
 }
 /**
  * Get the current segment values of a digit - called from JS to update the UI.

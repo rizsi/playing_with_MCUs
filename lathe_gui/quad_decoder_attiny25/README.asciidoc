@@ -1,0 +1,15 @@
+= Quadrature decoder with SPI interface
+
+TODO never executed - just a proof of concept
+
+Specification:
+
+ * Signal A change ISR takes about 30 cycles worst case (Program is in cli/sei block and pin change happens that moment)
+ * Only Signal A change (0->1 and 1->0) triggers ISR
+ * Full precision can be read out (changes in signal B since last ISR are read out on request)
+ * Read out is triggered by Negated Chip Select
+ * Read out is sent using software SPI master mode Can easily be received on Arduino and such.
+ * TODO CPU clock speed is tuned to 20MHz using PLL and OSCCAL -> about 0,8MHz signal A changes can be processed. That means 1.6MHz signals on full precision.
+
+See ASM file for further details.
+
