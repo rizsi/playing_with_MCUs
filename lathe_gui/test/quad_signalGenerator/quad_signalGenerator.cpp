@@ -335,7 +335,7 @@ static void loop() {
 	      case 'O': doQuads(16384ul, -1); break;
 	      case 'P': doQuads(32768ul, -1); break;
 	      case 'Q': doQuads(1000000ul, -1); break;
-	      case 'R': doQuads(10000000ul, 1); break;
+	      case 'R': doQuads(10000000ul, -1); break;
 
 	      default: break;
 	    }
