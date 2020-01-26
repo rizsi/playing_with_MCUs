@@ -167,6 +167,8 @@ static uint8_t decodeClockDiv(uint16_t divisor)
       default: 0;
     }
 }
+static void doFastQuads(uint32_t k, uint8_t n);
+
 
 uint32_t timeoutAt;
 
@@ -317,6 +319,8 @@ static void loop() {
 	      case 'p': doQuads(32768ul, 1); break;
 	      case 'q': doQuads(1000000ul, 1); break;
 	      case 'r': doQuads(10000000ul, 1); break;
+	      case 's': doFastQuads(100000ul, 127u); break;
+	      case 'S': doFastQuads(100000ul, 127u); break;
 
 	      case 'A': doQuads(1ul, -1); break;
 	      case 'B': doQuads(2ul, -1); break;
@@ -366,7 +370,7 @@ static void loop() {
 	sensor_readout(0);
 }
 
-static void setState(uint8_t st)
+static inline void setState(uint8_t st)
 {
 	switch(st)
 	{
@@ -384,11 +388,47 @@ static void doQuads(uint32_t n, int8_t dir)
 	{
 		state+=dir; state%=4;
 		setState(state);
-		asm volatile("nop");
-		asm volatile("nop");
-		asm volatile("nop");
-		asm volatile("nop");
-//		_delay_us(1);
+	}
+}
+
+#define BITTIME() asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop")
+
+void doFastQuads(uint32_t k, uint8_t n)
+{
+	for(uint32_t x=k;x>0;--x)
+	{
+		for(;n>0;--n)
+		{
+			PORTD|=_BV(5);PORTD&=~_BV(6);
+			BITTIME();
+			PORTD|=_BV(5);PORTD|=_BV(6);
+			BITTIME();
+			PORTD&=~_BV(5);PORTD|=_BV(6);
+			BITTIME();
+			PORTD&=~_BV(5);PORTD&=~_BV(6);
+			BITTIME();
+		}
 	}
 }
 
