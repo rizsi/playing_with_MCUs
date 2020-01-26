@@ -1,7 +1,31 @@
 #include <stdint.h>
 
+
+#define DIGITS_UTKOZO_K_INDEX 0
+#define DIGITS_UTKOZO_K_N 6
+#define DIGITS_UTKOZO_H_INDEX 6
+#define DIGITS_UTKOZO_K_N 6
+#define DIGITS_K_INDEX 12
+#define DIGITS_K_N 6
+#define DIGITS_H_INDEX 18
+#define DIGITS_H_N 6
+
+#define DIGIT_MODE_INDEX 24
+
+#define DIGITS_END_INDEX 25
+
+#define LED_INDEX_UTKOZO_K 25
+#define LED_INDEX_UTKOZO_H 26
+#define LED_INDEX_TRANSISTOR 27
+#define LED_INDEX_K 28
+#define LED_INDEX_H 29
+
+
 #define NUMBER_DISPLAY_NDIGIT 6
-#define NUMBER_DISPLAY_ALLBYTES (4*NUMBER_DISPLAY_NDIGIT+7)
+#define NUMBER_DISPLAY_ALLBYTES (DIGITS_END_INDEX+7)
+
+// Number of input shift registers
+#define NUMBER_SHIFT_IN_BYTES 2
 
 #define EDIT_MEASURED_KERESZT 1
 #define EDIT_MEASURED_HOSSZ 2
@@ -22,6 +46,7 @@ extern utkozo_setup_t utkozo_setup[2];
 extern utkozo_active_t utkozo_active;
 
 extern uint8_t segmentValues[NUMBER_DISPLAY_ALLBYTES];
+extern uint8_t shiftInValues[NUMBER_SHIFT_IN_BYTES];
 extern int32_t inputValues[2];
 extern int32_t diffValues[2];
 extern uint8_t mode; // 0:d (*2) 1:r
@@ -58,21 +83,4 @@ void gui_buttonPressed(uint8_t index);
  * @param value
  */
 void gui_updateInput(uint8_t index, int32_t value);
-
-/**
- * Show a number on a seven segment display.
- * @param target index of the target display
- * @param value to be shown on the display negative values light up the minus segment
- * @param dotMask bit mask the dot segment in these position is lighted up. 1<<n means n fractional digits
- */
-void showNumber(uint8_t target, int32_t value, uint8_t dotMask);
-
-/**
- * Set a decimal digit on a display.
- * @param target index of the number display
- * @param digitIndex index of the digit. 0 is right most digit
- * @param value decimal value to be shown on the digit. 0-9 are valid values. Other values turn all 7 segments off
- * @param dot boolean value true means the dot is lighted up
- */
-void setDigit(uint8_t target, uint8_t digitIndex, uint8_t value, bool dot);
 

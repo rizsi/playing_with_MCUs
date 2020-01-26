@@ -31,3 +31,5 @@
 
 #define NCS_SENSOR_OFF(index) if(index==0){PORTB|=_BV(1);DDRB|=_BV(1);}else{PORTD|=_BV(4);DDRD|=_BV(4);}
 #define NCS_SENSOR_ON(index) if(index==0){PORTB&=~_BV(1);DDRB|=_BV(1);}else{PORTD&=~_BV(4);DDRD|=_BV(4);}
+
+

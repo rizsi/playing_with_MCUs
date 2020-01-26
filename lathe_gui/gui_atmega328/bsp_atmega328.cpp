@@ -37,6 +37,28 @@ static void finishPinPadADC()
 	}
 	// TODO
 }
+static inline uint8_t max8(uint8_t a, uint8_t b)
+{
+	return a>b?a:b;
+}
+static uint8_t getOutputByte(uint8_t i, uint8_t nbytes)
+{
+	uint8_t hatravan=nbytes-i-1;
+	if(hatravan<NUMBER_DISPLAY_ALLBYTES)
+	{
+		return segmentValues[hatravan];	// We send index 0 last
+	}else
+	{
+		return 0;	// Do not cate - bacause this will be shifted through all registers
+	}
+}
+static void storeInputByte(uint8_t i, uint8_t nbytes, uint8_t value)
+{
+	if(i<NUMBER_SHIFT_IN_BYTES)
+	{
+		shiftInValues[i]=value;
+	}// else do not care because those values are garbage input on the last shift register
+}
 /**
  * Shift in and out into and from the shift registers that handle input/output.
  */
@@ -44,7 +66,7 @@ static void shiftButtonsAndSegments()
 {
 	uint8_t status;
 	uint8_t value;
-	uint8_t nbytes=128;
+	uint8_t nbytes=max8(NUMBER_DISPLAY_ALLBYTES, NUMBER_SHIFT_IN_BYTES);
 	// Turn SS to output! Otherwise low SS would transition SPI into slave mode!
 	SPI_SS_MASTER();
 	// DORD: LSB is transmitted first
@@ -53,12 +75,15 @@ static void shiftButtonsAndSegments()
 	status=SPSR; value=SPDR;	// Reset status
 	for(int i=0;i<nbytes;++i)
 	{
-		SPDR=0x0; // TODO get output data
+		SPDR=getOutputByte(i, nbytes);
 		while(SPSR&_BV(SPIF)==0);	// Wait until transfer is finished
 		status=SPSR; value=SPDR;	// Reset status and read value
-		// TODO store read value
+		storeInputByte(i, nbytes, value);
 	}
 	SPCR=0;	// disable SPI
+	DIGITS_LATCH_ON();	// Strobe on Latch loads value into the output register of shifts
+	_delay_us(10);
+	DIGITS_LATCH_OFF();
 }
 /**
  * Read the values from the quad decoders and update the locally stored value.

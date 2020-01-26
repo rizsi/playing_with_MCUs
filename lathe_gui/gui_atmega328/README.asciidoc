@@ -1,0 +1,102 @@
+= Eszterga project ATMega328 Board Support Package
+
+This folders contains the HAL layer for an ATMega328 implementation of the eszterga project.
+
+Ebben a folderben található az eszterga projekt HAL rétege, ami ATMega328-on valósítja meg az összes funkciót.
+
+== PINout nézet
+
+Pinout view. Legend: connected interface - (used feature)PIN ID
+
+Magyarázat: csatlakoztatott interfész - (a pin speciális funkciója, amit használunk) PIN AZONOSÍTÓ - 
+
+
+         ICSP - (RESET)PC6 -|1      28|- PC5 - transistor out
+DEBUG/extend   - (RXD) PD0 -|2        |- PC4 - NC
+DEBUG/extend   - (TXD) PD1 -|3        |- PC3 - NC
+INPUT LATCH - (PCINT18)PD2 -|         |- PC2 - NC
+  DIGITS PWM 1 - (OC2B)PD3 -|         |- PC1 - DIGITS latch
+Sensor2 NCS - (PCINT20)PD4 -|         |- PC0 (ADC0) - PIN pad input
+      ICSP, PowerCAP - VCC -|ATMEGA328|- GND - Connected to other GND pin
+      ICSP, PowerCAP - GND -|         |- AREF - capacitor to GND
+             NC-(XTAL1)PB6 -|         |- AVCC - same as VCC but additional cap to GND
+             NC-(XTAL2)PB7 -|         |- PB5 (SCK)  - ISCP, SWSPI CLK, SPI (Sensor ATTiny25)
+  DIGITS PWM 0 - (OC0B)PD5 -|         |- PB4 (MISO) - ICSP, SWSPI in, SPI (Sensor ATTiny25)
+POWER fail 3.3V- (AIN0)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI (Sensor ATTiny25)
+POWER fail5V*0.8-(AIN1)PD7 -|         |- PB2 (SS)   - SPI (Sensor ATTiny25)
+          NC - (PCINT0)PB0 -|14     15|- PB1 - Sensor1 NCS
+
+== Main clock
+
+Belső 8MHz oszcillátor elegendő a prototípushoz.
+20MHz külső kvarcnak volna értelme, mert így az UART jelideje stabilabb volna.
+
+== Timers
+
+TIMER1 - time keeping: length of transistor strobe, period of program loop, timeout of Attiny25 SPI, currentTimeMillis, etc
+TIMER0 - LED PWM -> OC0B
+TIMER2 - LED PWM -> OC2B
+
+== Interrupts, ATOMIC blocks
+
+TIMER1 ovf: increment timekeeping counter
+getCurrentTimeMillis - read out timekeeping counter+TCNT1
+SPI input? SW SPI could also be used!
+
+
+== Gombok és LED-ek további jelei
+
+ * DIGITS latch: az összes kimenet vezérlő shift regiszternek a latch-ét erre kell kötni
+ * INPUT latch: az összes bemenetet vezérlő shift regiszternek a latch-ét erre kell kötni
+ * DIGITS PWM 0: Minden második digit OE-jét ide kell kötni
+ * DIGITS PWM 1: Minden második digit OE-jét ide kell kötni (így két fázira tudjuk bontani a PWM-et, tehát nem egyszerre ég az összes LED)
+
+=== Kimeneti Shift reg bekötése
+
+ * /OE - DIGITS PWM 0 - (OC0B)PD5 vagy DIGITS PWM 1 - (OC2B)PD3
+ * SRCLK - PB5 (SCK)
+ * SER - PB3 (MOSI)
+ * RCLK - PC1 - DIGITS latch
+ * Minden jel kimenet a mikrovezérlő oldalán, és lehet védeni 1kOhm ellenállással például
+ * SRCLR - pullup 5V-ra pl 4.7kOhm
+
+== Power fail detector
+
+ * Power fail 3.3V ref: AIN0: 3.3V stabilizátorral készített 3.3V-os referencia jel.
+ * Power fail 5V*0,825: a külső tápot osztjuk úgy, hogy 0,825-szorosát mérjük. Ha a táp 4V-ra esik, akkor ez az érték éppen 3.3V lesz, tehát a komparátor jelezni fog. (az osztót lehet másképp is beállítani, pl 4.5V-ra)
+
+A komparátor jelzésére a főproci minden tevékenységet leállít - hogy keveset fogyasszon, és elmenti a pillanatnyi állapotát a kondenzátorban még meglévő energiát használva.
+
+== ICSP
+
+ICSP header konfigurációjú 2x3 pines csatlakozóra kell kötni, hogy standard programozóval, vagy pickit2-vel lehessen programozni.
+
+Minden egyéb funkciót egy 4.7k ellenálláson kerresztül kell rákötni, hogy az ICSP "felül tudja bírálni". A jelek a 4.7k-n gond nélkül átmennek.
+
+== SPI
+
+A Hardweres SPI-t arra használjuk, hogy a Quad dekóder adatát beolvassuk.
+
+ * SS -> 4.7k pull down to GND szükséges, más nem kell.
+ * SCK -> 4.7k-n keresztül a SHR-ekre és a két Attiny25 CLK-jára kell kötni
+ * MOSI -> 4.7k-n keresztül a kimeneti SHR-ekre kell kötni, és az Attiny25 DO-jára
+ * MISO -> 4.7k-n keresztül a bemeneti SHR-ek kimenetére kell kötni
+
+== ATTiny sensor
+
+Sensor1 NCS - Negated Chip Select: a szenzor 1 (Attiny25)-nek jelzi, hogy küldheti az adatot
+Sensor2 NCS - Negated Chip Select: a szenzor 2 (Attiny25)-nek jelzi, hogy küldheti az adatot
+
+== transistor out
+
+Ez vezérli a lineáris motort, ami reteszeli a gépet. Optocsatolón keresztül hajt egy tranzisztort. TODO magas, vagy alacsony aktív?
+
+== DEBUG/extend
+
+UART ki/bemenet - log üzenetek kiíratása hibakereséshez. Serial adapterrel PC-re köthető, ha kell. További funkciókkal lehet később a serialon keresztül összekötni a gépet.
+
+== NC - nincs bekötve
+
+Ezekre semmit nem kell kötni, a belső felhúzó ellenállással kb 40kOhm-mal magasba lesznek húzva.
+Not connected: internal pullup will be activated in the chip for these pins.
+

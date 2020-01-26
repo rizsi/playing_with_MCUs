@@ -5,6 +5,7 @@ utkozo_setup_t utkozo_setup[2];
 utkozo_active_t utkozo_active;
 
 uint8_t segmentValues[NUMBER_DISPLAY_ALLBYTES];
+uint8_t shiftInValues[NUMBER_SHIFT_IN_BYTES];
 int32_t inputValues[2];
 int32_t diffValues[2];
 uint8_t mode=1; // 0:d (*2) 1:r
@@ -26,6 +27,23 @@ static void setUtkozoValue(uint8_t counterIndex, int32_t value);
  * @param value the new value - in d mode it is 2* the measured value
  */
 static void setValue(uint8_t counterIndex, int32_t value);
+
+/**
+ * Show a number on a seven segment display.
+ * @param target index of the right most digit (smallest index)
+ * @param length number of digits on the screen
+ * @param value to be shown on the display negative values light up the minus segment
+ * @param dotMask bit mask the dot segment in these position is lighted up. 1<<n means n fractional digits
+ */
+static void showNumber(uint8_t target, uint8_t length, int32_t value, uint8_t dotMask);
+static void showNumberUnsigned(uint8_t target, uint8_t length, int32_t value, uint8_t dotMask);
+/**
+ * Set a decimal digit on a display.
+ * @param target index of the digit
+ * @param value decimal value to be shown on the digit. 0-9 are valid values. Other values turn all 7 segments off
+ * @param dot boolean value true means the dot is lighted up
+ */
+static void setDigit(uint8_t target, uint8_t value, bool dot);
 
 /**
  * Query if value was crossed if we have the prev and next value.
@@ -68,30 +86,34 @@ void gui_loop(uint32_t currentTimeMillis)
 {
 	bool villogas=currentTimeMillis%256>128;
 	counter++;
-	showNumber(0, utkozo_setup[0].value*(mode==0?2:1), 1<<2);
-	showNumber(1, utkozo_setup[1].value, 1<<2);
+	showNumber(DIGITS_UTKOZO_K_INDEX, DIGITS_UTKOZO_K_N, utkozo_setup[0].value*(mode==0?2:1), 1<<2);
+	showNumber(DIGITS_UTKOZO_H_INDEX, DIGITS_UTKOZO_K_N, utkozo_setup[1].value, 1<<2);
 	int32_t value=inputValues[0]+diffValues[0];
 	if(mode==0)
 	{
 		value*=2;
-		setDigit(4, 0, 'd', false);
+		setDigit(DIGIT_MODE_INDEX, 'd', false);
 	}else
 	{
-		setDigit(4, 0, 'r', false);
+		setDigit(DIGIT_MODE_INDEX, 'r', false);
 	}
-	showNumber(2, value, 1<<2);
-	showNumber(3, inputValues[1]+diffValues[1], 1<<2);
-	setDigit(4, 1, 'a', utkozo_setup[0].state==1?true:(editFocus==EDIT_UTKOZO_KERESZT?villogas:false)); // LED kereszt
-	setDigit(4, 2, 'a', utkozo_setup[1].state==1?true:(editFocus==EDIT_UTKOZO_HOSSZ?villogas:false)); // LED hossz
+	showNumber(DIGITS_K_INDEX, DIGITS_K_N, value, 1<<2);
+	showNumber(DIGITS_H_INDEX, DIGITS_H_N, inputValues[1]+diffValues[1], 1<<2);
+	setDigit(LED_INDEX_UTKOZO_K, 'a', utkozo_setup[0].state==1?true:(editFocus==EDIT_UTKOZO_KERESZT?villogas:false)); // LED kereszt
+	setDigit(LED_INDEX_UTKOZO_H, 'a', utkozo_setup[1].state==1?true:(editFocus==EDIT_UTKOZO_HOSSZ?villogas:false)); // LED hossz
 	if(utkozo_active.transistor && currentTimeMillis>utkozo_active.at+500)
 	{
 		utkozo_active.transistor=false;
 	}
-	setDigit(4, 3, 'a', utkozo_active.transistor); // transistor
+	setDigit(LED_INDEX_TRANSISTOR, 'a', utkozo_active.transistor); // transistor
 
 
-	setDigit(4, 4, 'a', editFocus==EDIT_MEASURED_KERESZT?villogas:false); // LED edit kereszt measured
-	setDigit(4, 5, 'a', editFocus==EDIT_MEASURED_HOSSZ?villogas:false); // LED edit kereszt measured
+	setDigit(LED_INDEX_K, 'a', editFocus==EDIT_MEASURED_KERESZT?villogas:false); // LED edit kereszt measured
+	setDigit(LED_INDEX_H, 'a', editFocus==EDIT_MEASURED_HOSSZ?villogas:false); // LED edit kereszt measured
+
+	// TODO debug remove
+	uint16_t v=getCurrentTimeMillis()/100;
+	showNumberUnsigned(0, 2, v, false);
 }
 static void buttonPressedOff(uint8_t index)
 {
@@ -253,24 +275,34 @@ void gui_updateInput(uint8_t index, int32_t value)
 }
 
 
-void showNumber(uint8_t target, int32_t value, uint8_t dotMask)
+static void showNumber(uint8_t target, uint8_t length, int32_t value, uint8_t dotMask)
 {
 	bool sign=value<0;
 	if(sign)
 	{
 		value=-value;
 	}
-	for(uint8_t i=0;i<5;++i)
+	for(uint8_t i=0;i<length-1;++i)
 	{
 		uint8_t digit=value%10;
 		value/=10;
-		setDigit(target, i, digit, dotMask&1);
+		setDigit(target+i, digit, dotMask&1);
 		dotMask>>=1;
 	}
-	setDigit(target, 5, sign?10:11, dotMask&1);
+	setDigit(target+length-1, sign?10:11, dotMask&1);
+}
+static void showNumberUnsigned(uint8_t target, uint8_t length, int32_t value, uint8_t dotMask)
+{
+	for(uint8_t i=0;i<length;++i)
+	{
+		uint8_t digit=value%10;
+		value/=10;
+		setDigit(target+i, digit, dotMask&1);
+		dotMask>>=1;
+	}
 }
 
-void setDigit(uint8_t target, uint8_t digitIndex, uint8_t value, bool dot)
+void setDigit(uint8_t target, uint8_t value, bool dot)
 {
 	uint8_t pattern=0;
 	switch(value)
@@ -294,7 +326,7 @@ void setDigit(uint8_t target, uint8_t digitIndex, uint8_t value, bool dot)
 	{
 		pattern |= 0b10000000;
 	}
-	segmentValues[NUMBER_DISPLAY_NDIGIT*target+digitIndex]=pattern;
+	segmentValues[target]=pattern;
 }
 
 static void setUtkozoValue(uint8_t counterIndex, int32_t value)
