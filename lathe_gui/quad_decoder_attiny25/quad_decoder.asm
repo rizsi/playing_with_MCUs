@@ -108,13 +108,17 @@ reset:
 	cbi PORTB, PIN_SPI_CLK	; no Pullup
 	cbi PORTB, PIN_SPI_DATA	; no Pullup
 
-;	rcall incOSCCAL
+	ldi Q32_TEMP, 127	; Test chip goes to 24MHz with this setting!
+				; In my test chip OSCCAL is dec 82
+	rcall incOSCCAL
 
-; In my test chip OSCCAL is dec 82
-;debug_loop:	; Put internal clk/4 freq onto CLK pin for scope measurement
+
 ;	sbi DDRB, PIN_SPI_CLK	; DEBUG CLOCK pattern
-;	sbi PORTB, PIN_SPI_CLK	; DEBUG CLOCK pattern
-;	cbi PORTB, PIN_SPI_CLK	; DEBUG CLOCK pattern
+;	ldi r16, 1<<PIN_SPI_CLK
+;	ldi r17, 0
+;debug_loop:	; Put internal clk/4 freq onto CLK pin for scope measurement
+;	out PORTB, r16		; DEBUG CLOCK pattern
+;	out PORTB, r17		; DEBUG CLOCK pattern
 ;	rjmp debug_loop	
 
 	ldi COMM_TMP, 1<<PIN_SIGNAL_A ; enable pin change interrupt on SIGNAL A
@@ -359,7 +363,7 @@ bitHoldTime2:
 
 incOSCCAL:
 	in COMM_TMP, OSCCAL
-	cpi COMM_TMP, 200
+	cp COMM_TMP, Q32_TEMP
 	brge incOSCCAL_READY
 	inc COMM_TMP
 	out OSCCAL, COMM_TMP
