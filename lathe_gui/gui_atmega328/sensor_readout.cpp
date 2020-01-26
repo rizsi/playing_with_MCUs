@@ -30,7 +30,7 @@ uint32_t sensor_readout(uint8_t sensorIndex)
 			// Transfer of 1 byte finished
 			uint8_t status=SPSR; uint8_t value=SPDR;	// Reset status and read value
 			SPDR=0;
-			data[3-byteIndex]=value;
+			data[byteIndex]=value;
 			byteIndex++;
 			if(byteIndex==4)
 			{
@@ -48,12 +48,12 @@ uint32_t sensor_readout(uint8_t sensorIndex)
 		// data read successfully -> store it!
 		gui_updateInput(sensorIndex, data32);
 	}
-	for(uint8_t i=0;i<byteIndex;++i)
-	{
-		UART0_Send_Bin(data[i]);
-		UART0_Send(' ');
-	}
-	UART0_Send('\n');
+//	for(uint8_t i=0;i<byteIndex;++i)
+//	{
+//		UART0_Send_Bin(data[i]);
+//		UART0_Send(' ');
+//	}
+//	UART0_Send('\n');
 	return data32;
 }
 

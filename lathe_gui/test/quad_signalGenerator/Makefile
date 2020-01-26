@@ -35,6 +35,6 @@ clean:
 
 # Launch minicom command line
 minicom:
-	minicom -D /dev/ttyACM0 -b 9600 -w
+	minicom -D /dev/ttyACM0 -b 19200 -w
 
 

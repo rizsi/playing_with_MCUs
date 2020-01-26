@@ -34,6 +34,8 @@
 .equ PIN_SPI_CLK = 2	; NCS bit in PINB
 .equ PIN_SPI_DATA = 1	; NCS bit in PINB
 .equ PIN_AB_HIGHER = 4	; Higher bit of AB input
+.equ PIN_SIGNAL_A = 3	; Higher bit of AB input
+.equ PIN_SIGNAL_B = 4	; Higher bit of AB input
 
 ; Registers used in ISR - not allowed anywhere else outside cli/sei block
 .def ISR_SREG = r1		; Save SREG
@@ -74,8 +76,6 @@
 	rjmp reset
 	reti
 
-	reti ; TODO this disables vector2
-
 PCINT0_vect:				; __vector_2 - pin change interrupt
 	in ISR_SREG, SREG		; Save SREG
 	in  ISR_1, PINB			; Input current PINB values: signal A and B are interesting
@@ -107,14 +107,19 @@ reset:
 	sbi PORTB, PIN_NCS	; Pullup on NCS pin
 	cbi PORTB, PIN_SPI_CLK	; no Pullup
 	cbi PORTB, PIN_SPI_DATA	; no Pullup
-	; TODO activate PIN change interrupt for signal A
+
+	ldi COMM_TMP, 1<<PIN_SIGNAL_A ; enable pin change interrupt on SIGNAL A
+	out PCMSK, COMM_TMP 
+	ldi COMM_TMP, 1<<PCIE ; enable pin change interrupt
+	out GIMSK, COMM_TMP
+
 	rcall PCINT0_vect	; Initialize the current state of the counter subsystem
 	cli			; reti of PCINT0_vect also does sei - maybe PCINT0_vect may be executed twice
 	ldi ISR_COUNTER16_L, 0  ; Zero ISR_COUNTER16 counter
 	ldi ISR_COUNTER16_H, 0
 	sei			; Internal counter works in ISR
 loop:
-;TODO	rcall queryValue32	; Periodically update the 32 bit counter so the ISR_COUNTER16 never over turns around twice
+	rcall queryValue32	; Periodically update the 32 bit counter so the ISR_COUNTER16 never over turns around twice
 
 	SBIS PINB, PIN_NCS	; NCS low: communication initiated
 	rcall commOnce
@@ -124,23 +129,12 @@ loop:
 queryValue16: ; Query the current counter value from the main thread: always correct but ISR processing time is increased
 	cli	; Disable interrputs for the time of read out. This increases ISR processing time with 6-7 cycles!
 
-	sbiw ISR_COUNTER16_L, 63		; TODO remove: Increment Quad counter
-
 	MOVW Q16_COUNTER16_L, ISR_COUNTER16_L	; read out counter
 	mov Q16_PREV,ISR_QUAD_PREV		; read out latest PINB value - may not eq to current pinb
 	in Q16_PINB,PINB	; read out current PINB value
 	sei
 	; TODO multiply QUERY_COUNTER16 by 2
 	; TODO update QUERY_COUNTER16_L - 1 more bit is possible to be gained by updating based on QTEMP_PINB and QTEMP_PREV
-	ret
-
-
-queryValue32xxx:
-	rcall queryValue16
-	mov Q32_COUNTER32_0, Q16_COUNTER16_L
-	mov Q32_COUNTER32_1, Q16_COUNTER16_H
-	ldi Q32_COUNTER32_2, 3
-	ldi Q32_COUNTER32_3, 4
 	ret
 
 queryValue32: ; Query the current 32 bit counter value: updates the QUERY_COUNTER32 bytes so that they reflect the latest current value
@@ -152,11 +146,6 @@ queryValue32: ; Query the current 32 bit counter value: updates the QUERY_COUNTE
 	sub Q32_DIFF_L, Q32_COUNTER32_0 ; Subtract low byte
 	sbc Q32_DIFF_H, Q32_COUNTER32_1 ; Subtract with carry high byte
 	
-
-;	mov Q32_COUNTER32_2, Q32_DIFF_L	;; TODO remove these lines
-;	mov Q32_COUNTER32_3, Q32_DIFF_H
-;	ret
-
 	; Was there overflow or underflow since last update?
 	SBRS Q32_DIFF_H, 7	; Skip if <0 (highest bit is 1)
 	rjmp q32_diff_non_neg	; diff>=0
@@ -276,6 +265,28 @@ SPI_Transfer_bit_set_up:
 	ret
 
 byteSetupTime:
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
 	rcall bitHoldTime
 	rcall bitHoldTime
 	rcall bitHoldTime

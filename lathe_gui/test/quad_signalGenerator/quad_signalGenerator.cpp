@@ -20,7 +20,7 @@
 // SPI pins used:
 // SCK - Arduino13
 // MOSI - Arduino11
-// PB2(SS)  - Arduino 10 - must be pulled to GND!
+// PB2(SS)  - Arduino 10 - must be pulled to NCS through a resistor!
 
 
 #define PORT_SPI PORTB
@@ -59,6 +59,22 @@ static void UART0_Send_Bin(uint8_t data)
 	{
 		UART0_Send((data&0b10000000)==0?'0':'1');
 		data<<=1;
+	}
+}
+
+static void UART0_Send_uint32(uint32_t v)
+{
+	int8_t out[16];
+	int8_t i=0;
+	do
+	{
+		out[i]='0'+v%10;
+		v/=10;
+		i++;
+	}while(v>0&&i<16);
+	for(i--;i>=0;--i)
+	{
+		UART0_Send(out[i]);
 	}
 }
 
@@ -116,7 +132,7 @@ static uint32_t timeGetTicks()
 
 static void UART_Init()
 {
-#define BAUD 9600
+#define BAUD 19200
 #include <util/setbaud.h>
 /* Set baud rate */
 UBRR0H = UBRRH_VALUE;
@@ -175,9 +191,36 @@ static bool timer1_isTimeout()
 static void timer1_cancelTimeout()
 {
 }
+uint32_t prevv=0;
 static void gui_updateInput(uint8_t sensorIndex, uint32_t data32)
 {
-	UART0_Send('W');
+	union
+	{
+		uint8_t data[4];
+		uint32_t data32b;
+	};
+	data32b=data32;
+//		UART0_Send('C');
+//		UART0_Send_uint32(data32);
+//		UART0_Send('\n');
+
+	if(data32!=prevv)
+	{
+		prevv=data32;
+		UART0_Send('C');
+	for(int8_t i=1;i>=0;--i)
+	{
+		UART0_Send_Bin(data[i]);
+		UART0_Send(' ');
+	}
+		UART0_Send_uint32(data32);
+		UART0_Send('\n');
+	}
+/*	for(uint8_t i=0;i<4;++i)
+	{
+		UART0_Send_Bin(data[i]);
+		UART0_Send(' ');
+	}*/
 }
 
 #include "../../gui_atmega328/sensor_readout.cpp"
@@ -243,6 +286,14 @@ static void loop() {
 	    {
 	      case 'a': startQuads(32, 16, 1,   250000ul); break; // T=4us  250.000 periods, 500.000 interrupt per second - 1.000.000 signals per second
 	      case 'b': startQuads(64, 32, 1,   125000ul); break; //    250.000 interrupt per second -   500.000 signals per second
+
+	      case 'c': startQuads(32, 16, 1,   2500000ul); break; // T=4us  10 seconds
+	      case 'd': startQuads(64, 32, 1,   1250000ul); break; // T=8us  10 seconds
+	      case 'e': startQuads(64, 32, 64,   1ul); break; //    250.000 interrupt per second -   500.000 signals per second
+	      case 'f': startQuads(64, 32, 64,   2ul); break; //    250.000 interrupt per second -   500.000 signals per second
+	      case 'g': startQuads(64, 32, 64,   4ul); break; //    250.000 interrupt per second -   500.000 signals per second
+	      case 'h': startQuads(64, 32, 64,   8ul); break; //    250.000 interrupt per second -   500.000 signals per second
+	      case 'i': startQuads(64, 32, 64,   16ul); break; //    250.000 interrupt per second -   500.000 signals per second
 	      default: break;
 	    }
     }else
@@ -270,8 +321,6 @@ static void loop() {
 	}
 */
 	sensor_readout(0);
-//	UART0_Send('P');
-//	_delay_ms(20);
 }
 
 int main()
@@ -288,7 +337,6 @@ int main()
 
 	SPI_SS_SLAVE();
 	sei();
-//while(1){UART0_Send(0xf0);}
 	while(1){
 		loop();
 	}
