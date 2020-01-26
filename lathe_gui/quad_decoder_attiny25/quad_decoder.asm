@@ -115,10 +115,10 @@ reset:
 	sei			; Internal counter works in ISR
 loop:
 ;TODO	rcall queryValue32	; Periodically update the 32 bit counter so the ISR_COUNTER16 never over turns around twice
-	SBIS PINB, PIN_NCS	; NCS low: communication initiated
 
-	rcall queryValue32
+	SBIS PINB, PIN_NCS	; NCS low: communication initiated
 	rcall commOnce
+
 	rjmp loop
 
 queryValue16: ; Query the current counter value from the main thread: always correct but ISR processing time is increased
@@ -179,17 +179,17 @@ q32_overflow_done:
 	ret
 
 commOnce:			; Send current 32 bit value through SPI
+	rcall queryValue32
+
 	mov COMM_COUNTER32_0, Q32_COUNTER32_0	; Latch current value of 32 bit counter
 	mov COMM_COUNTER32_1, Q32_COUNTER32_1
 	mov COMM_COUNTER32_2, Q32_COUNTER32_2
 	mov COMM_COUNTER32_3, Q32_COUNTER32_3
 
-;	ldi COMM_COUNTER32_0, 0b10101010
-;	inc TODO_CTR
 	ldi COMM_COUNTER32_0, 1
 	ldi COMM_COUNTER32_1, 2
-	ldi COMM_COUNTER32_2, 3
-	ldi COMM_COUNTER32_3, 4
+	ldi COMM_COUNTER32_2, 4
+	ldi COMM_COUNTER32_3, 8
 
 	cbi PORTB, PIN_SPI_CLK	; SPI pins to output
 	cbi PORTB, PIN_SPI_DATA	; 
@@ -211,28 +211,13 @@ commOnceOutputMode:		; We are in SPI output mode - send all bytes!
 	rcall SPITransfer
 	rcall comm_wait		; Wait some time so master can process the received value
 
-	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
-	ret
-	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
-	ret
-
 	mov COMM_TMP, COMM_COUNTER32_1
 	rcall SPITransfer
 	rcall comm_wait		; Wait some time so master can process the received value
 
-	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
-	ret
-	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
-	ret
-
 	mov COMM_TMP, COMM_COUNTER32_2
 	rcall SPITransfer
 	rcall comm_wait		; Wait some time so master can process the received value
-
-	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
-	ret
-	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
-	ret
 
 	mov COMM_TMP, COMM_COUNTER32_3
 	rcall SPITransfer
@@ -242,12 +227,6 @@ commOnceOutputMode:		; We are in SPI output mode - send all bytes!
 	; Wait for byte send:
 comm_wait:
 	rcall byteSetupTime	; Wait for the next byte to send
-
-	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
-	ret
-	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
-	ret
-
 	ret
 	
 SPITransfer:
@@ -269,11 +248,6 @@ SPITransfer:
 	ret
 
 SPI_Transfer_bit:		; SW SPI transfer that periodically checks if transfer was cancelled
-	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
-	ret
-	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
-	ret
-
 	SBRS COMM_TMP, 7	; Test current bit
 	rjmp SPI_Transfer_bit_low
 SPI_Transfer_bit_high:
@@ -282,6 +256,9 @@ SPI_Transfer_bit_high:
 SPI_Transfer_bit_low:
 	cbi PORTB, PIN_SPI_DATA ; Set data to high if high bit
 SPI_Transfer_bit_set_up:
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
 	sbi PORTB, PIN_SPI_CLK ; Set clk to high
 	rcall bitHoldTime
 	rcall bitHoldTime
@@ -304,6 +281,7 @@ byteSetupTime:
 	rcall bitHoldTime
 	rcall bitHoldTime
 	rcall bitHoldTime
+	ret
 
 bitHoldTime:
 	rcall bitHoldTime2

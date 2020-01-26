@@ -50,7 +50,7 @@ uint32_t sensor_readout(uint8_t sensorIndex)
 	}
 	for(uint8_t i=0;i<byteIndex;++i)
 	{
-		UART0_Send_Bin(data[byteIndex]);
+		UART0_Send_Bin(data[i]);
 		UART0_Send(' ');
 	}
 	UART0_Send('\n');
