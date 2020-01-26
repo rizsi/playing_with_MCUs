@@ -123,6 +123,9 @@ loop:
 
 queryValue16: ; Query the current counter value from the main thread: always correct but ISR processing time is increased
 	cli	; Disable interrputs for the time of read out. This increases ISR processing time with 6-7 cycles!
+
+	sbiw ISR_COUNTER16_L, 63		; TODO remove: Increment Quad counter
+
 	MOVW Q16_COUNTER16_L, ISR_COUNTER16_L	; read out counter
 	mov Q16_PREV,ISR_QUAD_PREV		; read out latest PINB value - may not eq to current pinb
 	in Q16_PINB,PINB	; read out current PINB value
@@ -132,17 +135,15 @@ queryValue16: ; Query the current counter value from the main thread: always cor
 	ret
 
 
-queryValue32:
+queryValue32xxx:
 	rcall queryValue16
 	mov Q32_COUNTER32_0, Q16_COUNTER16_L
 	mov Q32_COUNTER32_1, Q16_COUNTER16_H
-	ldi Q32_COUNTER32_0, 1
-	ldi Q32_COUNTER32_1, 2
 	ldi Q32_COUNTER32_2, 3
 	ldi Q32_COUNTER32_3, 4
 	ret
 
-queryValue32xxx: ; Query the current 32 bit counter value: updates the QUERY_COUNTER32 bytes so that they reflect the latest current value
+queryValue32: ; Query the current 32 bit counter value: updates the QUERY_COUNTER32 bytes so that they reflect the latest current value
 	rcall queryValue16
 
 	; diff=QUERY_COUNTER16-lo16(QUERY_COUNTER32) = new - old
@@ -151,25 +152,35 @@ queryValue32xxx: ; Query the current 32 bit counter value: updates the QUERY_COU
 	sub Q32_DIFF_L, Q32_COUNTER32_0 ; Subtract low byte
 	sbc Q32_DIFF_H, Q32_COUNTER32_1 ; Subtract with carry high byte
 	
+
+;	mov Q32_COUNTER32_2, Q32_DIFF_L	;; TODO remove these lines
+;	mov Q32_COUNTER32_3, Q32_DIFF_H
+;	ret
+
 	; Was there overflow or underflow since last update?
 	SBRS Q32_DIFF_H, 7	; Skip if <0 (highest bit is 1)
 	rjmp q32_diff_non_neg	; diff>=0
 q32_diff_neg:			; diff<0 && new>old -> underflow -> dec upper bytes
-	cp  Q32_DIFF_L, Q16_COUNTER16_L
-	cpc Q32_DIFF_H, Q16_COUNTER16_H
+	cp  Q16_COUNTER16_L, Q32_COUNTER32_0
+	cpc Q16_COUNTER16_H, Q32_COUNTER32_1
 	brlo q32_overflow_done
-	ldi Q32_TEMP, 1
+	ldi Q32_TEMP, 0xff
 	add Q32_COUNTER32_2, Q32_TEMP
-	ldi Q32_TEMP, 0
 	adc Q32_COUNTER32_3, Q32_TEMP
 
 	rjmp q32_overflow_done
 q32_diff_non_neg:		;  diff>0 && new<old -> overflow -> inc upper bytes
-	cp  Q16_COUNTER16_L, Q32_DIFF_L
-	cpc Q16_COUNTER16_H, Q32_DIFF_H
+	tst Q32_DIFF_L
+	brne q32_diff_pos
+	tst Q32_DIFF_H
+	breq q32_overflow_done
+q32_diff_pos:
+	cp  Q32_COUNTER32_0, Q16_COUNTER16_L
+	cpc Q32_COUNTER32_1, Q16_COUNTER16_H
 	brlo q32_overflow_done
-	ldi Q32_TEMP, 0xff
+	ldi Q32_TEMP, 1
 	add Q32_COUNTER32_2, Q32_TEMP
+	ldi Q32_TEMP, 0
 	adc Q32_COUNTER32_3, Q32_TEMP
 
 
@@ -185,11 +196,6 @@ commOnce:			; Send current 32 bit value through SPI
 	mov COMM_COUNTER32_1, Q32_COUNTER32_1
 	mov COMM_COUNTER32_2, Q32_COUNTER32_2
 	mov COMM_COUNTER32_3, Q32_COUNTER32_3
-
-	ldi COMM_COUNTER32_0, 1
-	ldi COMM_COUNTER32_1, 2
-	ldi COMM_COUNTER32_2, 4
-	ldi COMM_COUNTER32_3, 8
 
 	cbi PORTB, PIN_SPI_CLK	; SPI pins to output
 	cbi PORTB, PIN_SPI_DATA	; 
