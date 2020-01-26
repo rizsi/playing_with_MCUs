@@ -192,6 +192,7 @@ static void timer1_cancelTimeout()
 {
 }
 uint32_t prevv=0;
+static void doQuads(uint32_t n, int8_t dir);
 static void gui_updateInput(uint8_t sensorIndex, uint32_t data32)
 {
 	union
@@ -208,11 +209,11 @@ static void gui_updateInput(uint8_t sensorIndex, uint32_t data32)
 	{
 		prevv=data32;
 		UART0_Send('C');
-	for(int8_t i=1;i>=0;--i)
-	{
-		UART0_Send_Bin(data[i]);
-		UART0_Send(' ');
-	}
+		for(int8_t i=3;i>=0;--i)
+		{
+			UART0_Send_Bin(data[i]);
+			UART0_Send(' ');
+		}
 		UART0_Send_uint32(data32);
 		UART0_Send('\n');
 	}
@@ -237,6 +238,9 @@ static void startQuads(uint8_t periodDiv2, uint8_t phaseShift, uint16_t clockDiv
 	{
 		return;
 	}
+		UART0_Send('c');
+		UART0_Send_Bin(clockSetup);
+		UART0_Send('\n');
   // WGM=0b010;  - CTC mode
     // Reset all logic and stop counting
     TCCR0A=0;
@@ -284,7 +288,7 @@ static void loop() {
     {
 	    switch(v)
 	    {
-	      case 'a': startQuads(32, 16, 1,   250000ul); break; // T=4us  250.000 periods, 500.000 interrupt per second - 1.000.000 signals per second
+/*	      case 'a': startQuads(32, 16, 1,   250000ul); break; // T=4us  250.000 periods, 500.000 interrupt per second - 1.000.000 signals per second
 	      case 'b': startQuads(64, 32, 1,   125000ul); break; //    250.000 interrupt per second -   500.000 signals per second
 
 	      case 'c': startQuads(32, 16, 1,   2500000ul); break; // T=4us  10 seconds
@@ -294,6 +298,45 @@ static void loop() {
 	      case 'g': startQuads(64, 32, 64,   4ul); break; //    250.000 interrupt per second -   500.000 signals per second
 	      case 'h': startQuads(64, 32, 64,   8ul); break; //    250.000 interrupt per second -   500.000 signals per second
 	      case 'i': startQuads(64, 32, 64,   16ul); break; //    250.000 interrupt per second -   500.000 signals per second
+*/
+	      case 'a': doQuads(1ul, 1); break; //    1 full cycle
+	      case 'b': doQuads(2ul, 1); break; //    1 full cycle
+	      case 'c': doQuads(4ul, 1); break; //    1 full cycle
+	      case 'd': doQuads(8ul, 1); break; //    1 full cycle
+	      case 'e': doQuads(16ul, 1); break; //    1 full cycle
+	      case 'f': doQuads(32ul, 1); break; //    1 full cycle
+	      case 'g': doQuads(64ul, 1); break; //    1 full cycle
+	      case 'h': doQuads(128ul, 1); break; //    1 full cycle
+	      case 'i': doQuads(256ul, 1); break; //    1 full cycle
+	      case 'j': doQuads(512ul, 1); break;
+	      case 'k': doQuads(1024ul, 1); break;
+	      case 'l': doQuads(2048ul, 1); break;
+	      case 'm': doQuads(4096ul, 1); break;
+	      case 'n': doQuads(8192ul, 1); break;
+	      case 'o': doQuads(16384ul, 1); break;
+	      case 'p': doQuads(32768ul, 1); break;
+	      case 'q': doQuads(1000000ul, 1); break;
+	      case 'r': doQuads(10000000ul, 1); break;
+
+	      case 'A': doQuads(1ul, -1); break;
+	      case 'B': doQuads(2ul, -1); break;
+	      case 'C': doQuads(4ul, -1); break;
+	      case 'D': doQuads(8ul, -1); break;
+	      case 'E': doQuads(16ul, -1); break;
+	      case 'F': doQuads(32ul, -1); break;
+	      case 'G': doQuads(64ul, -1); break;
+	      case 'H': doQuads(128ul, -1); break;
+	      case 'I': doQuads(256ul, -1); break;
+	      case 'J': doQuads(512ul, -1); break;
+	      case 'K': doQuads(1024ul, -1); break;
+	      case 'L': doQuads(2048ul, -1); break;
+	      case 'M': doQuads(4096ul, -1); break;
+	      case 'N': doQuads(8192ul, -1); break;
+	      case 'O': doQuads(16384ul, -1); break;
+	      case 'P': doQuads(32768ul, -1); break;
+	      case 'Q': doQuads(1000000ul, -1); break;
+	      case 'R': doQuads(10000000ul, 1); break;
+
 	      default: break;
 	    }
     }else
@@ -321,6 +364,32 @@ static void loop() {
 	}
 */
 	sensor_readout(0);
+}
+
+static void setState(uint8_t st)
+{
+	switch(st)
+	{
+		case 0: PORTD&=~_BV(5);PORTD&=~_BV(6);break;
+		case 1: PORTD|=_BV(5);PORTD&=~_BV(6);break;
+		case 2: PORTD|=_BV(5);PORTD|=_BV(6);break;
+		case 3: PORTD&=~_BV(5);PORTD|=_BV(6);break;
+	}
+}
+
+static uint8_t state=0;
+static void doQuads(uint32_t n, int8_t dir)
+{
+	for(uint32_t i=0;i<n;++i)
+	{
+		state+=dir; state%=4;
+		setState(state);
+		asm volatile("nop");
+		asm volatile("nop");
+		asm volatile("nop");
+		asm volatile("nop");
+//		_delay_us(1);
+	}
 }
 
 int main()

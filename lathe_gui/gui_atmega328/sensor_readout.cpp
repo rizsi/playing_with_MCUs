@@ -25,7 +25,7 @@ uint32_t sensor_readout(uint8_t sensorIndex)
 //			UART0_Send('\n');
 			ready=true;
 		}
-		if(( (SPSR&_BV(SPIF))!=0)||((SPSR&_BV(WCOL))!=0))
+		if(( (SPSR&_BV(SPIF))!=0))
 		{
 			// Transfer of 1 byte finished
 			uint8_t status=SPSR; uint8_t value=SPDR;	// Reset status and read value
@@ -36,6 +36,10 @@ uint32_t sensor_readout(uint8_t sensorIndex)
 			{
 				ready=true;
 			}
+		}
+		if((SPSR&_BV(WCOL))!=0)
+		{
+			uint8_t status=SPSR; uint8_t value=SPDR;	// Reset status and read value
 		}
 	}
 	timer1_cancelTimeout();

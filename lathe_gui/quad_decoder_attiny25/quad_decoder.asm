@@ -80,16 +80,16 @@ PCINT0_vect:				; __vector_2 - pin change interrupt
 	in ISR_SREG, SREG		; Save SREG
 	in  ISR_1, PINB			; Input current PINB values: signal A and B are interesting
 	mov ISR_QUAD_PREV, ISR_1	; Store the current readout value to a persistent register
-	LSR ISR_1			; Shift the value so that the A and B signals can be XOR-ed
+	LSL ISR_1			; Shift the value so that the A and B signals can be XOR-ed
 	eor ISR_1, ISR_QUAD_PREV	; xor the two signal bits A and B (all other bits are ignored)
 	SBRS ISR_1, PIN_AB_HIGHER	; branch depending on A XOR B - increment or decrement counter
 	rjmp ISR_INC
 ISR_DEC:
-	adiw ISR_COUNTER16_L, 1		; Increment Quad counter
+	sbiw ISR_COUNTER16_L, 1		; Decrement Quad counter
 	out SREG, ISR_SREG		; Restore SREG
 	reti
 ISR_INC:
-	sbiw ISR_COUNTER16_L, 1			; Decrement Quad counter
+	adiw ISR_COUNTER16_L, 1		; Increment Quad counter
 	ret
 	out SREG, ISR_SREG	; Restore SREG
 	SBIS PINB, PIN_NCS	; NCS high: communication cancelled - we chack it in ISR because in case there is an ISR overload
@@ -107,6 +107,15 @@ reset:
 	sbi PORTB, PIN_NCS	; Pullup on NCS pin
 	cbi PORTB, PIN_SPI_CLK	; no Pullup
 	cbi PORTB, PIN_SPI_DATA	; no Pullup
+
+;	rcall incOSCCAL
+
+; In my test chip OSCCAL is dec 82
+;debug_loop:	; Put internal clk/4 freq onto CLK pin for scope measurement
+;	sbi DDRB, PIN_SPI_CLK	; DEBUG CLOCK pattern
+;	sbi PORTB, PIN_SPI_CLK	; DEBUG CLOCK pattern
+;	cbi PORTB, PIN_SPI_CLK	; DEBUG CLOCK pattern
+;	rjmp debug_loop	
 
 	ldi COMM_TMP, 1<<PIN_SIGNAL_A ; enable pin change interrupt on SIGNAL A
 	out PCMSK, COMM_TMP 
@@ -137,6 +146,12 @@ queryValue16: ; Query the current counter value from the main thread: always cor
 	; TODO update QUERY_COUNTER16_L - 1 more bit is possible to be gained by updating based on QTEMP_PINB and QTEMP_PREV
 	ret
 
+queryValue32xxx:
+	rcall queryValue16
+	mov Q32_COUNTER32_0, Q16_COUNTER16_L	; After inc/dec of higher bytes overwrite Q32 counter low bytes with current readout of counter
+	mov Q32_COUNTER32_1, Q16_COUNTER16_H
+	ret
+
 queryValue32: ; Query the current 32 bit counter value: updates the QUERY_COUNTER32 bytes so that they reflect the latest current value
 	rcall queryValue16
 
@@ -149,10 +164,11 @@ queryValue32: ; Query the current 32 bit counter value: updates the QUERY_COUNTE
 	; Was there overflow or underflow since last update?
 	SBRS Q32_DIFF_H, 7	; Skip if <0 (highest bit is 1)
 	rjmp q32_diff_non_neg	; diff>=0
+
 q32_diff_neg:			; diff<0 && new>old -> underflow -> dec upper bytes
-	cp  Q16_COUNTER16_L, Q32_COUNTER32_0
-	cpc Q16_COUNTER16_H, Q32_COUNTER32_1
-	brlo q32_overflow_done
+	cp  Q32_COUNTER32_0, Q16_COUNTER16_L
+	cpc Q32_COUNTER32_1, Q16_COUNTER16_H
+	brsh q32_overflow_done
 	ldi Q32_TEMP, 0xff
 	add Q32_COUNTER32_2, Q32_TEMP
 	adc Q32_COUNTER32_3, Q32_TEMP
@@ -163,19 +179,21 @@ q32_diff_non_neg:		;  diff>0 && new<old -> overflow -> inc upper bytes
 	brne q32_diff_pos
 	tst Q32_DIFF_H
 	breq q32_overflow_done
+
 q32_diff_pos:
-	cp  Q32_COUNTER32_0, Q16_COUNTER16_L
-	cpc Q32_COUNTER32_1, Q16_COUNTER16_H
-	brlo q32_overflow_done
+	cp  Q16_COUNTER16_L, Q32_COUNTER32_0
+	cpc Q16_COUNTER16_H, Q32_COUNTER32_1
+	brsh q32_overflow_done
+
 	ldi Q32_TEMP, 1
 	add Q32_COUNTER32_2, Q32_TEMP
 	ldi Q32_TEMP, 0
 	adc Q32_COUNTER32_3, Q32_TEMP
 
-
 q32_overflow_done:
 	mov Q32_COUNTER32_0, Q16_COUNTER16_L	; After inc/dec of higher bytes overwrite Q32 counter low bytes with current readout of counter
 	mov Q32_COUNTER32_1, Q16_COUNTER16_H
+
 	ret
 
 commOnce:			; Send current 32 bit value through SPI
@@ -338,4 +356,16 @@ bitHoldTime2:
 	nop
 	nop
 	ret
+
+incOSCCAL:
+	in COMM_TMP, OSCCAL
+	cpi COMM_TMP, 200
+	brge incOSCCAL_READY
+	inc COMM_TMP
+	out OSCCAL, COMM_TMP
+	rcall byteSetupTime
+	rjmp incOSCCAL
+incOSCCAL_READY:
+	ret
+
 
