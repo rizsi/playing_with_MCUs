@@ -17,6 +17,9 @@
 ;  communication fails because that is executed on main thread.
 ;  Even in this case the pins are set to input mode and communication is cancelled. So the implementation prevents sending invalid data!
 
+; With 1MHz of interrupts (what is about the max) counter will fail after not refreshing for about 32 ms.
+; While communicating counter is not updated. Communication always must be shorter than that.
+
 ; HW:
 ;			NRESET	-|1	8|- VCC
 ;	Input	QuadA	PB3	-|2	7|- PB2 SPI_CLK - connect to SPI bus throgh a resistor so main processor can sense and override
@@ -27,9 +30,10 @@
 .include "tn25def.inc"
 .list
 
-.equ BIT_NCS = 1	; NCS bit in PINB
-.equ BIT_SPI_CLK = 1	; NCS bit in PINB
-.equ BIT_SPI_DATA = 1	; NCS bit in PINB
+.equ PIN_NCS = 0	; NCS bit in PINB
+.equ PIN_SPI_CLK = 2	; NCS bit in PINB
+.equ PIN_SPI_DATA = 1	; NCS bit in PINB
+.equ PIN_AB_HIGHER = 4	; Higher bit of AB input
 
 ; Registers used in ISR - not allowed anywhere else outside cli/sei block
 .def ISR_SREG = r1		; Save SREG
@@ -69,15 +73,16 @@
 ;Interrupt vector table
 	rjmp reset
 	reti
-	reti
-	reti
-PCINT0_vect:
+
+	reti ; TODO this disables vector2
+
+PCINT0_vect:				; __vector_2 - pin change interrupt
 	in ISR_SREG, SREG		; Save SREG
 	in  ISR_1, PINB			; Input current PINB values: signal A and B are interesting
 	mov ISR_QUAD_PREV, ISR_1	; Store the current readout value to a persistent register
 	LSR ISR_1			; Shift the value so that the A and B signals can be XOR-ed
 	eor ISR_1, ISR_QUAD_PREV	; xor the two signal bits A and B (all other bits are ignored)
-	SBRS ISR_1, 1 			; branch depending on A XOR B - increment or decrement counter
+	SBRS ISR_1, PIN_AB_HIGHER	; branch depending on A XOR B - increment or decrement counter
 	rjmp ISR_INC
 ISR_DEC:
 	adiw ISR_COUNTER16_L, 1		; Increment Quad counter
@@ -87,24 +92,32 @@ ISR_INC:
 	sbiw ISR_COUNTER16_L, 1			; Decrement Quad counter
 	ret
 	out SREG, ISR_SREG	; Restore SREG
-	SBIS PINB, BIT_NCS	; NCS high: communication cancelled - we chack it in ISR because in case there is an ISR overload
+	SBIS PINB, PIN_NCS	; NCS high: communication cancelled - we chack it in ISR because in case there is an ISR overload
 				; That may corrupt communication. By cancelling communication the receiver can timeout but no
 				; corrupt data is received
 	reti
-	cbi DDRB, BIT_SPI_CLK	; Disable output on clock pin
-	cbi DDRB, BIT_SPI_DATA	; Disable output on SPI output pin
+	cbi DDRB, PIN_SPI_CLK	; Disable output on clock pin
+	cbi DDRB, PIN_SPI_DATA	; Disable output on SPI output pin
 	reti
 
 reset:
+	cbi DDRB, PIN_NCS	; NCS is input
+	cbi DDRB, PIN_SPI_CLK	; SPI pins are input - inactive now
+	cbi DDRB, PIN_SPI_DATA	; SPI pins are input - inactive now
+	sbi PORTB, PIN_NCS	; Pullup on NCS pin
+	cbi PORTB, PIN_SPI_CLK	; no Pullup
+	cbi PORTB, PIN_SPI_DATA	; no Pullup
 	; TODO activate PIN change interrupt for signal A
-	rjmp PCINT0_vect	; Initialize the current state of the counter subsystem
+	rcall PCINT0_vect	; Initialize the current state of the counter subsystem
 	cli			; reti of PCINT0_vect also does sei - maybe PCINT0_vect may be executed twice
 	ldi ISR_COUNTER16_L, 0  ; Zero ISR_COUNTER16 counter
 	ldi ISR_COUNTER16_H, 0
 	sei			; Internal counter works in ISR
 loop:
-	rcall queryValue32	; Periodically update the 32 bit counter so the ISR_COUNTER16 never over turns around twice
-	SBIS PINB, BIT_NCS	; NCS low: communication initiated
+;TODO	rcall queryValue32	; Periodically update the 32 bit counter so the ISR_COUNTER16 never over turns around twice
+	SBIS PINB, PIN_NCS	; NCS low: communication initiated
+
+	rcall queryValue32
 	rcall commOnce
 	rjmp loop
 
@@ -118,8 +131,18 @@ queryValue16: ; Query the current counter value from the main thread: always cor
 	; TODO update QUERY_COUNTER16_L - 1 more bit is possible to be gained by updating based on QTEMP_PINB and QTEMP_PREV
 	ret
 
-refresh:	; This has to be called periodically to refresh self state
-queryValue32: ; Query the current 32 bit counter value: updates the QUERY_COUNTER32 bytes so that they reflect the latest current value
+
+queryValue32:
+	rcall queryValue16
+	mov Q32_COUNTER32_0, Q16_COUNTER16_L
+	mov Q32_COUNTER32_1, Q16_COUNTER16_H
+	ldi Q32_COUNTER32_0, 1
+	ldi Q32_COUNTER32_1, 2
+	ldi Q32_COUNTER32_2, 3
+	ldi Q32_COUNTER32_3, 4
+	ret
+
+queryValue32xxx: ; Query the current 32 bit counter value: updates the QUERY_COUNTER32 bytes so that they reflect the latest current value
 	rcall queryValue16
 
 	; diff=QUERY_COUNTER16-lo16(QUERY_COUNTER32) = new - old
@@ -161,39 +184,54 @@ commOnce:			; Send current 32 bit value through SPI
 	mov COMM_COUNTER32_2, Q32_COUNTER32_2
 	mov COMM_COUNTER32_3, Q32_COUNTER32_3
 
-	; TODO enter output mode
+;	ldi COMM_COUNTER32_0, 0b10101010
+;	inc TODO_CTR
+	ldi COMM_COUNTER32_0, 1
+	ldi COMM_COUNTER32_1, 2
+	ldi COMM_COUNTER32_2, 3
+	ldi COMM_COUNTER32_3, 4
+
+	cbi PORTB, PIN_SPI_CLK	; SPI pins to output
+	cbi PORTB, PIN_SPI_DATA	; 
+	sbi DDRB, PIN_SPI_CLK	;
+	sbi DDRB, PIN_SPI_DATA	;
 	rcall commOnceOutputMode
-	; TODO cancel output mode and reset sending state
+	cbi PORTB, PIN_SPI_CLK	; SPI pins to input again
+	cbi PORTB, PIN_SPI_DATA	; 
+	cbi DDRB, PIN_SPI_CLK	;
+	cbi DDRB, PIN_SPI_DATA	;
+
+commWaitWhileNCSHigh:
+	SBIS PINB, PIN_NCS	; Wait while NCS is kept high
+	rjmp commWaitWhileNCSHigh
 	ret
 
-commOnceOutputMode:
-	; TODO configure SPI HW
-	; TODO Set data out byte0
+commOnceOutputMode:		; We are in SPI output mode - send all bytes!
 	mov COMM_TMP, COMM_COUNTER32_0
 	rcall SPITransfer
 	rcall comm_wait		; Wait some time so master can process the received value
 
-	SBIC PINB, BIT_NCS	; NCS high: communication cancelled
+	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
 	ret
-	SBIS DDRB, BIT_SPI_CLK	; CLK cleared by ISR: communication cancelled
+	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
 	ret
 
 	mov COMM_TMP, COMM_COUNTER32_1
 	rcall SPITransfer
 	rcall comm_wait		; Wait some time so master can process the received value
 
-	SBIC PINB, BIT_NCS	; NCS high: communication cancelled
+	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
 	ret
-	SBIS DDRB, BIT_SPI_CLK	; CLK cleared by ISR: communication cancelled
+	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
 	ret
 
 	mov COMM_TMP, COMM_COUNTER32_2
 	rcall SPITransfer
 	rcall comm_wait		; Wait some time so master can process the received value
 
-	SBIC PINB, BIT_NCS	; NCS high: communication cancelled
+	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
 	ret
-	SBIS DDRB, BIT_SPI_CLK	; CLK cleared by ISR: communication cancelled
+	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
 	ret
 
 	mov COMM_TMP, COMM_COUNTER32_3
@@ -203,14 +241,13 @@ commOnceOutputMode:
 
 	; Wait for byte send:
 comm_wait:
-	rcall queryValue32	; Querying 32 bit value periodically is required to keep the 32 bit counter synchronized
-	SBIC PINB, BIT_NCS	; NCS high: communication cancelled
+	rcall byteSetupTime	; Wait for the next byte to send
+
+	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
 	ret
-	SBIS DDRB, BIT_SPI_CLK	; CLK cleared by ISR: communication cancelled
+	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
 	ret
 
-	; TODO cancel wait on some event - use timer?
-	rjmp comm_wait
 	ret
 	
 SPITransfer:
@@ -232,19 +269,78 @@ SPITransfer:
 	ret
 
 SPI_Transfer_bit:		; SW SPI transfer that periodically checks if transfer was cancelled
-	SBIC PINB, BIT_NCS	; NCS high: communication cancelled
+	SBIC PINB, PIN_NCS	; NCS high: communication cancelled
 	ret
-	SBIS DDRB, BIT_SPI_CLK	; CLK cleared by ISR: communication cancelled
+	SBIS DDRB, PIN_SPI_CLK	; CLK cleared by ISR: communication cancelled
 	ret
 
-	SBRS COMM_TMP, 0	; Test current bit
+	SBRS COMM_TMP, 7	; Test current bit
 	rjmp SPI_Transfer_bit_low
-	sbi PORTB, BIT_SPI_DATA ; Set data to high if high bit
+SPI_Transfer_bit_high:
+	sbi PORTB, PIN_SPI_DATA ; Set data to low if low bit
+	rjmp SPI_Transfer_bit_set_up
 SPI_Transfer_bit_low:
-	cbi PORTB, BIT_SPI_DATA ; Set data to low if low bit
-	sbi PORTB, BIT_SPI_CLK ; Set clk to high
-	cbi PORTB, BIT_SPI_CLK ; Set clk to low
+	cbi PORTB, PIN_SPI_DATA ; Set data to high if high bit
+SPI_Transfer_bit_set_up:
+	sbi PORTB, PIN_SPI_CLK ; Set clk to high
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	cbi PORTB, PIN_SPI_CLK ; Set clk to low
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
 	ret
 
+byteSetupTime:
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
+	rcall bitHoldTime
 
+bitHoldTime:
+	rcall bitHoldTime2
+	rcall bitHoldTime2
+	rcall bitHoldTime2
+	rcall bitHoldTime2
+	rcall bitHoldTime2
+	rcall bitHoldTime2
+	rcall bitHoldTime2
+	rcall bitHoldTime2
+	rcall bitHoldTime2
+	ret
+
+bitHoldTime2:
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	ret
 

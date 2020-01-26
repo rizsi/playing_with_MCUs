@@ -15,6 +15,30 @@
 #include <util/delay.h>
 
 // PD6(OC0A) Arduino6, PD5(OC0B) Arduino5
+// NCS PB0 Arduino 8
+
+// SPI pins used:
+// SCK - Arduino13
+// MOSI - Arduino11
+// PB2(SS)  - Arduino 10 - must be pulled to GND!
+
+
+#define PORT_SPI PORTB
+#define DDR_SPI DDRB
+#define DD_MOSI 3
+#define DD_MISO 4
+#define DD_SCK 5
+#define DD_SS 2
+
+#define SS_PIN_IN(PINID) PORT_SPI&=~_BV(PINID); DDR_SPI&=~_BV(PINID)
+#define SS_PIN_OUT(PINID) PORT_SPI&=~_BV(PINID); DDR_SPI|=_BV(PINID)
+#define SS_PIN_OUT_HIGH(PINID) PORT_SPI|=_BV(PINID); DDR_SPI|=_BV(PINID)
+
+#define SPI_SS_MASTER() SS_PIN_OUT_HIGH(DD_SS); SS_PIN_OUT(DD_MOSI); SS_PIN_OUT(DD_SCK); SS_PIN_IN(DD_MISO)
+#define SPI_SS_SLAVE() SS_PIN_IN(DD_SS);         SS_PIN_IN(DD_MOSI);  SS_PIN_IN(DD_SCK); SS_PIN_OUT(DD_MISO)
+
+#define NCS_SENSOR_OFF(index) PORTB|=_BV(0);DDRB|=_BV(0)
+#define NCS_SENSOR_ON(index) PORTB&=~_BV(0);DDRB|=_BV(0)
 
 static uint16_t counter;
 static uint32_t timeCounter;
@@ -128,6 +152,35 @@ static uint8_t decodeClockDiv(uint16_t divisor)
     }
 }
 
+uint32_t timeoutAt;
+
+static void timer1_setupTimeout(uint16_t millis)
+{
+	
+	timeoutAt=timeGetTicks()+((uint32_t) millis)*16000;
+}
+static bool timer1_isTimeout()
+{
+	uint32_t t=timeGetTicks();
+//	UART0_Send_Bin((t>>24)&0xFf);
+//	UART0_Send(' ');
+//	UART0_Send_Bin((t>>16)&0xFf);
+//	UART0_Send('\n');
+
+	int8_t v=(int8_t)((timeoutAt-t)>>24);
+	bool qt=v<0;
+//	UART0_Send(qt?'T':'N');
+	return qt;
+}
+static void timer1_cancelTimeout()
+{
+}
+static void gui_updateInput(uint8_t sensorIndex, uint32_t data32)
+{
+	UART0_Send('W');
+}
+
+#include "../../gui_atmega328/sensor_readout.cpp"
 
 /**
  * periodDiv2 - half of the full period of the output signal
@@ -184,10 +237,6 @@ static void loop() {
   if( UCSR0A & (1<<RXC0) )
   {
     uint8_t v=UDR0;
-	      UART0_Send('A');
-	      UART0_Send(v);
-	      UART0_Send('\n');
-
     if(finished())
     {
 	    switch(v)
@@ -207,16 +256,37 @@ static void loop() {
 		running=false;
 		UART0_Send('R');
 	}
+
+	uint32_t t=timeGetTicks();
+/*	#define MODVAL 16000
+	t%=MODVAL;
+	if(t<MODVAL/2)
+	{
+		NCS_SENSOR_ON(0);
+	}
+	else
+	{
+		NCS_SENSOR_OFF(0);
+	}
+*/
+	sensor_readout(0);
+//	UART0_Send('P');
+//	_delay_ms(20);
 }
 
 int main()
 {
 	UART_Init();
 	initTimer1();
+//	PORTB|=_BV(5);
+//	DDRB|=_BV(5);
+
 	PORTD&=~_BV(5);
 	PORTD&=~_BV(6);
 	DDRD|=_BV(5);
 	DDRD|=_BV(6);
+
+	SPI_SS_SLAVE();
 	sei();
 //while(1){UART0_Send(0xf0);}
 	while(1){

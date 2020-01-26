@@ -12,7 +12,7 @@ all: ${TARGET}.hex
 ${TARGET}.hex: ${SRCS}
 	avra -o ${TARGET} -l ${TARGET}.lst ${SRCS}
 
-burn:
+burn: ${TARGET}.hex
 	avrdude -p ${MCU} -c ${PROGRAMMER} -B10 -U flash:w:${TARGET}.hex:i -F -P usb
 
 fuse:
