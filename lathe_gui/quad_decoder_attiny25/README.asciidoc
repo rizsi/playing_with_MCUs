@@ -13,3 +13,15 @@ Specification:
 
 See ASM file for further details.
 
+== Measurements
+
+Clock frequency increased using OSCCAL: approx 24MHz
+
+Smallest measurable T Quad signal read from oscilloscope:
+
+ * About 3.8us per full period which is 1.2us per signal and 2.4us per interrupt. (~57 cycles per interrupt)
+ * About 3.2is per full period already fails - program measures less than expected
+ * Both up and down counting is tested to work at about 57 cycles per interrupt
+
+At 16 MHz (PLL but unadjusted OSCCAL value) the min period time would be: 5,7 us
+

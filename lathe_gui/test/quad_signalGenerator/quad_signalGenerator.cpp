@@ -167,7 +167,9 @@ static uint8_t decodeClockDiv(uint16_t divisor)
       default: 0;
     }
 }
-static void doFastQuads(uint32_t k, uint8_t n);
+static void doFastQuads(uint32_t k);
+static void doFastQuadsDown(uint32_t k);
+
 
 
 uint32_t timeoutAt;
@@ -319,8 +321,10 @@ static void loop() {
 	      case 'p': doQuads(32768ul, 1); break;
 	      case 'q': doQuads(1000000ul, 1); break;
 	      case 'r': doQuads(10000000ul, 1); break;
-	      case 's': doFastQuads(100000ul, 127u); break;
-	      case 'S': doFastQuads(100000ul, 127u); break;
+	      case 's':     doFastQuads(100000ul); break;
+	      case 'S': doFastQuadsDown(100000ul); break;
+	      case 't':     doFastQuads(1000000ul); break;
+	      case 'T': doFastQuadsDown(1000000ul); break;
 
 	      case 'A': doQuads(1ul, -1); break;
 	      case 'B': doQuads(2ul, -1); break;
@@ -412,25 +416,45 @@ static void doQuads(uint32_t n, int8_t dir)
 	asm volatile("nop");\
 	asm volatile("nop");\
 	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
+	asm volatile("nop");\
 	asm volatile("nop")
 
-void doFastQuads(uint32_t k, uint8_t n)
+void doFastQuads(uint32_t k)
 {
+	// Adjust bittime for preferred frequency and signal profile
 	for(uint32_t x=k;x>0;--x)
 	{
-		for(;n>0;--n)
-		{
-			PORTD|=_BV(5);PORTD&=~_BV(6);
-			BITTIME();
-			PORTD|=_BV(5);PORTD|=_BV(6);
-			BITTIME();
-			PORTD&=~_BV(5);PORTD|=_BV(6);
-			BITTIME();
-			PORTD&=~_BV(5);PORTD&=~_BV(6);
-			BITTIME();
-		}
+		PORTD|=_BV(5);PORTD&=~_BV(6);
+		BITTIME();
+		PORTD|=_BV(5);PORTD|=_BV(6);
+		BITTIME();
+		PORTD&=~_BV(5);PORTD|=_BV(6);
+		BITTIME();
+		PORTD&=~_BV(5);PORTD&=~_BV(6);
+		BITTIME();
 	}
 }
+
+void doFastQuadsDown(uint32_t k)
+{
+	// Adjust bittime for preferred frequency and signal profile
+	for(uint32_t x=k;x>0;--x)
+	{
+		PORTD&=~_BV(5);PORTD|=_BV(6);
+		BITTIME();
+		PORTD|=_BV(5);PORTD|=_BV(6);
+		BITTIME();
+		PORTD|=_BV(5);PORTD&=~_BV(6);
+		BITTIME();
+		PORTD&=~_BV(5);PORTD&=~_BV(6);
+		BITTIME();
+	}
+}
+
 
 int main()
 {

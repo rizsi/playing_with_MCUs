@@ -44,6 +44,7 @@
 .def ISR_COUNTER16_L = r24	; 16 bit forward/backward counter updated by ISR.
 				; This counts on every change of signal A
 				; So it does not have the last bit of the final precision
+.def ISR_DDRB_SPI_OFF = r18	; DDRB pattern when SPI is in idle mode
 .def ISR_COUNTER16_H = r25
 
 ; Registers used in queryValue16
@@ -82,6 +83,13 @@ PCINT0_vect:				; __vector_2 - pin change interrupt
 	mov ISR_QUAD_PREV, ISR_1	; Store the current readout value to a persistent register
 	LSL ISR_1			; Shift the value so that the A and B signals can be XOR-ed
 	eor ISR_1, ISR_QUAD_PREV	; xor the two signal bits A and B (all other bits are ignored)
+
+	SBIC PINB, PIN_NCS	; NCS high: communication cancelled - we chack it
+		; in ISR because in case there is an ISR overload
+		; That may corrupt communication.
+		; By cancelling communication the receiver can timeout but no corrupt data is received
+	out DDRB, ISR_DDRB_SPI_OFF ; Disable output on clock and DATAOUT pins
+
 	SBRS ISR_1, PIN_AB_HIGHER	; branch depending on A XOR B - increment or decrement counter
 	rjmp ISR_INC
 ISR_DEC:
@@ -90,25 +98,20 @@ ISR_DEC:
 	reti
 ISR_INC:
 	adiw ISR_COUNTER16_L, 1		; Increment Quad counter
-	ret
 	out SREG, ISR_SREG	; Restore SREG
-	SBIS PINB, PIN_NCS	; NCS high: communication cancelled - we chack it in ISR because in case there is an ISR overload
-				; That may corrupt communication. By cancelling communication the receiver can timeout but no
-				; corrupt data is received
-	reti
-	cbi DDRB, PIN_SPI_CLK	; Disable output on clock pin
-	cbi DDRB, PIN_SPI_DATA	; Disable output on SPI output pin
 	reti
 
 reset:
-	cbi DDRB, PIN_NCS	; NCS is input
-	cbi DDRB, PIN_SPI_CLK	; SPI pins are input - inactive now
-	cbi DDRB, PIN_SPI_DATA	; SPI pins are input - inactive now
+	ldi ISR_DDRB_SPI_OFF, 0 ; All pins are input when SPI is idle
+	out DDRB, ISR_DDRB_SPI_OFF ; Disable output on clock and DATAOUT pins
+
 	sbi PORTB, PIN_NCS	; Pullup on NCS pin
 	cbi PORTB, PIN_SPI_CLK	; no Pullup
 	cbi PORTB, PIN_SPI_DATA	; no Pullup
 
-	ldi Q32_TEMP, 127	; Test chip goes to 24MHz with this setting!
+	in Q32_TEMP, OSCCAL
+	; ldi Q32_TEMP, 127	; Calibrate clock speed using this value
+				; Test chip goes to 24MHz with this setting!
 				; In my test chip OSCCAL is dec 82
 	rcall incOSCCAL
 
