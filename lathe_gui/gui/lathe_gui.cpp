@@ -5,7 +5,6 @@ utkozo_setup_t utkozo_setup[2];
 utkozo_active_t utkozo_active;
 
 uint8_t segmentValues[NUMBER_DISPLAY_ALLBYTES];
-uint8_t shiftInValues[NUMBER_SHIFT_IN_BYTES];
 int32_t inputValues[2];
 int32_t diffValues[2];
 uint8_t mode=1; // 0:d (*2) 1:r
@@ -13,6 +12,7 @@ uint8_t mode=1; // 0:d (*2) 1:r
 /** Index of the module that is currently edited. */
 static uint8_t editFocus=0;
 static int32_t counter=0;
+static uint8_t lastButtonPressed=255;
 
 /**
  * Set the visible value of an utkozo.
@@ -114,6 +114,7 @@ void gui_loop(uint32_t currentTimeMillis)
 	// TODO debug remove
 	uint16_t v=getCurrentTimeMillis()/100;
 	showNumberUnsigned(0, 2, v, false);
+	showNumberUnsigned(2, 3, lastButtonPressed, false);
 }
 static void buttonPressedOff(uint8_t index)
 {
@@ -165,6 +166,7 @@ typedef void (*handler_t)(uint8_t index);
 
 void gui_buttonPressed(uint8_t index)
 {
+	lastButtonPressed=index;
 	handler_t handler;
 	switch(editFocus)
 	{
@@ -182,7 +184,7 @@ void gui_buttonPressed(uint8_t index)
 	}
 	switch(index)
 	{
-		// Left pad:
+		// pin pad:
 		case 0:
 		case 1:
 		case 2:

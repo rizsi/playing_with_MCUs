@@ -1,6 +1,11 @@
 
 
-uint32_t sensor_readout(uint8_t sensorIndex)
+/**
+ * Read out Quad sensor counter value.
+ * If readout happens without error gui_updateInput is called with the value as parameter.
+ * @return true means read out happend without problem.
+ */
+bool sensor_readout(uint8_t sensorIndex)
 {
 	union
 	{
@@ -51,13 +56,14 @@ uint32_t sensor_readout(uint8_t sensorIndex)
 	{
 		// data read successfully -> store it!
 		gui_updateInput(sensorIndex, data32);
+		return true;
 	}
+	return false;
 //	for(uint8_t i=0;i<byteIndex;++i)
 //	{
 //		UART0_Send_Bin(data[i]);
 //		UART0_Send(' ');
 //	}
 //	UART0_Send('\n');
-	return data32;
 }
 

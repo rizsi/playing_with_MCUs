@@ -5,8 +5,9 @@
 
 #define PINPAD_INPUT() PORTC&=~_BV(0); DDRC&=_BV(0)
 
-#define INPUT_LATCH_OFF() PORTD&=~_BV(2); DDRD|=_BV(2)
-#define INPUT_LATCH_ON() PORTD|=_BV(2); DDRD|=_BV(2)
+/// Parallel input enable - read values from buttons - active low
+#define SHIFT_IN_LATCH_OFF() PORTD|=_BV(2); DDRD|=_BV(2)
+#define SHIFT_IN_LATCH_ON() PORTD&=~_BV(2); DDRD|=_BV(2)
 
 #define PORT_SPI PORTB
 #define DDR_SPI DDRB
@@ -17,8 +18,9 @@
 
 /**
  * Configure the pins as output and put them into high. (When timer OCRXX is activated that will override the values.)
+ * TODO configured to low instead - this version is always on because this is just a test program for now.
  */
-#define CONFIG_PWM_PINS() PORTD|=_BV(3); DDRD|=_BV(3); PORTD|=_BV(5); DDRD|=_BV(5)
+#define CONFIG_PWM_PINS() PORTD&=~_BV(3); DDRD|=_BV(3); PORTD&=~_BV(5); DDRD|=_BV(5)
 
 #define SS_PIN_IN(PINID) PORT_SPI&=~_BV(PINID); DDR_SPI&=~_BV(PINID)
 #define SS_PIN_OUT(PINID) PORT_SPI&=~_BV(PINID); DDR_SPI|=_BV(PINID)

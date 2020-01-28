@@ -14,15 +14,15 @@ Magyarázat: csatlakoztatott interfész - (a pin speciális funkciója, amit has
          ICSP - (RESET)PC6 -|1      28|- PC5 - transistor out
 DEBUG/extend   - (RXD) PD0 -|2        |- PC4 - NC
 DEBUG/extend   - (TXD) PD1 -|3        |- PC3 - NC
-INPUT LATCH - (PCINT18)PD2 -|         |- PC2 - NC
+         INPUT LATCH - PD2 -|         |- PC2 - NC
   DIGITS PWM 1 - (OC2B)PD3 -|         |- PC1 - DIGITS latch
-Sensor2 NCS - (PCINT20)PD4 -|         |- PC0 (ADC0) - PIN pad input
+         Sensor2 NCS - PD4 -|         |- PC0 (ADC0) - PIN pad input
       ICSP, PowerCAP - VCC -|ATMEGA328|- GND - Connected to other GND pin
       ICSP, PowerCAP - GND -|         |- AREF - capacitor to GND
              NC-(XTAL1)PB6 -|         |- AVCC - same as VCC but additional cap to GND
-             NC-(XTAL2)PB7 -|         |- PB5 (SCK)  - ISCP, SWSPI CLK, SPI (Sensor ATTiny25)
-  DIGITS PWM 0 - (OC0B)PD5 -|         |- PB4 (MISO) - ICSP, SWSPI in, SPI (Sensor ATTiny25)
-POWER fail 3.3V- (AIN0)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI (Sensor ATTiny25)
+             NC-(XTAL2)PB7 -|         |- PB5 (SCK)  - ISCP, SWSPI CLK, SPI ALL, Sensor ATTiny25
+  DIGITS PWM 0 - (OC0B)PD5 -|         |- PB4 (MISO) - ICSP, SWSPI in, SPI BUTTONS
+POWER fail 3.3V- (AIN0)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI DIGITS, Sensor ATTiny25
 POWER fail5V*0.8-(AIN1)PD7 -|         |- PB2 (SS)   - SPI (Sensor ATTiny25)
           NC - (PCINT0)PB0 -|14     15|- PB1 - Sensor1 NCS
 
@@ -60,6 +60,23 @@ SPI input? SW SPI could also be used!
  * Minden jel kimenet a mikrovezérlő oldalán, és lehet védeni 1kOhm ellenállással például
  * SRCLR - pullup 5V-ra pl 4.7kOhm
 
+=== Bemeneti Shift reg bekötése
+
+ * D0-D7 8 gomb bemenet. Minden bemenet legyen GND-re húzva pl 10kOhm-mal, és a benyomott gomb húzza 5V-ra (tehát magas aktív bemenet)
+ * GND, VCC értelemszerű
+ * NCE
+ * CP - PB5 (SCK)
+ * Q7 - az utolsót a uC-re: PB4 (MISO) - a többit felfűzni úgy, hogy a következő DS-ébe van kötve ez a kimenet.
+ * /PE - INPUT LATCH - (PCINT18)PD2
+ * /MR - +5V ellenálláson keresztül - pl 10kOhm
+ * DS - bemenet, a sorba kötött előző Shift regiszter Q7 portjára kell kötni
+
+=== PINPAD bekötése
+
+ * Ellenállásháló kimenete PC0(ADC0)-ra! (0-5V tartományon lehet a bemenet értéke, tehát a hálót is 5V-tal kell táplálni, szerintem a legjobb azzal, ami az AVCC-re van kötve)
+ * AVCC szűrt 5V-ra!
+ * AREF kapacitással a GND-re!
+
 == Power fail detector
 
  * Power fail 3.3V ref: AIN0: 3.3V stabilizátorral készített 3.3V-os referencia jel.
@@ -86,6 +103,29 @@ A Hardweres SPI-t arra használjuk, hogy a Quad dekóder adatát beolvassuk.
 
 Sensor1 NCS - Negated Chip Select: a szenzor 1 (Attiny25)-nek jelzi, hogy küldheti az adatot
 Sensor2 NCS - Negated Chip Select: a szenzor 2 (Attiny25)-nek jelzi, hogy küldheti az adatot
+
+=== Első szenzor bekötése
+
+ * GND, VCC értelemszerűen (kapacitás kell rá)
+ * /RESET - VCC-re 10kOhm-mal
+ * T25 PB3(INPUT_A)                - QuadA a jeladóból
+ * T25 PB4(INPUT_B)                - QuadB a jeladóból
+ * T25 PB2(SPI_CLK)                - MEGA328 PB5 (SCK) - Kisértékű ellenálláson keresztül, pl 500Ohm (max 10mA-re korlátoz)
+ * T25 PB1(SPI_DATA)               - MEGA328 PB3 (MOSI) - Kisértékű ellenálláson keresztül, pl 500Ohm (max 10mA-re korlátoz)
+ * T25 PB0(NCS)                    - MEGA328 PB1 - Sensor1 NCS - soros 10kOhm lehet
+                                   - MEGA328 SS -> 4.7k pull down to GND szükséges, különben nem működik
+
+
+=== Második szenzor bekötése
+
+ * GND, VCC értelemszerűen (kapacitás kell rá)
+ * /RESET - VCC-re 10kOhm-mal
+ * T25 PB3(INPUT_A)                - QuadA a jeladóból
+ * T25 PB4(INPUT_B)                - QuadB a jeladóból
+ * T25 PB2(SPI_CLK)                - MEGA328 PB5 (SCK) - Kisértékű ellenálláson keresztül, pl 500Ohm (max 10mA-re korlátoz)
+ * T25 PB1(SPI_DATA)               - MEGA328 PB3 (MOSI) - Kisértékű ellenálláson keresztül, pl 500Ohm (max 10mA-re korlátoz)
+ * T25 PB0(NCS)                    - MEGA328 PD4 - Sensor2 NCS - soros 10kOhm lehet
+                                   - MEGA328 SS -> 4.7k pull down to GND szükséges, különben nem működik
 
 == transistor out
 

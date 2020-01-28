@@ -24,9 +24,6 @@
 #define NUMBER_DISPLAY_NDIGIT 6
 #define NUMBER_DISPLAY_ALLBYTES (DIGITS_END_INDEX+7)
 
-// Number of input shift registers
-#define NUMBER_SHIFT_IN_BYTES 2
-
 #define EDIT_MEASURED_KERESZT 1
 #define EDIT_MEASURED_HOSSZ 2
 #define EDIT_UTKOZO_KERESZT 3
@@ -46,8 +43,6 @@ extern utkozo_setup_t utkozo_setup[2];
 extern utkozo_active_t utkozo_active;
 
 extern uint8_t segmentValues[NUMBER_DISPLAY_ALLBYTES];
-extern uint8_t shiftInValues[NUMBER_SHIFT_IN_BYTES];
-extern int32_t inputValues[2];
 extern int32_t diffValues[2];
 extern uint8_t mode; // 0:d (*2) 1:r
 
