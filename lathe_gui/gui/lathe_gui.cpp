@@ -112,9 +112,9 @@ void gui_loop(uint32_t currentTimeMillis)
 	setDigit(LED_INDEX_H, 'a', editFocus==EDIT_MEASURED_HOSSZ?villogas:false); // LED edit kereszt measured
 
 	// TODO debug remove
-	uint16_t v=getCurrentTimeMillis()/100;
-	showNumberUnsigned(0, 2, v, false);
-	showNumberUnsigned(2, 3, lastButtonPressed, false);
+	uint16_t v=getCurrentTimeMillis()/10;
+	showNumberUnsigned(0, 3, v, false);
+	showNumberUnsigned(3, 3, lastButtonPressed, false);
 }
 static void buttonPressedOff(uint8_t index)
 {

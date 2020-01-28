@@ -54,7 +54,7 @@ public class Divisors {
 		for(Integer i:readouts.keySet())
 		{
 			Range r=readouts.get(i);
-			System.out.println("if(value>="+r.minLimit+(r.maxLimit>-1?"&&value<"+r.maxLimit:"")+") pressedIndex="+r.index+"; // '"+r.ch+"'");
+			System.out.println("if(value>="+r.minLimit+(r.maxLimit>-1?"&&value<"+r.maxLimit:"")+") pressedIndex="+r.index+"; // '"+r.ch+"' "+(5.0/1024.0*r.minLimit)+"V-"+(5.0/1024.0*r.maxLimit)+"V");
 		}
 	}
 }

@@ -34,10 +34,10 @@ divisors:	# Generate divisors mapping code from divisors values - the result was
 	javac Divisors.java
 	java Divisors
 
+# Set fuses - 8MHz internal oscillator clock
 fuse:
-## TODO update fuses
-#	avrdude -cusbtiny -p $(MCU_DUDE) -u \
-#				-U lfuse:w:0x62:m -U hfuse:w:0xd9:m -U efuse:w:0xff:m
+	avrdude -cusbtiny -p $(MCU_DUDE) -u \
+		-U lfuse:w:0xe2:m -U hfuse:w:0xd9:m -U efuse:w:0xff:m 
 
 # Launch minicom command line
 minicom:
