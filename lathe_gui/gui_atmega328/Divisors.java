@@ -24,7 +24,21 @@ public class Divisors {
 				'7', '8', '9',
 				'*', '0', '#'
 		};
-		int colValues[]={150,197,244};
+/*
+1 - 1.02 V
+ 2 - 1.22 V
+ 3 - 1.46 V
+ 4 - 1.71 V
+ 5 - 2.02 V
+ 6 - 2.42 V
+ 7 - 2.81 V
+ 8 - 3.11 V
+ 9 - 3.31 V
+ 0 - 3.91 V
+ * - 3.60 V
+kettős kereszt - 3.77 V
+*/
+		int colValues[]={150,150+47,150+47+47};
 		int rowValues[]={47+47+150+330,47+47+150,47+47,47};
 		TreeMap<Integer, Range> readouts=new TreeMap<>();
 		for(int col=0;col<3;++col)
@@ -54,7 +68,7 @@ public class Divisors {
 		for(Integer i:readouts.keySet())
 		{
 			Range r=readouts.get(i);
-			System.out.println("if(value>="+r.minLimit+(r.maxLimit>-1?"&&value<"+r.maxLimit:"")+") pressedIndex="+r.index+"; // '"+r.ch+"' "+(5.0/1024.0*r.minLimit)+"V-"+(5.0/1024.0*r.maxLimit)+"V");
+			System.out.println("if(value>="+r.minLimit+(r.maxLimit>-1?"&&value<"+r.maxLimit:"")+") pressedIndex="+r.index+"; // '"+r.ch+"' "+(5.0/1024.0*r.readout)+"V ("+(5.0/1024.0*r.minLimit)+"V-"+(5.0/1024.0*r.maxLimit)+"V)");
 		}
 	}
 }
