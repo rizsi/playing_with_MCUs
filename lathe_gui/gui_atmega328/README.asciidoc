@@ -90,9 +90,10 @@ SPI input? SW SPI could also be used!
  * Ekkor a belső tápáramkör kondenzátora még legalább 4V-ra fel van tölte: ennek az energiája elegendő lesz az állapotmentéshez - úgy mérezezzük be ezt a kondenzátort
  * A jelzésére a főprogram minden fogyasztót leállít - hogy keveset fogyasszon, legyen egy kis ideje elmenteni az állapotát.
  * Az állapotát elmenti a csipbe épített EEPROM-ba.
- * A külső fogyasztókat viszont bekapcsolja, hogy mielőbb kisüljenek a táp kondenzátorai.
+ * A külső fogyasztókat viszont bekapcsolja, hogy mielőbb kisüljenek a külső táp kondenzátorai.
  * Miután a mentés megtörtént a főprogram bekapcsol egy fogyasztót, ami a belső kondenzátort is lemeríti. Például van egy státusz LED, amit kigyújt, vagy az egyik lába GND-re van kötve ellenálláson keresztül.
- * A tápláló kondenzátor lemerül, és a csip kikapcsol.
+ * A tápláló kondenzátor lemerül, és a csip kikapcsol. Brown Out Detectort érdemes bekapcsolni a csipen, hogy még azelőtt kikapcsoljon, mielőtt elkezdene hibásan működni.
+ * Ha a csip leállása nélkül visszajön a táp, vagy csak vaklárma volt, akkor egy idő után folytatja a program a futását.
 
 
 == ICSP
