@@ -98,10 +98,10 @@ Hossz érzékelő:
     <script type="text/javascript" src="helpers.js"></script>
     <script type="text/javascript">
 	var digits = [];
-	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesKereszt"), 50,100, 6, digits);
-	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesHossz"), 50,100, 6, digits);
 	createSevenSegmentDigits(document.getElementById("digitsKereszt"), 50,100, 6, digits);
 	createSevenSegmentDigits(document.getElementById("digitsHossz"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesKereszt"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesHossz"), 50,100, 6, digits);
 	createSevenSegmentDigits(document.getElementById("digitMode"), 50,100, 1, digits);
 	digits.push(new Led(document.getElementById("ledUtkoztetesKereszt")));
 	digits.push(new Led(document.getElementById("ledUtkoztetesHossz")));

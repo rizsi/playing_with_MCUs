@@ -1,14 +1,14 @@
 #include <stdint.h>
 
 
-#define DIGITS_UTKOZO_K_INDEX 0
-#define DIGITS_UTKOZO_K_N 6
-#define DIGITS_UTKOZO_H_INDEX 6
-#define DIGITS_UTKOZO_K_N 6
-#define DIGITS_K_INDEX 12
+#define DIGITS_K_INDEX 0
 #define DIGITS_K_N 6
-#define DIGITS_H_INDEX 18
+#define DIGITS_H_INDEX 6
 #define DIGITS_H_N 6
+#define DIGITS_UTKOZO_K_INDEX 12
+#define DIGITS_UTKOZO_K_N 6
+#define DIGITS_UTKOZO_H_INDEX 18
+#define DIGITS_UTKOZO_K_N 6
 
 #define DIGIT_MODE_INDEX 24
 

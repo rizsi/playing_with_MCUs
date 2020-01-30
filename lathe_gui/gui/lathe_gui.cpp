@@ -113,8 +113,8 @@ void gui_loop(uint32_t currentTimeMillis)
 
 	// TODO debug remove
 	uint16_t v=getCurrentTimeMillis()/10;
-	showNumberUnsigned(0, 3, v, false);
-	showNumberUnsigned(3, 3, lastButtonPressed, false);
+	showNumberUnsigned(DIGITS_UTKOZO_K_INDEX, 3, v, false);
+	showNumberUnsigned(DIGITS_UTKOZO_K_INDEX+3, 3, lastButtonPressed, false);
 }
 static void buttonPressedOff(uint8_t index)
 {
