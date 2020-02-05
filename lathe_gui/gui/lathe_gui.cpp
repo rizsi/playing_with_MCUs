@@ -8,6 +8,8 @@ uint8_t segmentValues[NUMBER_DISPLAY_ALLBYTES];
 int32_t inputValues[2];
 int32_t diffValues[2];
 uint8_t mode=1; // 0:d (*2) 1:r
+uint16_t debugInput=0;
+
 
 /** Index of the module that is currently edited. */
 static uint8_t editFocus=0;
@@ -112,9 +114,8 @@ void gui_loop(uint32_t currentTimeMillis)
 	setDigit(LED_INDEX_H, 'a', editFocus==EDIT_MEASURED_HOSSZ?villogas:false); // LED edit kereszt measured
 
 	// TODO debug remove
-	uint16_t v=getCurrentTimeMillis()/10;
-	showNumberUnsigned(DIGITS_UTKOZO_K_INDEX, 3, v, false);
-	showNumberUnsigned(DIGITS_UTKOZO_K_INDEX+3, 3, lastButtonPressed, false);
+	showNumberUnsigned(0, 4, debugInput, false);
+	showNumberUnsigned(6, 4, lastButtonPressed, false);
 }
 static void buttonPressedOff(uint8_t index)
 {

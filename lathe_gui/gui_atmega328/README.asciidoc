@@ -12,9 +12,9 @@ Magyarázat: csatlakoztatott interfész - (a pin speciális funkciója, amit has
 
 
          ICSP - (RESET)PC6 -|1      28|- PC5 - transistor out
-DEBUG/extend   - (RXD) PD0 -|2        |- PC4 - NC
-DEBUG/extend   - (TXD) PD1 -|3        |- PC3 - NC
-         INPUT LATCH - PD2 -|         |- PC2 - NC
+DEBUG/extend   - (RXD) PD0 -|2        |- PC4 - NUMPAD row 3
+DEBUG/extend   - (TXD) PD1 -|3        |- PC3 - NUMPAD row 2
+         INPUT LATCH - PD2 -|         |- PC2 - NUMPAD row 1
   DIGITS PWM 1 - (OC2B)PD3 -|         |- PC1 - DIGITS latch
          Sensor2 NCS - PD4 -|         |- PC0 (ADC0) - PIN pad input
       ICSP, PowerCAP - VCC -|ATMEGA328|- GND - Connected to other GND pin
@@ -24,7 +24,7 @@ DEBUG/extend   - (TXD) PD1 -|3        |- PC3 - NC
   DIGITS PWM 0 - (OC0B)PD5 -|         |- PB4 (MISO) - ICSP, SWSPI in, SPI BUTTONS
 POWER fail 3.3V- (AIN0)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI DIGITS, Sensor ATTiny25
 POWER fail5V*0.8-(AIN1)PD7 -|         |- PB2 (SS)   - SPI (Sensor ATTiny25)
-          NC - (PCINT0)PB0 -|14     15|- PB1 - Sensor1 NCS
+           INPUT NCS - PB0 -|14     15|- PB1 - Sensor1 NCS
 
 == Main clock
 
@@ -53,6 +53,8 @@ SPI input? SW SPI could also be used!
 
 === Kimeneti Shift reg bekötése
 
+Chip például: 74HC595-SMD adatlap: http://www.ti.com/lit/ds/scls041i/scls041i.pdf
+
  * /OE - DIGITS PWM 0 - (OC0B)PD5 vagy DIGITS PWM 1 - (OC2B)PD3
  * SRCLK - PB5 (SCK)
  * SER - PB3 (MOSI)
@@ -62,14 +64,26 @@ SPI input? SW SPI could also be used!
 
 === Bemeneti Shift reg bekötése
 
+Chip például: 74HCT166-SMD adatlap: http://www.ti.com/lit/ds/symlink/cd74hc166.pdf
+
  * D0-D7 8 gomb bemenet. Minden bemenet legyen GND-re húzva pl 10kOhm-mal, és a benyomott gomb húzza 5V-ra (tehát magas aktív bemenet)
  * GND, VCC értelemszerű
- * NCE
+ * /CE - GND-re pl 10kOhm-mal
  * CP - PB5 (SCK)
- * Q7 - az utolsót a uC-re: PB4 (MISO) - a többit felfűzni úgy, hogy a következő DS-ébe van kötve ez a kimenet.
+ * Q7 - az utolsót egy buffer-en keresztül a uC-re: PB4 (MISO) - a többit felfűzni úgy, hogy a következő DS-ébe van kötve ez a kimenet.
  * /PE - INPUT LATCH - (PCINT18)PD2
  * /MR - +5V ellenálláson keresztül - pl 10kOhm
  * DS - bemenet, a sorba kötött előző Shift regiszter Q7 portjára kell kötni
+
+Buffer szerepe és bekötése:
+
+ * A buffer szerepe, hogy a MISO vonal vezéreletlen legyen, ha az ATMega úgy akarja. Ezért a buffer vezérlőjét úgy kell bekötni, hogy magától inaktív legyen.
+ * Pl: 74HC125 SMD adatlap: https://www.hestore.hu/prod_getfile.php?id=8883
+ * 1A: SHR Q7-re
+ * /1OE: ATmega328 (INPUT NCS) PB0, plusz 10kOhm felhúzó ellenállás
+ * 1Y: ATMega328 (MISO) PB4
+
+A buffer többi 3 komponense nem használt. A bemeneteket érdemes magasba húzni.
 
 === PINPAD bekötése
 

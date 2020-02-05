@@ -104,6 +104,7 @@ static int8_t finishPinPadADC()
 		/// Clear ready singalling
 		ADCSRA|=_BV(ADIF);
 		uint16_t value=ADC;
+		debugInput=value;
 
 /// Accept range around exact value
 #define RANGE 0.05

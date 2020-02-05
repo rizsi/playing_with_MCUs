@@ -46,6 +46,8 @@ extern uint8_t segmentValues[NUMBER_DISPLAY_ALLBYTES];
 extern int32_t diffValues[2];
 extern uint8_t mode; // 0:d (*2) 1:r
 
+extern uint16_t debugInput; // Readout value of ADC input - TODO remove after debugging
+
 
 /**
  * This must be called first.

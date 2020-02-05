@@ -1,7 +1,5 @@
 = Quadrature decoder with SPI interface
 
-TODO never executed - just a proof of concept
-
 Specification:
 
  * Signal A change ISR takes about 30 cycles worst case (Program is in cli/sei block and pin change happens that moment)
