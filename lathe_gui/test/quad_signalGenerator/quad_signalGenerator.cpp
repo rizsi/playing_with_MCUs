@@ -20,7 +20,7 @@
 // SPI pins used:
 // SCK - Arduino13
 // MOSI - Arduino11
-// PB2(SS)  - Arduino 10 - must be pulled to NCS through a resistor!
+// PB2(SS)  - Arduino 8 - must be pulled to NCS through a resistor!
 
 
 #define PORT_SPI PORTB
@@ -30,12 +30,13 @@
 #define DD_SCK 5
 #define DD_SS 2
 
-#define SS_PIN_IN(PINID) PORT_SPI&=~_BV(PINID); DDR_SPI&=~_BV(PINID)
+#define SS_PIN_IN(PINID) DDR_SPI&=~_BV(PINID); PORT_SPI&=~_BV(PINID)
+#define SS_PIN_IN_PULLUP(PINID) DDR_SPI&=~_BV(PINID); PORT_SPI|=_BV(PINID)
 #define SS_PIN_OUT(PINID) PORT_SPI&=~_BV(PINID); DDR_SPI|=_BV(PINID)
 #define SS_PIN_OUT_HIGH(PINID) PORT_SPI|=_BV(PINID); DDR_SPI|=_BV(PINID)
 
 #define SPI_SS_MASTER() SS_PIN_OUT_HIGH(DD_SS); SS_PIN_OUT(DD_MOSI); SS_PIN_OUT(DD_SCK); SS_PIN_IN(DD_MISO)
-#define SPI_SS_SLAVE() SS_PIN_IN(DD_SS);         SS_PIN_IN(DD_MOSI);  SS_PIN_IN(DD_SCK); SS_PIN_OUT(DD_MISO)
+#define SPI_SS_SLAVE() SS_PIN_IN(DD_SS);         SS_PIN_IN(DD_MOSI);  SS_PIN_IN_PULLUP(DD_SCK); SS_PIN_OUT(DD_MISO)
 
 #define NCS_SENSOR_OFF(index) PORTB|=_BV(0);DDRB|=_BV(0)
 #define NCS_SENSOR_ON(index) PORTB&=~_BV(0);DDRB|=_BV(0)
@@ -172,32 +173,23 @@ static void doFastQuadsDown(uint32_t k);
 
 
 
-uint32_t timeoutAt;
+uint16_t timeoutAt;
 
 static void timer1_setupTimeout(uint16_t millis)
 {
-	
-	timeoutAt=timeGetTicks()+((uint32_t) millis)*16000;
+	timeoutAt=TCNT1; // Timeout is 488Hz ~ 2ms
 }
 static bool timer1_isTimeout()
 {
-	uint32_t t=timeGetTicks();
-//	UART0_Send_Bin((t>>24)&0xFf);
-//	UART0_Send(' ');
-//	UART0_Send_Bin((t>>16)&0xFf);
-//	UART0_Send('\n');
-
-	int8_t v=(int8_t)((timeoutAt-t)>>24);
-	bool qt=v<0;
-//	UART0_Send(qt?'T':'N');
-	return qt;
+	uint16_t t=TCNT1;
+	return (t-timeoutAt)>32000;
 }
 static void timer1_cancelTimeout()
 {
 }
 uint32_t prevv=0;
 static void doQuads(uint32_t n, int8_t dir);
-static void gui_updateInput(uint8_t sensorIndex, uint32_t data32)
+static void gui_updateInput(uint8_t sensorIndex, uint32_t data32, uint8_t err)
 {
 	union
 	{
@@ -218,6 +210,8 @@ static void gui_updateInput(uint8_t sensorIndex, uint32_t data32)
 			UART0_Send_Bin(data[i]);
 			UART0_Send(' ');
 		}
+		UART0_Send_Bin(err);
+		UART0_Send(' ');
 		UART0_Send_uint32(data32);
 		UART0_Send('\n');
 	}
@@ -284,8 +278,13 @@ static bool finished()
 	return TCCR0B==0;
 }
 
+static bool UART_hasInput()
+{
+	return (UCSR0A & (1<<RXC0))!=0;
+}
+
 static void loop() {
-  if( UCSR0A & (1<<RXC0) )
+  if( UART_hasInput() )
   {
     uint8_t v=UDR0;
     if(finished())

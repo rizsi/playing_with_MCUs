@@ -9,17 +9,17 @@ bool sensor_readout(uint8_t sensorIndex)
 {
 	union
 	{
-		uint8_t data[4];
+		uint8_t data[5];	// 4 data and 1 byte signaling of error
 		uint32_t data32;
 	};
 	bool ready=false;
 	uint8_t byteIndex=0;
-	timer1_setupTimeout(10);
+	timer1_setupTimeout(3);
 	SPI_SS_SLAVE();
 	SPCR=0;	// RESET SPI as slave
 	SPDR=0; // Send 0s when asked
 	{uint8_t status=SPSR; uint8_t value=SPDR;}	// Reset status and read value
-	SPCR=_BV(SPE); //|_BV(DORD);
+	SPCR=_BV(SPE)|_BV(DORD)|_BV(CPOL);
 	NCS_SENSOR_ON(sensorIndex);  // signal sensor for read
 	while(!ready)
 	{
@@ -37,7 +37,7 @@ bool sensor_readout(uint8_t sensorIndex)
 			SPDR=0;
 			data[byteIndex]=value;
 			byteIndex++;
-			if(byteIndex==4)
+			if(byteIndex==5)
 			{
 				ready=true;
 			}
@@ -52,10 +52,10 @@ bool sensor_readout(uint8_t sensorIndex)
 	_delay_us(500);    // wait little until client releases the line after signalling end of
 	_delay_ms(3);    // wait little until client releases the line after signalling end of
 	SPCR=0;	// RESET SPI hardware
-	if(byteIndex==4)
+	if(byteIndex==5)
 	{
 		// data read successfully -> store it!
-		gui_updateInput(sensorIndex, data32);
+		gui_updateInput(sensorIndex, data32, data[4]);
 		return true;
 	}
 	return false;
