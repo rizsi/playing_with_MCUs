@@ -1,0 +1,25 @@
+= Quadrature decoder with SPI interface OLD version
+
+Specification:
+
+ * Signal A change ISR takes about 30 cycles worst case (Program is in cli/sei block and pin change happens that moment)
+ * Only Signal A change (0->1 and 1->0) triggers ISR
+ * Full precision can be read out (changes in signal B since last ISR are read out on request)
+ * Read out is triggered by Negated Chip Select
+ * Read out is sent using software SPI master mode Can easily be received on Arduino and such.
+ * TODO CPU clock speed is tuned to 20MHz using PLL and OSCCAL -> about 0,8MHz signal A changes can be processed. That means 1.6MHz signals on full precision.
+
+See ASM file for further details.
+
+== Measurements
+
+Clock frequency increased using OSCCAL: approx 24MHz
+
+Smallest measurable T Quad signal read from oscilloscope:
+
+ * About 3.8us per full period which is 1.2us per signal and 2.4us per interrupt. (~57 cycles per interrupt)
+ * About 3.2is per full period already fails - program measures less than expected
+ * Both up and down counting is tested to work at about 57 cycles per interrupt
+
+At 16 MHz (PLL but unadjusted OSCCAL value) the min period time would be: 5,7 us
+

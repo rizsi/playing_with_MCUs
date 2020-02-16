@@ -1,6 +1,15 @@
+/*.map
+/*.lst
+/*.obj
 /*.cof
 /*.eep.hex
 /*.hex
-/*.lst
-/*.obj
+/a.out
+#/sim_gen.cpp
+/sim_progmem.cpp
+#/sim_labels.h
+/test_program
+/test_report.txt
+
+
 
