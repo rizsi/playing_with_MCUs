@@ -53,7 +53,7 @@ uint8_t getSegmentValues(uint8_t index)
  */
 void setInput(uint8_t index, int32_t value)
 {
-	gui_updateInput(index, value);
+	gui_updateInput(index, value, 0);
 }
 
 void updateTime(uint64_t t)

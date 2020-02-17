@@ -78,6 +78,7 @@ void gui_buttonPressed(uint8_t index);
  * Sets the current input value of a sensor subsystem.
  * @param index of the sensor subsystem: 0 kereszt, 1 hossz
  * @param value
+ * @param errcode error code of the readout of the value. 0 means no error
  */
-void gui_updateInput(uint8_t index, int32_t value);
+void gui_updateInput(uint8_t index, int32_t value, uint8_t errcode);
 

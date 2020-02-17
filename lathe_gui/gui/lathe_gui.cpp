@@ -260,7 +260,7 @@ static void toggleEditFocus(uint8_t target)
 	}
 }
 
-void gui_updateInput(uint8_t index, int32_t value)
+void gui_updateInput(uint8_t index, int32_t value, uint8_t errorcode)
 {
 	int32_t prev=inputValues[index]+diffValues[index];
 	int32_t next=value+diffValues[index];

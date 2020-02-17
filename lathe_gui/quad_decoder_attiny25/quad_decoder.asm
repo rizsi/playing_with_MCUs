@@ -1,4 +1,4 @@
-; Quadrature decoder - totally optimized version. TODO never executed - just a proof of concept
+; Quadrature decoder - totally optimized version. Tested in simulator and using signal generator: works as expected.
 ; Using raw ASM - compiles with avra - instead of avr-gcc
 ; The program does not use ISRs
 ; Timing: samples signal AB in every 12cycles.

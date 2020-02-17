@@ -134,11 +134,11 @@ Sensor2 NCS - Negated Chip Select: a szenzor 2 (Attiny25)-nek jelzi, hogy küldh
 
  * GND, VCC értelemszerűen (kapacitás kell rá)
  * /RESET - VCC-re 10kOhm-mal
- * T25 PB3(INPUT_A)                - QuadA a jeladóból
- * T25 PB4(INPUT_B)                - QuadB a jeladóból
- * T25 PB2(SPI_CLK)                - MEGA328 PB5 (SCK) - Kisértékű ellenálláson keresztül, pl 500Ohm (max 10mA-re korlátoz)
- * T25 PB1(SPI_DATA)               - MEGA328 PB3 (MOSI) - Kisértékű ellenálláson keresztül, pl 500Ohm (max 10mA-re korlátoz)
- * T25 PB0(NCS)                    - MEGA328 PB1 - Sensor1 NCS - soros 10kOhm lehet
+ * T25 PB0(INPUT_A)                - QuadA a jeladóból
+ * T25 PB1(NCS)                    - MEGA328 PB1 - Sensor1 NCS - soros 10kOhm lehet
+ * T25 PB2(INPUT_B)                - QuadB a jeladóból
+ * T25 PB3(SPI_DATA)               - MEGA328 PB3 (MOSI) - Kisértékű ellenálláson keresztül, pl 500 Ohm (max 10mA-re korlátoz)
+ * T25 PB4(SPI_CLK)                - MEGA328 PB5 (SCK) - Kisértékű ellenálláson keresztül, pl 500 Ohm (max 10mA-re korlátoz)
                                    - MEGA328 SS -> 4.7k pull down to GND szükséges, különben nem működik
 
 
@@ -146,11 +146,11 @@ Sensor2 NCS - Negated Chip Select: a szenzor 2 (Attiny25)-nek jelzi, hogy küldh
 
  * GND, VCC értelemszerűen (kapacitás kell rá)
  * /RESET - VCC-re 10kOhm-mal
- * T25 PB3(INPUT_A)                - QuadA a jeladóból
- * T25 PB4(INPUT_B)                - QuadB a jeladóból
- * T25 PB2(SPI_CLK)                - MEGA328 PB5 (SCK) - Kisértékű ellenálláson keresztül, pl 500Ohm (max 10mA-re korlátoz)
- * T25 PB1(SPI_DATA)               - MEGA328 PB3 (MOSI) - Kisértékű ellenálláson keresztül, pl 500Ohm (max 10mA-re korlátoz)
- * T25 PB0(NCS)                    - MEGA328 PD4 - Sensor2 NCS - soros 10kOhm lehet
+ * T25 PB0(INPUT_A)                - QuadA a jeladóból
+ * T25 PB1(NCS)                    - MEGA328 PD4 - Sensor2 NCS - soros 10kOhm lehet
+ * T25 PB2(INPUT_B)                - QuadB a jeladóból
+ * T25 PB3(SPI_DATA)               - MEGA328 PB3 (MOSI) - Kisértékű ellenálláson keresztül, pl 500 Ohm (max 10mA-re korlátoz)
+ * T25 PB4(SPI_CLK)                - MEGA328 PB5 (SCK) - Kisértékű ellenálláson keresztül, pl 500 Ohm (max 10mA-re korlátoz)
                                    - MEGA328 SS -> 4.7k pull down to GND szükséges, különben nem működik
 
 == transistor out
