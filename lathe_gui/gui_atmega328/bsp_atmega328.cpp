@@ -7,8 +7,8 @@
 #include <timer1.h>
 #include <debug_uart0.h>
 
-// Number of input shift registers
-#define NUMBER_SHIFT_IN_BYTES 2
+// Number of input shift registers multipled by number of repeats due to scanning rows of pinpad
+#define NUMBER_SHIFT_IN_BYTES 6
 
 /**
  * Shifted in bits of the input shift registers - handles buttons.
@@ -20,13 +20,6 @@ static uint8_t shiftInValues[NUMBER_SHIFT_IN_BYTES];
  */
 static void resetAllHW();
 
-/**
- * Set up pinpad input ADC to start reading value
- */
-static void startPinPadADC()
-{
-	ADCSRA|=_BV(ADSC);
-}
 /**
  * Process current time and current measured pressed button index.
  * Debounce the button event and execute button handler when debounced event happens.
@@ -87,45 +80,6 @@ static void debounceAndExecute(uint32_t t, uint8_t pressedIndex)
 			break;
 	}
 }
-/**
- * Wait pinpad input reading and store the input value.
- * @return index of the button pressed in the current moment -1 means none pressed
- */
-static int8_t finishPinPadADC()
-{
-	/// Exit loop when either there is no running ADC or there is an active ready signalling.
-	while( ((ADCSRA&_BV(ADIF)) == 0 ) && ((ADCSRA&_BV(ADSC)) == 1))
-	{
-	}
-	int8_t pressedIndex=-1;
-	/// If there is a ready signalling...
-	if((ADCSRA&_BV(ADIF)) != 0)
-	{
-		/// Clear ready singalling
-		ADCSRA|=_BV(ADIF);
-		uint16_t value=ADC;
-		debugInput=value;
-
-/// Accept range around exact value
-#define RANGE 0.05
-#define VOLT_TO_VALUE(X) ((uint16_t)((X)*1024.0/5.14))
-#define AROUND(X) value>=VOLT_TO_VALUE((X)-RANGE)&&value<VOLT_TO_VALUE((X)+RANGE)
-		// Numbers:
-		if(AROUND(1.02)) pressedIndex=1;
-		if(AROUND(1.22)) pressedIndex=2;
-		if(AROUND(1.46)) pressedIndex=3;
-		if(AROUND(1.71)) pressedIndex=4;
-		if(AROUND(2.02)) pressedIndex=5;
-		if(AROUND(2.42)) pressedIndex=6;
-		if(AROUND(2.81)) pressedIndex=7;
-		if(AROUND(3.11)) pressedIndex=8;
-		if(AROUND(3.31)) pressedIndex=9;
-		if(AROUND(3.91)) pressedIndex=0;
-		if(AROUND(3.60)) pressedIndex=10;
-		if(AROUND(3.77)) pressedIndex=11;
-	}
-	return pressedIndex;
-}
 static inline uint8_t max8(uint8_t a, uint8_t b)
 {
 	return a>b?a:b;
@@ -139,6 +93,22 @@ static uint8_t getOutputByte(uint8_t i, uint8_t nbytes)
 	}else
 	{
 		return 0b01010101;	// Do not cate - bacause this will be shifted through all registers
+	}
+}
+static void driveInput(uint8_t i, uint8_t nbytes)
+{
+	if(i<NUMBER_SHIFT_IN_BYTES)
+	{
+		if((i%2)==0)
+		{
+			PINPAD_ROW_ON(i);
+			_delay_us(10);	// Stabilize output
+			// Strobe on input SHRs reads current button states
+			SHIFT_IN_LATCH_ON();
+			_delay_us(10);
+			SHIFT_IN_LATCH_OFF();
+			PINPAD_ROWS_INIT();
+		}
 	}
 }
 static void storeInputByte(uint8_t i, uint8_t nbytes, uint8_t value)
@@ -157,13 +127,9 @@ static void shiftButtonsAndSegments()
 	uint8_t value;
 	uint8_t nbytes=max8(NUMBER_DISPLAY_ALLBYTES, NUMBER_SHIFT_IN_BYTES);
 
-	// Strobe on input SHRs reads current button states
-	SHIFT_IN_LATCH_ON();
-	_delay_us(10);
-	SHIFT_IN_LATCH_OFF();
-
 	// Turn SS to output! Otherwise low SS would transition SPI into slave mode!
 	SPI_SS_MASTER();
+	SHIFT_IN_BUFFER_ON();
 	SPCR=_BV(SPE)
 	//	|_BV(DORD) // DORD: LSB is transmitted first
 		|_BV(MSTR);
@@ -172,12 +138,14 @@ static void shiftButtonsAndSegments()
 	status=SPSR; value=SPDR;	// Reset status
 	for(int i=0;i<nbytes;++i)
 	{
+		driveInput(i, nbytes);
 		SPDR=getOutputByte(i, nbytes);
 		while((SPSR&_BV(SPIF))==0);	// Wait until transfer is finished
 		status=SPSR; value=SPDR;	// Reset status and read value
 		storeInputByte(i, nbytes, value);
 	}
 	SPCR=0;	// disable SPI
+	SHIFT_IN_BUFFER_OFF();
 	DIGITS_LATCH_ON();	// Strobe on Latch loads value into the output register of shifts
 	_delay_us(10);
 	DIGITS_LATCH_OFF();
@@ -194,25 +162,54 @@ static void readQuadDecoders()
 	sensor_readout(1);
 }
 
-static uint8_t decodeShiftRegBitIndexToButtonIndex(uint8_t shiftBitIndex)
+#define BUTTON(BYTE, BIT, VALUE) ((((uint16_t)(BYTE))<<8)+(BIT)+((VALUE)?0b10000000:0))
+
+static uint8_t decodedIndex(uint8_t byteIndex, uint8_t bitIndex, bool value)
 {
-	switch(shiftBitIndex)
+	switch(BUTTON(byteIndex,bitIndex,value))
 	{
-		case 0: return 200;
-		case 1: return 201;
-		case 2: return 202;
-		case 3: return 203;
-		case 4: return 204;
-		case 5: return 205;
-		case 6: return 206;
+		// PINPAD ROW 1
+		case BUTTON(1,0,true): return 0;
+		case BUTTON(1,1,true): return 1;
+		case BUTTON(1,2,true): return 2;
+		case BUTTON(1,3,true): return 3;
+
+		// PINPAD ROW 2
+		case BUTTON(3,0,true): return 4;
+		case BUTTON(3,1,true): return 5;
+		case BUTTON(3,2,true): return 6;
+		case BUTTON(3,3,true): return 7;
+
+		// PINPAD ROW 3
+		case BUTTON(5,0,true): return 8;
+		case BUTTON(5,1,true): return 9;
+		case BUTTON(5,2,true): return 10;
+		case BUTTON(5,3,true): return 11;
+
+		// Simple buttons
+		case BUTTON(1,4,true): return 200;
+		case BUTTON(1,5,true): return 201;
+		case BUTTON(1,6,true): return 202;
+		case BUTTON(1,7,true): return 203;
+
+		case BUTTON(0,0,true): return 204;
+		case BUTTON(0,1,true): return 205;
+		case BUTTON(0,2,true): return 206;
+		case BUTTON(0,3,true): return 207;
+		case BUTTON(0,4,true): return 208;
+		case BUTTON(0,5,true): return 209;
+		case BUTTON(0,6,true): return 210;
+		case BUTTON(0,7,true): return 211;
+
+		default: return 255;
 	}
-	return 255;
 }
+
 /**
  * Decode shift in button to index.
  * @return -1 means no button
  */
-static int8_t decodeShiftInButton()
+static uint8_t decodeShiftInButton()
 {
 	uint8_t currentIndex=255;
 	uint8_t nFound=0;
@@ -221,9 +218,11 @@ static int8_t decodeShiftInButton()
 		uint8_t mask=0b10000000;
 		for(uint8_t bitIndex=0;bitIndex<8;++bitIndex)
 		{
-			if((shiftInValues[byteIndex]&mask)!=0)
+			bool v=(shiftInValues[byteIndex]&mask)!=0;
+			uint8_t decoded=decodedIndex(byteIndex, bitIndex, v);
+			if(decoded!=255)
 			{
-				currentIndex=byteIndex*8+bitIndex;
+				currentIndex=decoded;
 				nFound++;
 			}
 			mask>>=1;
@@ -236,21 +235,6 @@ static int8_t decodeShiftInButton()
 	return currentIndex;
 }
 
-/**
- * TODO call this on power fail before saving state into EEPROM.
- */
-static void disableAllHardware()
-{
-	// TODO disable all hardware - executed on pre-power fail to spare energy for state saving
-	// TODO disable SPI
-	// disable ADC
-	ADMUX=0;
-	ADCSRA=0;
-	ADCSRB=0;
-	// TODO disable PWM
-	// TODO turn pins off
-}
-
 int main()
 {
 	resetAllHW();
@@ -260,13 +244,10 @@ int main()
 	{
 		// Single period time: about 16ms - perfect
 		uint32_t t=getCurrentTimeMillis();
-		startPinPadADC();	// ADC takes time - we do useful stuff while it is running
 		shiftButtonsAndSegments();
 		readQuadDecoders();
 		uint8_t shiftInButton=decodeShiftInButton();
-		uint8_t pinPadButton=finishPinPadADC();
-		uint8_t b=pinPadButton!=255?pinPadButton:shiftInButton; // Pinpad has higher priority
-		debounceAndExecute(t, b);
+		debounceAndExecute(t, shiftInButton);
 		gui_loop(t);
 	}
 }
@@ -286,18 +267,14 @@ static void resetAllHW()
 
 	DIGITS_LATCH_OFF();
 	SHIFT_IN_LATCH_OFF();
-	PINPAD_INPUT();
+	SHIFT_IN_BUFFER_OFF();
+
+	PINPAD_ROWS_INIT();
 	CONFIG_PWM_PINS();
 
 	NCS_SENSOR_OFF(0);
 	NCS_SENSOR_OFF(1);
 
-	// AD converter set up:
-	ADMUX=_BV(REFS0)|0b0000; // Reference is VCC and input is ADC0
-	ADCSRA=_BV(ADEN)|0b111;	// Enabled but no auto. Pre scaler is 128 which means 62.5-125kHz (assuming CPU is 8MHz - 16MHz)
-				// ADC takes 13 cycles so we are still over 1kHz with frequency
-	ADCSRB=0;
-	DIDR0|=_BV(ADC0D);	// Disable digital input on ACD0 pin to spare some power
 	initTimer1();
 	UART0_Init();	// Debug messages are sent using UART0
 	sei();

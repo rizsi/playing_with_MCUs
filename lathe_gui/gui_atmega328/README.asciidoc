@@ -16,14 +16,14 @@ DEBUG/extend   - (RXD) PD0 -|2        |- PC4 - NUMPAD row 3
 DEBUG/extend   - (TXD) PD1 -|3        |- PC3 - NUMPAD row 2
          INPUT LATCH - PD2 -|         |- PC2 - NUMPAD row 1
   DIGITS PWM 1 - (OC2B)PD3 -|         |- PC1 - DIGITS latch
-         Sensor2 NCS - PD4 -|         |- PC0 (ADC0) - PIN pad input
+         Sensor2 NCS - PD4 -|         |- PC0 (ADC0) - NC
       ICSP, PowerCAP - VCC -|ATMEGA328|- GND - Connected to other GND pin
       ICSP, PowerCAP - GND -|         |- AREF - capacitor to GND
              NC-(XTAL1)PB6 -|         |- AVCC - same as VCC but additional cap to GND
              NC-(XTAL2)PB7 -|         |- PB5 (SCK)  - ISCP, SWSPI CLK, SPI ALL, Sensor ATTiny25
   DIGITS PWM 0 - (OC0B)PD5 -|         |- PB4 (MISO) - ICSP, SWSPI in, SPI BUTTONS
-POWER fail 3.3V- (AIN0)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI DIGITS, Sensor ATTiny25
-POWER fail5V*0.8-(AIN1)PD7 -|         |- PB2 (SS)   - SPI (Sensor ATTiny25)
+            NC - (AIN0)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI DIGITS, Sensor ATTiny25
+             NC -(AIN1)PD7 -|         |- PB2 (SS)   - SPI (Sensor ATTiny25)
            INPUT NCS - PB0 -|14     15|- PB1 - Sensor1 NCS
 
 == Main clock
@@ -34,15 +34,15 @@ Belső 8MHz oszcillátor elegendő a prototípushoz.
 == Timers
 
 TIMER1 - time keeping: length of transistor strobe, period of program loop, timeout of Attiny25 SPI, currentTimeMillis, etc
-TIMER0 - LED PWM -> OC0B
-TIMER2 - LED PWM -> OC2B
+TIMER0 - LED PWM -> OC0B (only if necessary - now it is constantly on)
+TIMER2 - LED PWM -> OC2B (only if necessary - now it is constantly on)
 
 == Interrupts, ATOMIC blocks
 
-TIMER1 ovf: increment timekeeping counter
-getCurrentTimeMillis - read out timekeeping counter+TCNT1
-SPI input? SW SPI could also be used!
-
+ * TIMER1 ovf: increment timekeeping counter
+ * TIMER1 compare match: timeout
+ * getCurrentTimeMillis - read out timekeeping counter+TCNT1
+ * SPI input is handled using polling of HW SPI status bits
 
 == Gombok és LED-ek további jelei
 
@@ -91,25 +91,6 @@ A buffer többi 3 komponense nem használt. A bemeneteket érdemes magasba húzn
  * AVCC szűrt 5V-ra!
  * AREF kapacitással a GND-re!
 
-== Power fail detector
-
-Így kell bekötni:
-
- * PD6(AIN0) 3.3V referencia: 3.3V stabilizátorral készített 3.3V-os bemeneti referencia jel.
- * PD7(AIN1) 5V*0,825: a külső tápot osztjuk két ellenállással úgy, hogy 0,825-szorosát mérjük. Ha a táp 4V-ra esik, akkor ez az érték éppen 3.3V lesz, tehát a komparátor jelezni fog. (az osztó lehet egy potméter, és akkor hangolható lesz a kikapcsolási feszültség)
-
-Így működik:
-
- * A komparátor áramkör a 3.3V referenciát és a külső táp osztott értékét méri egymáshoz. Amikor a külső táp feszültsége pl 4V alá esik, akkor interrupttal azonnal jelez a főprogramnak!
- * Ekkor a belső tápáramkör kondenzátora még legalább 4V-ra fel van tölte: ennek az energiája elegendő lesz az állapotmentéshez - úgy mérezezzük be ezt a kondenzátort
- * A jelzésére a főprogram minden fogyasztót leállít - hogy keveset fogyasszon, legyen egy kis ideje elmenteni az állapotát.
- * Az állapotát elmenti a csipbe épített EEPROM-ba.
- * A külső fogyasztókat viszont bekapcsolja, hogy mielőbb kisüljenek a külső táp kondenzátorai.
- * Miután a mentés megtörtént a főprogram bekapcsol egy fogyasztót, ami a belső kondenzátort is lemeríti. Például van egy státusz LED, amit kigyújt, vagy az egyik lába GND-re van kötve ellenálláson keresztül.
- * A tápláló kondenzátor lemerül, és a csip kikapcsol. Brown Out Detectort érdemes bekapcsolni a csipen, hogy még azelőtt kikapcsoljon, mielőtt elkezdene esetleg hibásan működni.
- * Ha a csip leállása nélkül visszajön a táp (gyors kapcsolgatás), vagy csak vaklárma volt (tranziens alacsony feszültség valami hibából adódóan), akkor egy idő után folytatja a program a futását.
-
-
 == ICSP
 
 ICSP header konfigurációjú 2x3 pines csatlakozóra kell kötni, hogy standard programozóval, vagy pickit2-vel lehessen programozni.
@@ -127,8 +108,8 @@ A Hardweres SPI-t arra használjuk, hogy a Quad dekóder adatát beolvassuk.
 
 == ATTiny sensor
 
-Sensor1 NCS - Negated Chip Select: a szenzor 1 (Attiny25)-nek jelzi, hogy küldheti az adatot
-Sensor2 NCS - Negated Chip Select: a szenzor 2 (Attiny25)-nek jelzi, hogy küldheti az adatot
+ * Sensor1 NCS - Negated Chip Select: a szenzor 1 (Attiny25)-nek jelzi, hogy küldheti az adatot
+ * Sensor2 NCS - Negated Chip Select: a szenzor 2 (Attiny25)-nek jelzi, hogy küldheti az adatot
 
 === Első szenzor bekötése
 

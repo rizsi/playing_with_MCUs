@@ -3,11 +3,17 @@
 #define DIGITS_LATCH_OFF() PORTC|=_BV(1); DDRC|=_BV(1)
 #define DIGITS_LATCH_ON() PORTC&=~_BV(1); DDRC|=_BV(1)
 
-#define PINPAD_INPUT() PORTC&=~_BV(0); DDRC&=_BV(0)
+#define PINPAD_ROWS_MASK 0b11100
+#define PINPAD_ROWS_INIT() PORTC&=~PINPAD_ROWS_MASK; DDRC|=PINPAD_ROWS_MASK
+/// Turn on the ROW output - must be 0,1 or 2
+#define PINPAD_ROW_ON(X) PORTC|=_BV(2+X)
 
 /// Parallel input enable - read values from buttons - active low
 #define SHIFT_IN_LATCH_OFF() PORTD|=_BV(2); DDRD|=_BV(2)
 #define SHIFT_IN_LATCH_ON() PORTD&=~_BV(2); DDRD|=_BV(2)
+/// Input shift register MISO drive buffer enabled - works as chip select. Active low
+#define SHIFT_IN_BUFFER_ON() PORTB&=~_BV(0); DDRB|=_BV(0)
+#define SHIFT_IN_BUFFER_OFF() PORTB|=_BV(0); DDRB|=_BV(0)
 
 #define PORT_SPI PORTB
 #define DDR_SPI DDRB
