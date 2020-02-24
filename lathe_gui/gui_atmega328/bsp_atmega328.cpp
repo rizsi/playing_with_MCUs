@@ -10,6 +10,24 @@
 // Number of input shift registers multipled by number of repeats due to scanning rows of pinpad
 #define NUMBER_SHIFT_IN_BYTES 6
 
+static volatile uint8_t prevPIND;
+static volatile uint32_t calib1UpEdgeTime;
+static volatile uint32_t calib2UpEdgeTime;
+
+ISR(PCINT2_vect)
+{
+	uint8_t v=PIND;
+	if(((v&_BV(6))!=0) && ((prevPIND&_BV(6))==0))
+	{
+		calib1UpEdgeTime=timer1_GetCycles();
+	}
+	if(((v&_BV(7))!=0) && ((prevPIND&_BV(7))==0))
+	{
+		calib2UpEdgeTime=timer1_GetCycles();
+	}
+	prevPIND=v;
+}
+
 /**
  * Shifted in bits of the input shift registers - handles buttons.
  */
@@ -151,6 +169,13 @@ static void shiftButtonsAndSegments()
 	DIGITS_LATCH_OFF();
 }
 
+inline static void sensor_readout_callback(uint8_t sensorIndex, int32_t data32, int8_t errorcode)
+{
+	uint32_t time=timer1_GetCycles();
+	gui_updateInput(sensorIndex, data32, errorcode);
+}
+
+
 // Ugly hack to include the source code but it works :-)
 #include "sensor_readout.cpp"
 /**
@@ -245,10 +270,34 @@ int main()
 		// Single period time: about 16ms - perfect
 		uint32_t t=getCurrentTimeMillis();
 		shiftButtonsAndSegments();
+		
+		uint32_t tc=timer1_GetCycles();
+		uint32_t old=tc-16000000ul;	// Very old - 1 second
+		uint32_t c1;
+		uint32_t c2;
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
+			c1=calib1UpEdgeTime;
+			calib1UpEdgeTime=old;
+			c2=calib2UpEdgeTime;
+			calib2UpEdgeTime=old;
+		}
+		if(tc-c1<8000000ul || c1-tc<8000000ul)
+		{
+			// TODO there was a calib1 edge
+		}
+		if(tc-c2<8000000ul || c2-tc<8000000ul)
+		{
+			// TODO there was a calib2 edge
+		}
 		readQuadDecoders();
 		uint8_t shiftInButton=decodeShiftInButton();
 		debounceAndExecute(t, shiftInButton);
 		gui_loop(t);
+		for(uint8_t i=0;i<NUMBER_SHIFT_IN_BYTES;++i) // TODO remove
+		{
+			segmentValues[6+i]=shiftInValues[i];
+		}
 	}
 }
 
@@ -277,6 +326,11 @@ static void resetAllHW()
 
 	initTimer1();
 	UART0_Init();	// Debug messages are sent using UART0
+
+	// Calibration signal
+	PCICR=_BV(PCIE2);
+	PCMSK2=_BV(PCINT22)|_BV(PCINT23);
+	prevPIND=PIND;
 	sei();
 }
 

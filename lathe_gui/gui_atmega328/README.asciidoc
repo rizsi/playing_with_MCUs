@@ -22,8 +22,8 @@ DEBUG/extend   - (TXD) PD1 -|3        |- PC3 - NUMPAD row 2
              NC-(XTAL1)PB6 -|         |- AVCC - same as VCC but additional cap to GND
              NC-(XTAL2)PB7 -|         |- PB5 (SCK)  - ISCP, SWSPI CLK, SPI ALL, Sensor ATTiny25
   DIGITS PWM 0 - (OC0B)PD5 -|         |- PB4 (MISO) - ICSP, SWSPI in, SPI BUTTONS
-            NC - (AIN0)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI DIGITS, Sensor ATTiny25
-             NC -(AIN1)PD7 -|         |- PB2 (SS)   - SPI (Sensor ATTiny25)
+     CALIB1 - (PCINT22)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI DIGITS, Sensor ATTiny25
+      CALIB2 -(PCINT23)PD7 -|         |- PB2 (SS)   - SPI (Sensor ATTiny25)
            INPUT NCS - PB0 -|14     15|- PB1 - Sensor1 NCS
 
 == Main clock

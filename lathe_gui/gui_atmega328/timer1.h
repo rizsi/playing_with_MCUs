@@ -7,5 +7,9 @@ void initTimer1();
 void timer1_setupTimeout(uint16_t timeoutMillis);
 bool timer1_isTimeout();
 void timer1_cancelTimeout();
+/**
+ * Read the most precision clock.
+ */
+uint32_t timer1_GetCycles();
 
 

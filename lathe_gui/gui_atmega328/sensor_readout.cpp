@@ -55,7 +55,7 @@ bool sensor_readout(uint8_t sensorIndex)
 	if(byteIndex==5)
 	{
 		// data read successfully -> store it!
-		gui_updateInput(sensorIndex, data32, data[4]);
+		sensor_readout_callback(sensorIndex, data32, data[4]);
 		return true;
 	}
 	return false;

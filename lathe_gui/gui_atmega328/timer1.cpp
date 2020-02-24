@@ -55,7 +55,7 @@ static uint32_t timeGetTicks()
 		ctr=TCNT1;
 		tifr=TIFR1;
 	}
-	bool ovf=(tifr & _BV(TOV1)) && (ctr <32000);
+	bool ovf=(tifr & _BV(TOV1)) && ((ctr&0b1000000000000000)==0);
 	if(ovf)
 	{
 		m++;
@@ -65,6 +65,28 @@ static uint32_t timeGetTicks()
 	ctr>>=3;
 	m+=ctr;
 	// Returned value is measured in about 0.976 millis which is exact enough for our goals.
+	return m;
+}
+uint32_t timer1_GetCycles()
+{
+	uint32_t m;
+	uint16_t ctr;
+	uint8_t tifr;
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+	{
+		m = timeCounter;
+		ctr=TCNT1;
+		tifr=TIFR1;
+	}
+	bool ovf=(tifr & _BV(TOV1)) && ((ctr&0b1000000000000000)==0);
+	if(ovf)
+	{
+		m++;
+	}
+	// Div by 8 -> shift left 13 instead of 16
+	m<<=16;
+	m+=ctr;
+	// Returned value is measured in raw cycles.
 	return m;
 }
 

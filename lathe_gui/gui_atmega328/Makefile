@@ -11,7 +11,7 @@ INCLUDES = -I. -I../gui/
 all: ${BINARYNAME}.hex
 
 ${BINARYNAME}.hex: ${SRCS}
-	avr-gcc -o $(BINARYNAME).elf -mmcu=$(MCU) -Os $(INCLUDES) -Wl,-Map,$(BINARYNAME).map $(SRCS)
+	avr-gcc -o $(BINARYNAME).elf -mmcu=$(MCU) -O3 $(INCLUDES) -Wl,-Map,$(BINARYNAME).map $(SRCS)
 	avr-objdump -S --disassemble $(BINARYNAME).elf >$(BINARYNAME).disassemble.txt
 	avr-objcopy -j .text -j .data -O ihex $(BINARYNAME).elf $(BINARYNAME).hex
 	avr-size -C --mcu=$(MCU) $(BINARYNAME).elf

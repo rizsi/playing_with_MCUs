@@ -189,7 +189,7 @@ static void timer1_cancelTimeout()
 }
 uint32_t prevv=0;
 static void doQuads(uint32_t n, int8_t dir);
-static void gui_updateInput(uint8_t sensorIndex, uint32_t data32, uint8_t err)
+static void sensor_readout_callback(uint8_t sensorIndex, uint32_t data32, uint8_t err)
 {
 	union
 	{

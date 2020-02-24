@@ -300,7 +300,7 @@ case 0x92:
 case 0x93:
 	if(AVR_ldi(ctx, 0x93, /* K */0x98, /* d */0x8) || ctx->breakpointActivated) break;	// ldi {K=10011000, d=1000} HEX:0xe988
 case 0x94:
-	if(AVR_nop(ctx, 0x94) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
+	if(AVR_ldi(ctx, 0x94, /* K */0x10, /* d */0x2) || ctx->breakpointActivated) break;	// ldi {K=00010000, d=0010} HEX:0xe120
 case 0x95:
 	if(AVR_rjmp(ctx, 0x95, /* k */0xf7a) || ctx->breakpointActivated) break;	// rjmp {k=111101111010} HEX:0xcf7a
 case 0x96:
@@ -308,11 +308,11 @@ case 0x96:
 case 0x97:
 	if(AVR_rjmp(ctx, 0x97, /* k */0xf78) || ctx->breakpointActivated) break;	// rjmp {k=111101111000} HEX:0xcf78
 case 0x98:
-	if(AVR_ldi(ctx, 0x98, /* K */0x9f, /* d */0x8) || ctx->breakpointActivated) break;	// ldi {K=10011111, d=1000} HEX:0xe98f
+	if(AVR_dec(ctx, 0x98, /* d */0x12) || ctx->breakpointActivated) break;	// dec {d=10010} HEX:0x952a
 case 0x99:
-	if(AVR_nop(ctx, 0x99) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
+	if(AVR_brne(ctx, 0x99, /* k */0x5) || ctx->breakpointActivated) break;	// brne {k=0000101} HEX:0xf429
 case 0x9a:
-	if(AVR_nop(ctx, 0x9a) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
+	if(AVR_mov(ctx, 0x9a, /* d */0x18, /* r */0x19) || ctx->breakpointActivated) break;	// mov {d=11000, r=11001} HEX:0x2f89
 case 0x9b:
 	if(AVR_nop(ctx, 0x9b) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0x9c:
@@ -322,21 +322,21 @@ case 0x9d:
 case 0x9e:
 	if(AVR_rjmp(ctx, 0x9e, /* k */0xf71) || ctx->breakpointActivated) break;	// rjmp {k=111101110001} HEX:0xcf71
 case 0x9f:
-	if(AVR_ldi(ctx, 0x9f, /* K */0xa6, /* d */0x8) || ctx->breakpointActivated) break;	// ldi {K=10100110, d=1000} HEX:0xea86
+	if(AVR_nop(ctx, 0x9f) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xa0:
 	if(AVR_nop(ctx, 0xa0) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xa1:
 	if(AVR_nop(ctx, 0xa1) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xa2:
-	if(AVR_nop(ctx, 0xa2) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
+	if(AVR_rjmp(ctx, 0xa2, /* k */0xf6d) || ctx->breakpointActivated) break;	// rjmp {k=111101101101} HEX:0xcf6d
 case 0xa3:
 	if(AVR_nop(ctx, 0xa3) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xa4:
 	if(AVR_nop(ctx, 0xa4) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xa5:
-	if(AVR_rjmp(ctx, 0xa5, /* k */0xf6a) || ctx->breakpointActivated) break;	// rjmp {k=111101101010} HEX:0xcf6a
+	if(AVR_nop(ctx, 0xa5) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xa6:
-	if(AVR_ldi(ctx, 0xa6, /* K */0xad, /* d */0x8) || ctx->breakpointActivated) break;	// ldi {K=10101101, d=1000} HEX:0xea8d
+	if(AVR_nop(ctx, 0xa6) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xa7:
 	if(AVR_nop(ctx, 0xa7) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xa8:
@@ -348,9 +348,9 @@ case 0xaa:
 case 0xab:
 	if(AVR_nop(ctx, 0xab) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xac:
-	if(AVR_rjmp(ctx, 0xac, /* k */0xf63) || ctx->breakpointActivated) break;	// rjmp {k=111101100011} HEX:0xcf63
+	if(AVR_nop(ctx, 0xac) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xad:
-	if(AVR_ldi(ctx, 0xad, /* K */0xb4, /* d */0x8) || ctx->breakpointActivated) break;	// ldi {K=10110100, d=1000} HEX:0xeb84
+	if(AVR_nop(ctx, 0xad) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xae:
 	if(AVR_nop(ctx, 0xae) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xaf:
@@ -362,9 +362,9 @@ case 0xb1:
 case 0xb2:
 	if(AVR_nop(ctx, 0xb2) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xb3:
-	if(AVR_rjmp(ctx, 0xb3, /* k */0xf5c) || ctx->breakpointActivated) break;	// rjmp {k=111101011100} HEX:0xcf5c
+	if(AVR_nop(ctx, 0xb3) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xb4:
-	if(AVR_ldi(ctx, 0xb4, /* K */0xbb, /* d */0x8) || ctx->breakpointActivated) break;	// ldi {K=10111011, d=1000} HEX:0xeb8b
+	if(AVR_nop(ctx, 0xb4) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xb5:
 	if(AVR_nop(ctx, 0xb5) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xb6:
@@ -376,9 +376,9 @@ case 0xb8:
 case 0xb9:
 	if(AVR_nop(ctx, 0xb9) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xba:
-	if(AVR_rjmp(ctx, 0xba, /* k */0xf55) || ctx->breakpointActivated) break;	// rjmp {k=111101010101} HEX:0xcf55
+	if(AVR_nop(ctx, 0xba) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xbb:
-	if(AVR_mov(ctx, 0xbb, /* d */0x18, /* r */0x19) || ctx->breakpointActivated) break;	// mov {d=11000, r=11001} HEX:0x2f89
+	if(AVR_nop(ctx, 0xbb) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xbc:
 	if(AVR_nop(ctx, 0xbc) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xbd:
@@ -390,7 +390,7 @@ case 0xbf:
 case 0xc0:
 	if(AVR_nop(ctx, 0xc0) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xc1:
-	if(AVR_rjmp(ctx, 0xc1, /* k */0xf4e) || ctx->breakpointActivated) break;	// rjmp {k=111101001110} HEX:0xcf4e
+	if(AVR_nop(ctx, 0xc1) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xc2:
 	if(AVR_nop(ctx, 0xc2) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0xc3:
