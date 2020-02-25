@@ -157,7 +157,7 @@ static void shiftButtonsAndSegments()
 	SPCR=_BV(SPE)
 	//	|_BV(DORD) // DORD: LSB is transmitted first
 		|_BV(MSTR);
-	SPCR|=0b11;	// clockdiv: /16
+	SPCR|=0b01;	// clockdiv: /16
 	SPSR&=~_BV(SPI2X); // Disable clock x2
 	status=SPSR; value=SPDR;	// Reset status
 	for(int i=0;i<nbytes;++i)
@@ -200,28 +200,28 @@ static uint8_t decodedIndex(uint8_t byteIndex, uint8_t bitIndex, bool value)
 	switch(BUTTON(byteIndex,bitIndex,value))
 	{
 		// PINPAD ROW 1
-		case BUTTON(1,0,true): return 0;
-		case BUTTON(1,1,true): return 1;
-		case BUTTON(1,2,true): return 2;
-		case BUTTON(1,3,true): return 3;
+		case BUTTON(1,7,true): return 1;
+		case BUTTON(1,6,true): return 4;
+		case BUTTON(1,5,true): return 7;
+		case BUTTON(1,4,true): return 11;
 
 		// PINPAD ROW 2
-		case BUTTON(3,0,true): return 4;
-		case BUTTON(3,1,true): return 5;
-		case BUTTON(3,2,true): return 6;
-		case BUTTON(3,3,true): return 7;
+		case BUTTON(3,7,true): return 2;
+		case BUTTON(3,6,true): return 5;
+		case BUTTON(3,5,true): return 8;
+		case BUTTON(3,4,true): return 0;
 
 		// PINPAD ROW 3
-		case BUTTON(5,0,true): return 8;
-		case BUTTON(5,1,true): return 9;
-		case BUTTON(5,2,true): return 10;
-		case BUTTON(5,3,true): return 11;
+		case BUTTON(5,7,true): return 3;
+		case BUTTON(5,6,true): return 6;
+		case BUTTON(5,5,true): return 9;
+		case BUTTON(5,4,true): return 12;
 
 		// Simple buttons
-		case BUTTON(1,4,true): return 200;
-		case BUTTON(1,5,true): return 201;
-		case BUTTON(1,6,true): return 202;
-		case BUTTON(1,7,true): return 203;
+		case BUTTON(1,3,true): return 200;
+		case BUTTON(1,2,true): return 201;
+		case BUTTON(1,1,true): return 202;
+		case BUTTON(1,0,true): return 203;
 
 		case BUTTON(0,0,true): return 204;
 		case BUTTON(0,1,true): return 205;
@@ -300,10 +300,10 @@ int main()
 		uint8_t shiftInButton=decodeShiftInButton();
 		debounceAndExecute(t, shiftInButton);
 		gui_loop(t);
-		for(uint8_t i=0;i<NUMBER_SHIFT_IN_BYTES;++i) // TODO remove
+/*		for(uint8_t i=0;i<NUMBER_SHIFT_IN_BYTES;++i) // TODO remove
 		{
 			segmentValues[6+i]=shiftInValues[i];
-		}
+		}*/
 	}
 }
 

@@ -288,7 +288,7 @@ COMM_STATE_BYTESHIFT_CLK:	; Clock strobe
 	dec BYTESHIFT_N		; dec also updates the SREG
 	BRNE COMM_STATE_BYTESHIFT_CLK_NEXT
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_DATA_END)
-	ldi BYTESHIFT_N, 160	; Number of wait cycles after data byte was shifted out - in this time the master processor must store the value and be ready for the shift in of the next byte
+	ldi BYTESHIFT_N, 16	; Number of wait cycles after data byte was shifted out - in this time the master processor must store the value and be ready for the shift in of the next byte
 	rjmp loop
 
 COMM_STATE_BYTESHIFT_CLK_NEXT:
