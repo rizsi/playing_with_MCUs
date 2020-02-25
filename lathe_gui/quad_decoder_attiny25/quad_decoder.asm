@@ -260,20 +260,39 @@ COMM_STATE_BYTESHIFT_DATA:	; Clock to low, data to output
 	SBRC BYTESHIFT_VALUE, 0
 	ldi ZL, (1<<PIN_SPI_CLK) | (1<<PIN_SPI_DATA)
 	OUT PORTB, ZL
-	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_CLK)
+	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_CLK_PRE)
 	lsr BYTESHIFT_VALUE
 	rjmp loop
+
+COMM_STATE_BYTESHIFT_CLK_PRE:
+	nop
+	nop
+	nop
+	nop
+	nop
+	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_CLK)
+	rjmp loop
+
+COMM_STATE_BYTESHIFT_DATA_PRE:
+	nop
+	nop
+	nop
+	nop
+	nop
+	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_DATA)
+	rjmp loop
+	
 
 COMM_STATE_BYTESHIFT_CLK:	; Clock strobe
 	CBI PORTB, PIN_SPI_CLK
 	dec BYTESHIFT_N		; dec also updates the SREG
 	BRNE COMM_STATE_BYTESHIFT_CLK_NEXT
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_DATA_END)
-	ldi BYTESHIFT_N, 16
+	ldi BYTESHIFT_N, 160	; Number of wait cycles after data byte was shifted out - in this time the master processor must store the value and be ready for the shift in of the next byte
 	rjmp loop
 
 COMM_STATE_BYTESHIFT_CLK_NEXT:
-	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_DATA)
+	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_DATA_PRE)
 	rjmp loop
 
 COMM_STATE_BYTESHIFT_DATA_END:

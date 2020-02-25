@@ -8,7 +8,9 @@
 #define PIN_SPI_DATA 3
 #define MASK_CLK (1<<PIN_SPI_CLK)
 #define MASK_DATA (1<<PIN_SPI_DATA)
-#define N_CYCLE_SPI 151
+#define SPI_WAITCYCLES 160
+#define N_CYCLE_SPI 727
+// (151+144*5)
 
 static uint8_t sindex=0;
 static uint8_t signalAB;
@@ -249,7 +251,7 @@ int main (int argc, char ** argv)
 	inc0=0; inc1=0;inc2=1;
 	// Test reading out counter while counting
 	testCommunication(2, 0);	// Counter is latched after two cycles
-	ASSERT(getCounterValue()==N_CYCLE_SPI+27, "Counter value: %d required: %d", getCounterValue(), N_CYCLE_SPI+27);	// Readout test takes N_CYCLE_SPI+26 cycles
+	ASSERT(getCounterValue()==N_CYCLE_SPI+SPI_WAITCYCLES+11, "Counter value: %d required: %d", getCounterValue(), N_CYCLE_SPI+SPI_WAITCYCLES+11);	// Readout test takes N_CYCLE_SPI+26 cycles
 	for(uint32_t i=0;i<PROGMEM_N_WORDS;++i)
 	{
 		if((i>=CODE_ENDS&&i<0x100)||i>=0x200)
@@ -284,7 +286,7 @@ static void testCommunication(uint32_t counterValue, uint8_t errorValue)
 	ASSERT(counter==counterValue, "Counter value read correctly. Expected: %u (%x) value: %u (%x)", counterValue, counterValue, counter, counter);
 	ASSERT(error==errorValue, "Error value read correctly. Expected: %u value: %u", errorValue, error);
 	ASSERT(getReg(ctx, 24)==COMM_STATE_BYTESHIFT_DATA_END, "Communication state is COMM_STATE_BYTESHIFT_DATA_END Actual: 0x%x", getReg(ctx, 24));
-	for(uint8_t i=0;i<17;++i)
+	for(uint8_t i=0;i<SPI_WAITCYCLES+1;++i)
 	{
 		executeOneCycle(ctx);
 	}
