@@ -9,6 +9,7 @@
 
 // Number of input shift registers multipled by number of repeats due to scanning rows of pinpad
 #define NUMBER_SHIFT_IN_BYTES 6
+#define NUMBER_SHIFT_IN_CYCLES 9
 
 static volatile uint8_t prevPIND;
 static volatile uint32_t calib1UpEdgeTime;
@@ -115,15 +116,17 @@ static uint8_t getOutputByte(uint8_t i, uint8_t nbytes)
 }
 static void driveInput(uint8_t i, uint8_t nbytes)
 {
-	if(i<NUMBER_SHIFT_IN_BYTES)
+	if(i<NUMBER_SHIFT_IN_CYCLES)
 	{
-		if((i%2)==0)
+		if((i%3)==0)
 		{
-			PINPAD_ROW_ON(i);
+			PINPAD_ROW_ON(i/3);
 			_delay_us(10);	// Stabilize output
-			// Strobe on input SHRs reads current button states
+			// Enable input SHRs reads current button states - only when CP is ticking
 			SHIFT_IN_LATCH_ON();
-			_delay_us(10);
+		}
+		if((i%3)==1)
+		{
 			SHIFT_IN_LATCH_OFF();
 			PINPAD_ROWS_INIT();
 		}
@@ -131,9 +134,12 @@ static void driveInput(uint8_t i, uint8_t nbytes)
 }
 static void storeInputByte(uint8_t i, uint8_t nbytes, uint8_t value)
 {
-	if(i<NUMBER_SHIFT_IN_BYTES)
+	if(i<NUMBER_SHIFT_IN_CYCLES)
 	{
-		shiftInValues[i]=value;
+		if((i%3)!=0)
+		{
+			shiftInValues[i-(i/3)-1]=value;
+		}
 	}// else do not care because those values are garbage input on the last shift register
 }
 /**
@@ -143,7 +149,7 @@ static void shiftButtonsAndSegments()
 {
 	uint8_t status;
 	uint8_t value;
-	uint8_t nbytes=max8(NUMBER_DISPLAY_ALLBYTES, NUMBER_SHIFT_IN_BYTES);
+	uint8_t nbytes=max8(NUMBER_DISPLAY_ALLBYTES, NUMBER_SHIFT_IN_CYCLES);
 
 	// Turn SS to output! Otherwise low SS would transition SPI into slave mode!
 	SPI_SS_MASTER();
@@ -151,7 +157,7 @@ static void shiftButtonsAndSegments()
 	SPCR=_BV(SPE)
 	//	|_BV(DORD) // DORD: LSB is transmitted first
 		|_BV(MSTR);
-	SPCR|=0b01;	// clockdiv: /16
+	SPCR|=0b11;	// clockdiv: /16
 	SPSR&=~_BV(SPI2X); // Disable clock x2
 	status=SPSR; value=SPDR;	// Reset status
 	for(int i=0;i<nbytes;++i)

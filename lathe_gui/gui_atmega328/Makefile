@@ -24,6 +24,10 @@ burn:	all
 arduino: all
 	avrdude -carduino  -P /dev/ttyACM* -b115200 -p $(MCU_DUDE) -u -U flash:w:$(BINARYNAME).hex
 
+pickit2: all
+	avrdude -cpickit2 -p $(MCU_DUDE) -u -U flash:w:$(BINARYNAME).hex
+
+
 clean:
 	rm -f ${BINARYNAME}.hex
 	rm -f ${BINARYNAME}.disassemble.txt
