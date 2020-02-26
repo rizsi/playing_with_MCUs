@@ -8,8 +8,11 @@
 #define PIN_SPI_DATA 3
 #define MASK_CLK (1<<PIN_SPI_CLK)
 #define MASK_DATA (1<<PIN_SPI_DATA)
-#define SPI_WAITCYCLES 160
-#define N_CYCLE_SPI 727
+// Wait cycles after each bit: set up time for the client MCU for the receive of the next byte
+#define SPI_WAITCYCLES 16
+// Number of cycles to shift one bit 2 is minimal. 2 additional wait cycles are used to slow down the signal in current implementation
+#define SPI_BITCYCLES 4
+#define N_CYCLE_SPI (2+SPI_BITCYCLES*40+SPI_WAITCYCLES*4)
 // (151+144*5)
 
 static uint8_t sindex=0;

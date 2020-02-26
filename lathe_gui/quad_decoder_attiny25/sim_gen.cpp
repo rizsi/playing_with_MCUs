@@ -328,7 +328,7 @@ case 0xa0:
 case 0xa1:
 	if(AVR_ldi(ctx, 0xa1, /* K */0xa6, /* d */0x8) || ctx->breakpointActivated) break;	// ldi {K=10100110, d=1000} HEX:0xea86
 case 0xa2:
-	if(AVR_ldi(ctx, 0xa2, /* K */0xa0, /* d */0x2) || ctx->breakpointActivated) break;	// ldi {K=10100000, d=0010} HEX:0xea20
+	if(AVR_ldi(ctx, 0xa2, /* K */0x10, /* d */0x2) || ctx->breakpointActivated) break;	// ldi {K=00010000, d=0010} HEX:0xe120
 case 0xa3:
 	if(AVR_rjmp(ctx, 0xa3, /* k */0xf6c) || ctx->breakpointActivated) break;	// rjmp {k=111101101100} HEX:0xcf6c
 case 0xa4:
