@@ -175,7 +175,7 @@ static void shiftButtonsAndSegments()
 	DIGITS_LATCH_OFF();
 }
 
-inline static void sensor_readout_callback(uint8_t sensorIndex, int32_t data32, int8_t errorcode)
+inline static void sensor_readout_callback(uint8_t sensorIndex, int32_t data32, uint8_t errorcode, uint32_t zero)
 {
 	uint32_t time=timer1_GetCycles();
 	gui_updateInput(sensorIndex, data32, errorcode);

@@ -23,23 +23,11 @@
 // PB2(SS)  - Arduino 8 - must be pulled to NCS through a resistor!
 
 
-#define PORT_SPI PORTB
-#define DDR_SPI DDRB
 #define DD_MOSI 3
 #define DD_MISO 4
 #define DD_SCK 5
 #define DD_SS 2
 
-#define SS_PIN_IN(PINID) DDR_SPI&=~_BV(PINID); PORT_SPI&=~_BV(PINID)
-#define SS_PIN_IN_PULLUP(PINID) DDR_SPI&=~_BV(PINID); PORT_SPI|=_BV(PINID)
-#define SS_PIN_OUT(PINID) PORT_SPI&=~_BV(PINID); DDR_SPI|=_BV(PINID)
-#define SS_PIN_OUT_HIGH(PINID) PORT_SPI|=_BV(PINID); DDR_SPI|=_BV(PINID)
-
-#define SPI_SS_MASTER() SS_PIN_OUT_HIGH(DD_SS); SS_PIN_OUT(DD_MOSI); SS_PIN_OUT(DD_SCK); SS_PIN_IN(DD_MISO)
-#define SPI_SS_SLAVE() SS_PIN_IN(DD_SS);         SS_PIN_IN(DD_MOSI);  SS_PIN_IN_PULLUP(DD_SCK); SS_PIN_OUT(DD_MISO)
-
-#define NCS_SENSOR_OFF(index) PORTB|=_BV(0);DDRB|=_BV(0)
-#define NCS_SENSOR_ON(index) PORTB&=~_BV(0);DDRB|=_BV(0)
 
 static uint16_t counter;
 static uint32_t timeCounter;
@@ -189,7 +177,7 @@ static void timer1_cancelTimeout()
 }
 uint32_t prevv=0;
 static void doQuads(uint32_t n, int8_t dir);
-static void sensor_readout_callback(uint8_t sensorIndex, uint32_t data32, uint8_t err)
+static void sensor_readout_callback(uint8_t sensorIndex, uint32_t data32, uint8_t err, uint32_t zero)
 {
 	union
 	{
@@ -289,19 +277,10 @@ static void loop() {
     uint8_t v=UDR0;
     if(finished())
     {
+      UART0_Send('Y');
+      UART0_Send(v);
 	    switch(v)
 	    {
-/*	      case 'a': startQuads(32, 16, 1,   250000ul); break; // T=4us  250.000 periods, 500.000 interrupt per second - 1.000.000 signals per second
-	      case 'b': startQuads(64, 32, 1,   125000ul); break; //    250.000 interrupt per second -   500.000 signals per second
-
-	      case 'c': startQuads(32, 16, 1,   2500000ul); break; // T=4us  10 seconds
-	      case 'd': startQuads(64, 32, 1,   1250000ul); break; // T=8us  10 seconds
-	      case 'e': startQuads(64, 32, 64,   1ul); break; //    250.000 interrupt per second -   500.000 signals per second
-	      case 'f': startQuads(64, 32, 64,   2ul); break; //    250.000 interrupt per second -   500.000 signals per second
-	      case 'g': startQuads(64, 32, 64,   4ul); break; //    250.000 interrupt per second -   500.000 signals per second
-	      case 'h': startQuads(64, 32, 64,   8ul); break; //    250.000 interrupt per second -   500.000 signals per second
-	      case 'i': startQuads(64, 32, 64,   16ul); break; //    250.000 interrupt per second -   500.000 signals per second
-*/
 	      case 'a': doQuads(1ul, 1); break; //    1 full cycle
 	      case 'b': doQuads(2ul, 1); break; //    1 full cycle
 	      case 'c': doQuads(4ul, 1); break; //    1 full cycle
@@ -370,7 +349,16 @@ static void loop() {
 		NCS_SENSOR_OFF(0);
 	}
 */
-	sensor_readout(0);
+	uint16_t err=sensor_readout(0);
+	if(err!=0)
+	{
+		UART0_Send('x');
+		UART0_Send_uint32(err);
+		UART0_Send('\n');
+	}else
+	{
+//		UART0_Send('o');
+	}
 }
 
 static inline void setState(uint8_t st)
@@ -459,15 +447,12 @@ int main()
 {
 	UART_Init();
 	initTimer1();
-//	PORTB|=_BV(5);
-//	DDRB|=_BV(5);
 
 	PORTD&=~_BV(5);
 	PORTD&=~_BV(6);
 	DDRD|=_BV(5);
 	DDRD|=_BV(6);
 
-	SPI_SS_SLAVE();
 	sei();
 	while(1){
 		loop();

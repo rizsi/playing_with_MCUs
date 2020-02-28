@@ -4,14 +4,21 @@
 MCU = atmega328p
 MCU_DUDE = m328p
 BINARYNAME = lathe_atmega328
+RECEIVER_FOLDER = ../quad_decoder_attiny25_custom/receiver
+MHZ = 16mhz
+F_CPU = 16000000
+#DEBUG_PARAMS="-DDEBUG_EDGE_START=cbi _SFR_IO_ADDR(PINB),4" "-DDEBUG_EDGE_END=sbi _SFR_IO_ADDR(PINB),4"
+DEBUG_PARAMS="-DDEBUG_EDGE_START=" "-DDEBUG_EDGE_END="
 
-SRCS = bsp_atmega328.cpp ../gui/lathe_gui.cpp timer1.cpp debug_uart0.cpp
-INCLUDES = -I. -I../gui/
+
+SRCS = bsp_atmega328.cpp ../gui/lathe_gui.cpp timer1.cpp debug_uart0.cpp ${RECEIVER_FOLDER}/receiver.cpp
+ASM_SRCS = ${RECEIVER_FOLDER}/${MHZ}/SW_RX_1.S ${RECEIVER_FOLDER}/${MHZ}/SW_RX_2.S
+INCLUDES = -I. -I../gui/ -I${RECEIVER_FOLDER}/${MHZ}/ -I${RECEIVER_FOLDER}/
 
 all: ${BINARYNAME}.hex
 
 ${BINARYNAME}.hex: ${SRCS}
-	avr-gcc -o $(BINARYNAME).elf -mmcu=$(MCU) -O3 $(INCLUDES) -Wl,-Map,$(BINARYNAME).map $(SRCS)
+	avr-gcc -o $(BINARYNAME).elf -mmcu=$(MCU) -DF_CPU=${F_CPU} ${DEBUG_PARAMS} -O3 $(INCLUDES) -Wl,-Map,$(BINARYNAME).map $(SRCS) $(ASM_SRCS)
 	avr-objdump -S --disassemble $(BINARYNAME).elf >$(BINARYNAME).disassemble.txt
 	avr-objcopy -j .text -j .data -O ihex $(BINARYNAME).elf $(BINARYNAME).hex
 	avr-size -C --mcu=$(MCU) $(BINARYNAME).elf
