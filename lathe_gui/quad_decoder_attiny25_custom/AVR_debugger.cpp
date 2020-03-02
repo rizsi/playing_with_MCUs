@@ -10,6 +10,7 @@
 #define NSTEP 6
 #define STATUS_MASK_ERROR 1
 #define STATUS_MASK_ZERO 2
+// #define lo(X) (X&0xff)
 // (151+144*5)
 
 static uint8_t sindex=0;
@@ -242,7 +243,7 @@ int main (int argc, char ** argv)
 	executeOneCycle(&ctx);
 	inc[0]=1; inc[1]=1;inc[2]=1; inc[3]=1; inc[4]=1; inc[5]=1;
 	executeOneCycle(&ctx);
-	ASSERT(getCounterValue()==3, "increment is not counted on the same cycle when set up: %d ",getCounterValue());
+	ASSERT(getCounterValue()==3, "increment half counted on the same cycle when set up: %d ",getCounterValue());
 	executeOneCycle(&ctx);
 	ASSERT(getCounterValue()==9, "increment is only counted in every second cycle %d", getCounterValue());
 	executeOneCycle(&ctx);
@@ -289,11 +290,11 @@ int main (int argc, char ** argv)
 	nZero=0;
 	updatePins(&ctx);
 	// Test reading out counter while counting
-	testCommunication(2, 2, 39);	// Counter is latched after two cycles, zero is latched after 131 cycles
+	testCommunication(2, 2, 48);	// Counter is latched after two cycles, zero is latched after 131 cycles
 	ASSERT(getCounterValue()==N_CYCLE_RX+8, "Counter value: %d required: %d", getCounterValue(), N_CYCLE_RX+8);
-	for(uint32_t i=0;i<CODE_ENDS;++i)
+	for(uint32_t i=0;i<THIRD_256_ENDS;++i)
 	{
-		if((i>=CODE_ENDS&&i<0x100)||i>=0x200)
+		if((i>=FIRST_256_LAST&&i<0x200))
 		{
 			ASSERT_SILENT(!commandExecuted[i], "Unused command MUST NOT be executed at progmem index 0x%x", i);
 		}else
@@ -334,14 +335,14 @@ static void testCommunication(uint32_t counterValue, uint8_t errorValue, uint32_
 	ASSERT(counter==counterValue, "Counter value read correctly. Expected: %u (%x) value: %u (%x)", counterValue, counterValue, counter, counter);
 	ASSERT(error==errorValue, "Error value read correctly. Expected: %u value: %u", errorValue, error);
 	ASSERT(zero==zeroValue, "Zero value read correctly. Expected: %u (%x) value: %u (%x)", zeroValue, zeroValue, zero, zero);
-	ASSERT(getReg(ctx, 24)==COMM_STATE_FINISHED, "Communication state is COMM_STATE_FINISHED Actual: 0x%x", getReg(ctx, 24));
+	ASSERT(getReg(ctx, 24)==lo(COMM_STATE_FINISHED), "Communication state is COMM_STATE_FINISHED Actual: 0x%x", getReg(ctx, 24));
 	executeOneCycle(ctx);
 	ASSERT(getIO(ctx, DDRB)==0, "DDRB is turned off after communication + 2 cycles");
-	ASSERT(getReg(ctx, 24)==COMM_STATE_OFF, "Communication state is COMM_STATE_OFF 0x%x", getReg(ctx, 24));
+	ASSERT(getReg(ctx, 24)==lo(COMM_STATE_OFF), "Communication state is COMM_STATE_OFF 0x%x", getReg(ctx, 24));
 	for(uint32_t i=0;i<5;++i)
 	{
 		executeOneCycle(ctx);
-		ASSERT(getReg(ctx, 24)==COMM_STATE_OFF, "Communication state is off after communication and chip selectput to high 0x%x 0x%x (%d)", getReg(ctx, 24), getIO(ctx, PINB), i);
+		ASSERT(getReg(ctx, 24)==lo(COMM_STATE_OFF), "Communication state is off after communication and chip selectput to high 0x%x 0x%x (%d)", getReg(ctx, 24), getIO(ctx, PINB), i);
 	}
 	rxEnd();
 }

@@ -105,7 +105,6 @@ reset:
 	mov ZERO_2, ZH
 	mov ZERO_3, ZH
 
-	ldi ZH, 0x01	; ZH is used with this constant value
 	ldi COMMUNICATION_STATE, low(COMM_STATE_OFF)	; Initial communication state is OFF
 	ldi COUNTER_STATUS, 0
 	ldi CONST_MASK, 0b00000101	; Mask to find the signal AB bits
@@ -114,7 +113,7 @@ reset:
 	and PRSAMPLE0, CONST_MASK	; PRSAMPLE0 is always stored already masked format!
 	in PRSAMPLE1, PINB		; Initialize previous samples before first normal cycle
 	in PRSAMPLE2, PINB		; Initialize previous samples before first normal cycle
-	ldi ZH, 0b10			; ZH is 0b10 by default
+	ldi ZH, 0b10			; ZH is 0b10. LPM targets 0x100 and ijmp targets 0x200
 sample0a:
 comm_read:	; Ideal read time for communication sample
 loop:		; In every N cycle a sample is taken
@@ -147,7 +146,7 @@ process3samples_a:
 	movw ZERO_2, COUNTER32_2
 	sbr COUNTER_STATUS, COUNTER_STATUS_MASK_ZEROED
 no_zero_ret:
-	ldi ZH, 0	; Prepare comm ijmp
+	nop
 	mov ZL, COMMUNICATION_STATE
 sample2a:
 	in PRSAMPLE2, PINB
@@ -156,7 +155,8 @@ sample2a:
 no_zero:
 	rjmp no_zero_ret
 comm_ret:
-	ldi ZH, 0b10			; ZH is 0b10 by default
+	nop
+	nop
 sample0b:
 	in ZL, PINB
 	and PRSAMPLE1, CONST_MASK
@@ -218,12 +218,21 @@ sample2b_b:
 	nop
 	nop
 	rjmp loop
+FIRST_256_LAST:
+
+.org 0x100
+FIRST_256_ENDS:
+
+.nolist
+.include "quad_jumptable.inc"
+.list	; "quad_jumptable.inc" is hidden from the list output
 
 ; Communication states:
+
+.org 0x200
 COMM_STATE_OFF:	; OFF - See if comm is initiated otherwise keep COMMunication off
 	SBRS PRSAMPLE2, PIN_INDEX_NCS
 	ldi COMMUNICATION_STATE, low(COMM_STATE_START_BY_NCOMM)
-	nop
 	nop
 	nop
 	nop
@@ -235,7 +244,6 @@ COMM_STATE_START_BY_NCOMM:	; Communication is started by pulling NCOMM to 0. Wai
 	nop
 	nop
 	nop
-	nop
 	rjmp comm_ret
 
 COMM_STATE_START:	; START - store current value
@@ -244,7 +252,6 @@ COMM_STATE_START:	; START - store current value
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTE_0)
 	out PORTB, CONST_COMM_HIGH	; Drive COMM line
 	out DDRB, CONST_COMM_HIGH
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTE_0:	; Send byte 0
@@ -252,7 +259,6 @@ COMM_STATE_BYTE_0:	; Send byte 0
 ;	ldi BYTESHIFT_VALUE, 0b10101010
 	ldi BYTESHIFT_RET, low(COMM_STATE_BYTE_1)
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_0)
-	nop
 	nop
 	nop
 	rjmp comm_ret
@@ -263,14 +269,12 @@ COMM_STATE_BYTE_1:
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_0)
 	nop
 	nop
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTE_2:
 	mov BYTESHIFT_VALUE, COMM_COUNTER32_2
 	ldi BYTESHIFT_RET, low(COMM_STATE_BYTE_3)
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_0)
-	nop
 	nop
 	nop
 	rjmp comm_ret
@@ -281,7 +285,6 @@ COMM_STATE_BYTE_3:
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_0)
 	nop
 	nop
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTE_4:
@@ -289,24 +292,21 @@ COMM_STATE_BYTE_4:
 	ldi COUNTER_STATUS, 0
 	ldi BYTESHIFT_RET, low(COMM_STATE_BYTE_5)
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_0)
-	movw	COMM_COUNTER32_0, ZERO_0
-	movw	COMM_COUNTER32_2, ZERO_2
+	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTE_5:	; ZERO - store current value
+	movw	COMM_COUNTER32_0, ZERO_0
+	movw	COMM_COUNTER32_2, ZERO_2
 	mov BYTESHIFT_VALUE, COMM_COUNTER32_0
 	ldi BYTESHIFT_RET, low(COMM_STATE_BYTE_6)
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_0)
-	nop
-	nop
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTE_6:
 	mov BYTESHIFT_VALUE, COMM_COUNTER32_1
 	ldi BYTESHIFT_RET, low(COMM_STATE_BYTE_7)
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_0)
-	nop
 	nop
 	nop
 	rjmp comm_ret
@@ -317,14 +317,12 @@ COMM_STATE_BYTE_7:
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_0)
 	nop
 	nop
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTE_8:
 	mov BYTESHIFT_VALUE, COMM_COUNTER32_3
 	ldi BYTESHIFT_RET, low(COMM_STATE_FINISHED)
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_0)
-	nop
 	nop
 	nop
 	rjmp comm_ret
@@ -335,7 +333,6 @@ COMM_STATE_FINISHED:
 	ldi COMMUNICATION_STATE, low(COMM_STATE_OFF)
 	nop
 	nop
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTESHIFT_0:
@@ -344,7 +341,6 @@ COMM_STATE_BYTESHIFT_0:
 	sbrs BYTESHIFT_VALUE, 0
 	ldi BYTESHIFT_NEXT, OUT_MASK_COMM_HIGH
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_1)
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTESHIFT_1:
@@ -353,7 +349,6 @@ COMM_STATE_BYTESHIFT_1:
 	sbrs BYTESHIFT_VALUE, 1
 	ldi BYTESHIFT_NEXT, OUT_MASK_COMM_HIGH
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_2)
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTESHIFT_2:
@@ -362,7 +357,6 @@ COMM_STATE_BYTESHIFT_2:
 	sbrs BYTESHIFT_VALUE, 2
 	ldi BYTESHIFT_NEXT, OUT_MASK_COMM_HIGH
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_3)
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTESHIFT_3:
@@ -371,7 +365,6 @@ COMM_STATE_BYTESHIFT_3:
 	sbrs BYTESHIFT_VALUE, 3
 	ldi BYTESHIFT_NEXT, OUT_MASK_COMM_HIGH
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_4)
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTESHIFT_4:
@@ -380,7 +373,6 @@ COMM_STATE_BYTESHIFT_4:
 	sbrs BYTESHIFT_VALUE, 4
 	ldi BYTESHIFT_NEXT, OUT_MASK_COMM_HIGH
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_5)
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTESHIFT_5:
@@ -389,7 +381,6 @@ COMM_STATE_BYTESHIFT_5:
 	sbrs BYTESHIFT_VALUE, 5
 	ldi BYTESHIFT_NEXT, OUT_MASK_COMM_HIGH
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_6)
-	nop
 	rjmp comm_ret
 
 COMM_STATE_BYTESHIFT_6:
@@ -398,7 +389,6 @@ COMM_STATE_BYTESHIFT_6:
 	sbrs BYTESHIFT_VALUE, 6
 	ldi BYTESHIFT_NEXT, OUT_MASK_COMM_HIGH
 	ldi COMMUNICATION_STATE, low(COMM_STATE_BYTESHIFT_7)
-	nop
 	rjmp comm_ret
 COMM_STATE_BYTESHIFT_7:
 	out PORTB, CONST_ZERO ; Pull to 0
@@ -406,12 +396,8 @@ COMM_STATE_BYTESHIFT_7:
 	sbrs BYTESHIFT_VALUE, 7
 	ldi BYTESHIFT_NEXT, OUT_MASK_COMM_HIGH
 	mov COMMUNICATION_STATE, BYTESHIFT_RET
-	nop
 	rjmp comm_ret
 
-CODE_ENDS:
-
-.nolist
-.include "quad_jumptable.inc"
-.list	; "quad_jumptable.inc" is hidden from the list output
+THIRD_256_ENDS:
+.org 0x300
 

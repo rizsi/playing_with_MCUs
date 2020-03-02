@@ -17,7 +17,7 @@ test_program: sim_gen.cpp AVR_simulator.cpp AVR_debugger.cpp
 
 # Processs hex file to generate executable simulator CPP code
 sim_gen.cpp: ${TARGET}.hex
-	java -jar ~/vboxshared/other/AVR-tools.jar avr-sim -hex quad_decoder.hex --dataSegmentLabel CODE_ENDS
+	java -jar ~/vboxshared/other/AVR-tools.jar avr-sim -hex quad_decoder.hex --dataSegmentLabels FIRST_256_ENDS-COMM_STATE_OFF
 
 quad_jumptable.inc: ~/vboxshared/other/AVR-tools.jar
 	java -jar ~/vboxshared/other/AVR-tools.jar generateSamplesDecoder > quad_jumptable.inc
