@@ -6,7 +6,7 @@
 #define PIN_NCS 1
 #define MASK_RX (1<<PIN_NCS)
 #define ZERO_MASK (1<<3)
-#define N_CYCLE_RX 82
+#define N_CYCLE_RX 83
 #define NSTEP 6
 #define STATUS_MASK_ERROR 1
 #define STATUS_MASK_ZERO 2
