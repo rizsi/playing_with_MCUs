@@ -18,16 +18,6 @@
 typedef uint16_t (*fun)();
 
 #define rec()
-/* TODO remove - see timing of failure
-#define HANDLE_ERR(index) \
-if(high(v)!=0) \
-	{ \
-		PORTB&=~4; \
-		_delay_us(10); \
-		PORTB|=4;	 \
-		return combine16(high(v), index); \
-	} 
-*/
 
 #define HANDLE_ERR(index) \
 if(high(v)!=0) \
@@ -40,8 +30,7 @@ uint16_t quad_receive(uint8_t index, quad_receiver_t * ret)
 	fun f;
 	uint16_t v;
 #ifdef DEBUG_EDGE_START
-	PORTB|=4;	// Debug pin output high
-	DDRB|=4;
+	DDRB|=_BV(2); // Debug pin output
 #endif
 	cli();
 	switch(index)

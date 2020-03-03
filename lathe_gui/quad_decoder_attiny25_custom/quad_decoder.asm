@@ -119,6 +119,7 @@ sample0a:
 comm_read:	; Ideal read time for communication sample
 loop:		; In every N cycle a sample is taken
 	in ZL, PINB
+	out PORTB, CONST_COMM_HIGH
 	; Process 5 consecutive samples with 4 possible increments. After reading PRSAMPLE0 the latest sample is stored into PRSAMPLE0
 	; Prepare jump value: combine 4*2 sample into a single byte that is a jumptable address
 	; and PRSAMPLE0, CONST_MASK ALREADY MASKED!
@@ -132,13 +133,12 @@ loop:		; In every N cycle a sample is taken
 
 	swap PRSAMPLE1
 	lsl PRSAMPLE2
-	or ZL, PRSAMPLE2
 	or ZL, PRSAMPLE1
 
 	ldi BYTESHIFT_NEXT, OUT_MASK_COMM_HIGH  ; Reset BYTESHIFT_NEXT value after used
 sample1a:
 	in PRSAMPLE1, PINB	; We are at 12 cycles: read a sample
-	out PORTB, CONST_COMM_HIGH
+	or ZL, PRSAMPLE2
 process3samples_a:
 	lpm ADD_CYCLE0, Z			; Cycles: 3
 	sbrc PRSAMPLE1, PIN_ZERO_IN		; Do not update zero reg if not
@@ -173,7 +173,7 @@ sample0b:
 	lsl PRSAMPLE2
 	or ZL, PRSAMPLE2
 	or ZL, PRSAMPLE1
-	nop
+	out PORTB, BYTESHIFT_NEXT
 sample1b:
 	in PRSAMPLE1, PINB	; We are at 12 cycles: read a sample
 process3samples_b:
@@ -188,7 +188,7 @@ process3samples_b:
 	ldi ADD_CYCLE1, 0
 sample2b:
 	in PRSAMPLE2, PINB
-	out PORTB, BYTESHIFT_NEXT
+	nop
 	add COUNTER32_0, ADD_CYCLE0
 	adc COUNTER32_1, ADD_CYCLE1
 	adc COUNTER32_2, ADD_CYCLE1
@@ -209,7 +209,7 @@ sample_error1:
 	nop
 sample2b_b:
 	in PRSAMPLE2, PINB
-	out PORTB, BYTESHIFT_NEXT
+	nop
 	sbr COUNTER_STATUS, COUNTER_STATUS_MASK_ERROR
 	nop
 	nop

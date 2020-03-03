@@ -7,8 +7,8 @@ BINARYNAME = quad_signalGenerator
 RECEIVER_FOLDER = ../../quad_decoder_attiny25_custom/receiver
 MHZ = 16mhz
 F_CPU = 16000000
-#DEBUG_PARAMS="-DDEBUG_EDGE_START=cbi _SFR_IO_ADDR(PINB),4" "-DDEBUG_EDGE_END=sbi _SFR_IO_ADDR(PINB),4"
-DEBUG_PARAMS="-DDEBUG_EDGE_START=" "-DDEBUG_EDGE_END="
+## Uncomment DEBUG_PARAMS so that on the receiver side the signal processing main time points are pushed out onto a debug output
+#DEBUG_PARAMS="-DDEBUG_EDGE_START_WAIT=cbi _SFR_IO_ADDR(PORTB),2" "-DDEBUG_EDGE_PRELLWAIT=sbi _SFR_IO_ADDR(PORTB),2" "-DDEBUG_EDGE_START=cbi _SFR_IO_ADDR(PORTB),2" "-DDEBUG_EDGE_END=sbi _SFR_IO_ADDR(PORTB),2"
 
 
 SRCS = quad_signalGenerator.cpp ${RECEIVER_FOLDER}/receiver.cpp

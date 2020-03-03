@@ -8,22 +8,18 @@
 	.type	SW_RX_2_receiveByte, @function
 SW_RX_2_receiveByte:
 	ldi r23, 8
+	ldi r24, 0
 	ldi r25, 0
 loop:
-	lsr r25
-	rcall receiveBit
-	cpi r24, 2
-	breq err
-	or r25, r24
+	lsr r24
+	rjmp receiveBit
+receiveBit_ret:
 	dec r23
 	brne loop
-
-	mov r24, r25
-	ldi r25, 0
 	ret
 	
-err:
-	ldi 25, 1
+receiveBit_err:
+	mov r25, r24
 	swap r23
 	or r25, r23	; High hex digit shows index of failing bit
 	ldi 24, 0
@@ -31,11 +27,12 @@ err:
 .size	SW_RX_2_receiveByte, .-SW_RX_2_receiveByte
 	
 
-
-;
 ; * Receive 1 bit
-; * @return single byte: 0:0 0b1000000:1 2:error - no start bit detected within timeout
+; * @return r24 is untouched if received 0, highest bit is set otherwise. load error code to r24 and jump to receiveBit_err in case of error
 receiveBit:
+	#if defined(DEBUG_EDGE_START_WAIT)
+	DEBUG_EDGE_START_WAIT
+	#endif
 	; Wait for "start bit" low
 	sbis _SFR_IO_ADDR(PIND), 4	; 0
 	rjmp receiveBit_prellWait
@@ -399,21 +396,12 @@ receiveBit:
 	rjmp receiveBit_prellWait
 receiveBit_timeout_start:
 	ldi r24, 2
-	ret
+	rjmp receiveBit_err
 	
 receiveBit_prellWait:
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
+	#if defined(DEBUG_EDGE_PRELLWAIT)
+	DEBUG_EDGE_PRELLWAIT
+	#endif
 	nop
 	nop
 	nop
@@ -421,43 +409,157 @@ receiveBit_prellWait:
 
 receiveBit_started:
 ; Debug receiving timing - can be used to inject a edge generating command. Must be defined to empty otherwise
+	#if defined(DEBUG_EDGE_START)
 	DEBUG_EDGE_START
+	#endif
 	; Wait for end of strobe - high
 	sbic _SFR_IO_ADDR(PIND), 4	; 0
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 1
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 2
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 3
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 4
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 5
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 6
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 7
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 8
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 9
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 10
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 	sbic _SFR_IO_ADDR(PIND), 4	; 11
-	rjmp receiveBit0
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
+	sbic _SFR_IO_ADDR(PIND), 4	; 12
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
+	sbic _SFR_IO_ADDR(PIND), 4	; 13
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
+	sbic _SFR_IO_ADDR(PIND), 4	; 14
+	rjmp receiveBit0	; We could jump directly to receiveBit_ret when not DEBUG but it is unnecessary because this is the faster path
 
+waitStopBit:
+	sbr r24, 0b10000000	; Set return value which is already known Wait after setting value so we potentially spare a cycle after wait
+	; Wait for stop bit up edge
+	sbic _SFR_IO_ADDR(PIND), 4	; 0
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 1
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 2
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 3
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 4
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 5
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 6
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 7
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 8
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 9
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 10
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+	sbic _SFR_IO_ADDR(PIND), 4	; 11
+#ifndef DEBUG_EDGE_END
+	rjmp receiveBit_ret ; if marker debug is disabled then we can return here: additional 2 cycles spared!
+#endif
+	
+#ifdef DEBUG_EDGE_END
+	rjmp receiveBit1	; if marker debug is enabled then we have to jump to a handler: additional 2 cycles lost!
+#endif
+
+stopBitTimeout:
+	ldi r24, 1
+	rjmp receiveBit_err
+
+#ifdef DEBUG_EDGE_END
 receiveBit1:
 ; Debug receiving timing - can be used to inject a edge generating command. Must be defined to empty otherwise
 	DEBUG_EDGE_END
-	ldi r24, 0b10000000
-	ret
+	rjmp receiveBit_ret
+#endif
 
 receiveBit0:
 ; Debug receiving timing - can be used to inject a edge generating command. Must be defined to empty otherwise
+#ifdef DEBUG_EDGE_END
 	DEBUG_EDGE_END
-	ldi r24, 0
-	ret
+#endif
+	rjmp receiveBit_ret
 	.size	receiveBit, .-receiveBit
 
