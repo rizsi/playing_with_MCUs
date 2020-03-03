@@ -12,12 +12,11 @@ uint16_t sensor_readout(uint8_t sensorIndex)
 	uint16_t err=quad_receive(sensorIndex, &q);
 	if(err!=0)
 	{
-		// Error
+		// Error wait until the communication line is released by sender if communication has started.
 		_delay_ms(2);
 		return err;
 	}
 	sensor_readout_callback(sensorIndex, q.count, q.status, q.zero);
-	_delay_ms(2);
 	return 0;
 }
 
