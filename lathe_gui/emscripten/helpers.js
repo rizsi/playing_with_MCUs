@@ -7,7 +7,24 @@ function buttonHandler(elementId, cIndex)
 		buttonPressed(this.cIndex);
 	}.bind(ctx)); 
 }
-
+class Leds {
+  constructor() {
+    this.state=0;
+    this.leds=[];
+  }
+  add(led) {
+    this.leds.push(led);
+    return this;
+  }
+  setPattern(pattern)
+  {
+	for(var i in this.leds)
+	{
+		this.leds[i].setPattern(pattern&1);
+		pattern>>=1;
+	}
+  }
+}
 class Led {
   constructor(domObject) {
     this.domObject = domObject;

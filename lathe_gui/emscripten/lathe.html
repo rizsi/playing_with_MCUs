@@ -40,6 +40,12 @@ Hossz érzékelő:
  min="0" max="2000" step="1" value="1000" />
 	</div>
   <div class="row">
+	<div class="solid" style="flex:20%">
+		Szerszam:
+		<span id="digitsSzerszam"></span>
+	</div>
+  </div>
+  <div class="row">
 	<div class="solid column">
 		<div class="title">Ütköztetés Kereszt</div>
 		  <div style="flex: 20%">
@@ -103,11 +109,14 @@ Hossz érzékelő:
 	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesKereszt"), 50,100, 6, digits);
 	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesHossz"), 50,100, 6, digits);
 	createSevenSegmentDigits(document.getElementById("digitMode"), 50,100, 1, digits);
-	digits.push(new Led(document.getElementById("ledUtkoztetesKereszt")));
-	digits.push(new Led(document.getElementById("ledUtkoztetesHossz")));
-	digits.push(new Led(document.getElementById("ledTransistorKereszt")));
-	digits.push(new Led(document.getElementById("ledInputKereszt")));
-	digits.push(new Led(document.getElementById("ledInputHossz")));
+	createSevenSegmentDigits(document.getElementById("digitsSzerszam"), 50,100, 2, digits);
+	digits.push(new Leds()
+		.add(new Led(document.getElementById("ledUtkoztetesKereszt")))
+		.add(new Led(document.getElementById("ledUtkoztetesHossz")))
+		.add(new Led(document.getElementById("ledTransistorKereszt")))
+		.add(new Led(document.getElementById("ledInputKereszt")))
+		.add(new Led(document.getElementById("ledInputHossz")))
+		);
 
 	buttonHandler("pad-left-1", 1);
 	buttonHandler("pad-left-2", 2);

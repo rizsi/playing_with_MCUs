@@ -48,23 +48,23 @@ case 0x14:
 case 0x15:
 	if(AVR_in(ctx, 0x15, /* A */0x16, /* d */0x1e) || ctx->breakpointActivated) break;	// in {A=010110, d=11110} HEX:0xb3e6
 case 0x16:
-	if(AVR_and(ctx, 0x16, /* d */0xb, /* r */0x10) || ctx->breakpointActivated) break;	// and {d=01011, r=10000} HEX:0x22b0
+	if(AVR_out(ctx, 0x16, /* A */0x18, /* r */0x1) || ctx->breakpointActivated) break;	// out {A=011000, r=00001} HEX:0xba18
 case 0x17:
-	if(AVR_and(ctx, 0x17, /* d */0xc, /* r */0x10) || ctx->breakpointActivated) break;	// and {d=01100, r=10000} HEX:0x22c0
+	if(AVR_and(ctx, 0x17, /* d */0xb, /* r */0x10) || ctx->breakpointActivated) break;	// and {d=01011, r=10000} HEX:0x22b0
 case 0x18:
-	if(AVR_and(ctx, 0x18, /* d */0x1e, /* r */0x10) || ctx->breakpointActivated) break;	// and {d=11110, r=10000} HEX:0x23e0
+	if(AVR_and(ctx, 0x18, /* d */0xc, /* r */0x10) || ctx->breakpointActivated) break;	// and {d=01100, r=10000} HEX:0x22c0
 case 0x19:
-	if(AVR_add(ctx, 0x19, /* d */0xb, /* r */0xb) || ctx->breakpointActivated) break;	// add {d=01011, r=01011} HEX:0xcbb
+	if(AVR_and(ctx, 0x19, /* d */0x1e, /* r */0x10) || ctx->breakpointActivated) break;	// and {d=11110, r=10000} HEX:0x23e0
 case 0x1a:
-	if(AVR_or(ctx, 0x1a, /* d */0xb, /* r */0xa) || ctx->breakpointActivated) break;	// or {d=01011, r=01010} HEX:0x28ba
+	if(AVR_add(ctx, 0x1a, /* d */0xb, /* r */0xb) || ctx->breakpointActivated) break;	// add {d=01011, r=01011} HEX:0xcbb
 case 0x1b:
-	if(AVR_mov(ctx, 0x1b, /* d */0xa, /* r */0x1e) || ctx->breakpointActivated) break;	// mov {d=01010, r=11110} HEX:0x2eae
+	if(AVR_or(ctx, 0x1b, /* d */0xb, /* r */0xa) || ctx->breakpointActivated) break;	// or {d=01011, r=01010} HEX:0x28ba
 case 0x1c:
-	if(AVR_swap(ctx, 0x1c, /* d */0xb) || ctx->breakpointActivated) break;	// swap {d=01011} HEX:0x94b2
+	if(AVR_mov(ctx, 0x1c, /* d */0xa, /* r */0x1e) || ctx->breakpointActivated) break;	// mov {d=01010, r=11110} HEX:0x2eae
 case 0x1d:
-	if(AVR_add(ctx, 0x1d, /* d */0xc, /* r */0xc) || ctx->breakpointActivated) break;	// add {d=01100, r=01100} HEX:0xccc
+	if(AVR_swap(ctx, 0x1d, /* d */0xb) || ctx->breakpointActivated) break;	// swap {d=01011} HEX:0x94b2
 case 0x1e:
-	if(AVR_or(ctx, 0x1e, /* d */0x1e, /* r */0xc) || ctx->breakpointActivated) break;	// or {d=11110, r=01100} HEX:0x29ec
+	if(AVR_add(ctx, 0x1e, /* d */0xc, /* r */0xc) || ctx->breakpointActivated) break;	// add {d=01100, r=01100} HEX:0xccc
 case 0x1f:
 	if(AVR_or(ctx, 0x1f, /* d */0x1e, /* r */0xb) || ctx->breakpointActivated) break;	// or {d=11110, r=01011} HEX:0x29eb
 case 0x20:
@@ -72,7 +72,7 @@ case 0x20:
 case 0x21:
 	if(AVR_in(ctx, 0x21, /* A */0x16, /* d */0xb) || ctx->breakpointActivated) break;	// in {A=010110, d=01011} HEX:0xb2b6
 case 0x22:
-	if(AVR_out(ctx, 0x22, /* A */0x18, /* r */0x1) || ctx->breakpointActivated) break;	// out {A=011000, r=00001} HEX:0xba18
+	if(AVR_or(ctx, 0x22, /* d */0x1e, /* r */0xc) || ctx->breakpointActivated) break;	// or {d=11110, r=01100} HEX:0x29ec
 case 0x23:
 	if(AVR_lpm(ctx, 0x23, /* d */0x14, /* i */0x0) || ctx->breakpointActivated) break;	// lpm {d=10100, i=0} HEX:0x9144
 case 0x24:
@@ -124,7 +124,7 @@ case 0x3a:
 case 0x3b:
 	if(AVR_or(ctx, 0x3b, /* d */0x1e, /* r */0xb) || ctx->breakpointActivated) break;	// or {d=11110, r=01011} HEX:0x29eb
 case 0x3c:
-	if(AVR_nop(ctx, 0x3c) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
+	if(AVR_out(ctx, 0x3c, /* A */0x18, /* r */0x16) || ctx->breakpointActivated) break;	// out {A=011000, r=10110} HEX:0xbb68
 case 0x3d:
 	if(AVR_in(ctx, 0x3d, /* A */0x16, /* d */0xb) || ctx->breakpointActivated) break;	// in {A=010110, d=01011} HEX:0xb2b6
 case 0x3e:
@@ -148,7 +148,7 @@ case 0x46:
 case 0x47:
 	if(AVR_in(ctx, 0x47, /* A */0x16, /* d */0xc) || ctx->breakpointActivated) break;	// in {A=010110, d=01100} HEX:0xb2c6
 case 0x48:
-	if(AVR_out(ctx, 0x48, /* A */0x18, /* r */0x16) || ctx->breakpointActivated) break;	// out {A=011000, r=10110} HEX:0xbb68
+	if(AVR_nop(ctx, 0x48) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0x49:
 	if(AVR_add(ctx, 0x49, /* d */0x1a, /* r */0x14) || ctx->breakpointActivated) break;	// add {d=11010, r=10100} HEX:0xfa4
 case 0x4a:
@@ -180,7 +180,7 @@ case 0x56:
 case 0x57:
 	if(AVR_in(ctx, 0x57, /* A */0x16, /* d */0xc) || ctx->breakpointActivated) break;	// in {A=010110, d=01100} HEX:0xb2c6
 case 0x58:
-	if(AVR_out(ctx, 0x58, /* A */0x18, /* r */0x16) || ctx->breakpointActivated) break;	// out {A=011000, r=10110} HEX:0xbb68
+	if(AVR_nop(ctx, 0x58) || ctx->breakpointActivated) break;	// nop {} HEX:0x0
 case 0x59:
 	if(AVR_sbr(ctx, 0x59, /* K */0x1, /* d */0x1) || ctx->breakpointActivated) break;	// sbr {K=00000001, d=0001} HEX:0x6011
 case 0x5a:

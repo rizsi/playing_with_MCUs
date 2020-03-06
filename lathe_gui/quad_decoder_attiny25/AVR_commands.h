@@ -40,3 +40,6 @@ extern bool AVR_brge(AVR_simulator_t * ctx, uint32_t pc, uint32_t k);
 extern bool AVR_inc(AVR_simulator_t * ctx, uint32_t pc, uint8_t d);
 extern bool AVR_dec(AVR_simulator_t * ctx, uint32_t pc, uint8_t d);
 extern bool AVR_cpi(AVR_simulator_t * ctx, uint32_t pc, uint8_t K, uint8_t d);
+extern bool AVR_lpmr0(AVR_simulator_t * ctx, uint32_t pc);
+extern bool AVR_lpm(AVR_simulator_t * ctx, uint32_t pc, uint8_t d, uint8_t i);
+extern bool AVR_sbr(AVR_simulator_t * ctx, uint32_t pc, uint8_t K, uint8_t d);

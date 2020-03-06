@@ -46,6 +46,12 @@ static void showNumberUnsigned(uint8_t target, uint8_t length, int32_t value, ui
  * @param dot boolean value true means the dot is lighted up
  */
 static void setDigit(uint8_t target, uint8_t value, bool dot);
+/**
+ * Set LED state.
+ * @param ledIndex index of LED
+ * @param value true light on
+ */
+static void setLed(uint16_t ledIndex, bool value);
 
 /**
  * Query if value was crossed if we have the prev and next value.
@@ -101,17 +107,17 @@ void gui_loop(uint32_t currentTimeMillis)
 	}
 	showNumber(DIGITS_K_INDEX, DIGITS_K_N, value, 1<<2);
 	showNumber(DIGITS_H_INDEX, DIGITS_H_N, inputValues[1]+diffValues[1], 1<<2);
-	setDigit(LED_INDEX_UTKOZO_K, 'a', utkozo_setup[0].state==1?true:(editFocus==EDIT_UTKOZO_KERESZT?villogas:false)); // LED kereszt
-	setDigit(LED_INDEX_UTKOZO_H, 'a', utkozo_setup[1].state==1?true:(editFocus==EDIT_UTKOZO_HOSSZ?villogas:false)); // LED hossz
+	setLed(LED_INDEX_UTKOZO_K, utkozo_setup[0].state==1?true:(editFocus==EDIT_UTKOZO_KERESZT?villogas:false)); // LED kereszt
+	setLed(LED_INDEX_UTKOZO_H, utkozo_setup[1].state==1?true:(editFocus==EDIT_UTKOZO_HOSSZ?villogas:false)); // LED hossz
 	if(utkozo_active.transistor && currentTimeMillis>utkozo_active.at+500)
 	{
 		utkozo_active.transistor=false;
 	}
-	setDigit(LED_INDEX_TRANSISTOR, 'a', utkozo_active.transistor); // transistor
+	setLed(LED_INDEX_TRANSISTOR, utkozo_active.transistor); // transistor
 
 
-	setDigit(LED_INDEX_K, 'a', editFocus==EDIT_MEASURED_KERESZT?villogas:false); // LED edit kereszt measured
-	setDigit(LED_INDEX_H, 'a', editFocus==EDIT_MEASURED_HOSSZ?villogas:false); // LED edit kereszt measured
+	setLed(LED_INDEX_K, editFocus==EDIT_MEASURED_KERESZT?villogas:false); // LED edit kereszt measured
+	setLed(LED_INDEX_H, editFocus==EDIT_MEASURED_HOSSZ?villogas:false); // LED edit kereszt measured
 
 	// TODO debug remove
 //	showNumberUnsigned(3, 3, lastButtonPressed, false);
@@ -329,7 +335,27 @@ void setDigit(uint8_t target, uint8_t value, bool dot)
 	{
 		pattern |= 0b10000000;
 	}
-	segmentValues[target]=pattern;
+	if(target<DIGITS_END_INDEX)
+	{
+		segmentValues[target]=pattern;
+	}
+}
+static void setLed(uint16_t ledIndex, bool value)
+{
+	uint8_t target=ledIndex/8;
+	uint8_t bitIndex=ledIndex%8;
+	uint8_t mask=1<<bitIndex;
+	if(target>=DIGITS_END_INDEX && target<NUMBER_DISPLAY_ALLBYTES)
+	{
+		if(value)
+		{
+			segmentValues[target]|=mask;
+		}
+		else
+		{
+			segmentValues[target]&=~mask;
+		}
+	}
 }
 
 static void setUtkozoValue(uint8_t counterIndex, int32_t value)

@@ -19,8 +19,9 @@ test_program: sim_gen.cpp AVR_simulator.cpp AVR_debugger.cpp
 sim_gen.cpp: ${TARGET}.hex
 	java -jar ~/vboxshared/other/AVR-tools.jar avr-sim -hex quad_decoder.hex
 
-quad_jumptable.inc: ~/vboxshared/other/AVR-tools.jar
-	java -jar ~/vboxshared/other/AVR-tools.jar generateSamplesDecoder > quad_jumptable.inc
+# We do not regenerate it any more once it is good.
+#quad_jumptable.inc: ~/vboxshared/other/AVR-tools.jar
+#	java -jar ~/vboxshared/other/AVR-tools.jar generateSamplesDecoder > quad_jumptable.inc
 
 #all: ${TARGET}.hex
 

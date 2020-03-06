@@ -9,7 +9,9 @@ SRCS = quad_decoder.asm
 
 all: test
 
-test: test_program
+test: test_report.txt
+
+test_report.txt: test_program
 	./test_program > test_report.txt
 
 test_program: sim_gen.cpp AVR_simulator.cpp AVR_debugger.cpp
@@ -38,4 +40,5 @@ fuse:
 
 clean:
 	rm -f *.hex *.obj *.cof *.lst
+	rm -rf test_report.txt
 
