@@ -7,6 +7,15 @@ function buttonHandler(elementId, cIndex)
 		buttonPressed(this.cIndex);
 	}.bind(ctx)); 
 }
+function signalHandler(elementId, cIndex)
+{
+	var dom=document.getElementById(elementId);
+	var ctx={};
+	ctx.cIndex=cIndex;
+	dom.addEventListener("click", function(){
+		signalEvent(this.cIndex);
+	}.bind(ctx)); 
+}
 class Leds {
   constructor() {
     this.state=0;

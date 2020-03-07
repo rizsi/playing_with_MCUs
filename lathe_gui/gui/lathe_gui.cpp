@@ -1,13 +1,24 @@
 #include <lathe_gui.h>
 #include <bsp.h>
 
+#include <stdio.h>
+
+#define STATE_UNINITIALIZED 0
+#define STATE_UNCALIBRATED 1
+#define STATE_CALIBRATED 2
+#define N_SZERSZAM 10
+
 utkozo_setup_t utkozo_setup[2];
 utkozo_active_t utkozo_active;
 
 uint8_t segmentValues[NUMBER_DISPLAY_ALLBYTES];
 int32_t inputValues[2];
+int32_t inputValuesCalibration[2];
+int32_t szerszamValue[N_SZERSZAM];
+bool inputValuesValidState[2];
 int32_t diffValues[2];
 uint8_t mode=1; // 0:d (*2) 1:r
+uint8_t szerszam=0;
 uint16_t debugInput=0;
 
 
@@ -47,12 +58,19 @@ static void showNumberUnsigned(uint8_t target, uint8_t length, int32_t value, ui
  */
 static void setDigit(uint8_t target, uint8_t value, bool dot);
 /**
+ * Directly set the pattern of a digit.
+ */
+static void setDigitPattern(uint8_t target, uint8_t pattern);
+/**
  * Set LED state.
  * @param ledIndex index of LED
  * @param value true light on
  */
 static void setLed(uint16_t ledIndex, bool value);
-
+/**
+ * Save all settings to EEPROM memory.
+ */
+static void saveSettings();
 /**
  * Query if value was crossed if we have the prev and next value.
  */
@@ -72,7 +90,29 @@ static void fireUtkozo(uint8_t index)
 	utkozo_active.at=getCurrentTimeMillis();
 	utkozo_active.transistor=true;
 }
-
+static void saveSettings()
+{
+	uint8_t asFile[N_SZERSZAM*4+1];
+	for(uint8_t i=0;i<N_SZERSZAM;++i)
+	{
+		*((int32_t *)(&asFile[i*4]))=szerszamValue[i];
+	}
+	asFile[N_SZERSZAM*4]=mode;
+	saveData(asFile, N_SZERSZAM*4+1);
+}
+static void loadSettings()
+{
+	uint8_t asFile[N_SZERSZAM*4+1];
+	if(loadData(asFile, N_SZERSZAM*4+1))
+	{
+		for(uint8_t i=0;i<N_SZERSZAM;++i)
+		{
+			szerszamValue[i]=*((int32_t *)(&asFile[i*4]));
+		}
+		mode=asFile[N_SZERSZAM*4];
+		if(mode>1){ mode=1; }
+	}
+}
 void gui_init()
 {
 	utkozo_setup[0].state=0;
@@ -88,13 +128,22 @@ void gui_setup()
 {
 	diffValues[0]=0;
 	diffValues[1]=0;
+	inputValuesValidState[0]=STATE_UNINITIALIZED;
+	inputValuesValidState[1]=STATE_UNINITIALIZED;
+	inputValuesCalibration[0]=0;
+	inputValuesCalibration[1]=0;
+	for(uint8_t i=0;i<N_SZERSZAM;++i)
+	{
+		szerszamValue[i]=0;
+	}
+	loadSettings();
 }
 
 void gui_loop(uint32_t currentTimeMillis)
 {
 	bool villogas=currentTimeMillis%256>128;
 	counter++;
-	showNumber(DIGITS_UTKOZO_K_INDEX, DIGITS_UTKOZO_K_N, utkozo_setup[0].value*(mode==0?2:1), 1<<2);
+	showNumber(DIGITS_UTKOZO_K_INDEX, DIGITS_UTKOZO_K_N, utkozo_setup[0].value, 1<<2);
 	showNumber(DIGITS_UTKOZO_H_INDEX, DIGITS_UTKOZO_K_N, utkozo_setup[1].value, 1<<2);
 	int32_t value=inputValues[0]+diffValues[0];
 	if(mode==0)
@@ -107,6 +156,17 @@ void gui_loop(uint32_t currentTimeMillis)
 	}
 	showNumber(DIGITS_K_INDEX, DIGITS_K_N, value, 1<<2);
 	showNumber(DIGITS_H_INDEX, DIGITS_H_N, inputValues[1]+diffValues[1], 1<<2);
+	bool szerszamVillog=diffValues[0]!=szerszamValue[szerszam];
+	if(szerszamVillog&&!villogas)
+	{
+		for(int i=0;i<DIGITS_SZERSZAM_N;++i)
+		{
+			setDigitPattern(DIGITS_SZERSZAM_INDEX+i, 0);
+		}
+	}else
+	{
+		showNumber(DIGITS_SZERSZAM_INDEX, DIGITS_SZERSZAM_N, szerszam, (editFocus==EDIT_SZERSZAM && villogas)?1:0);
+	}
 	setLed(LED_INDEX_UTKOZO_K, utkozo_setup[0].state==1?true:(editFocus==EDIT_UTKOZO_KERESZT?villogas:false)); // LED kereszt
 	setLed(LED_INDEX_UTKOZO_H, utkozo_setup[1].state==1?true:(editFocus==EDIT_UTKOZO_HOSSZ?villogas:false)); // LED hossz
 	if(utkozo_active.transistor && currentTimeMillis>utkozo_active.at+500)
@@ -131,10 +191,10 @@ static void buttonPressedUtkozo(uint8_t index)
 {
 	uint8_t utkozoIndex= (editFocus==EDIT_UTKOZO_KERESZT?0:1);
 	int32_t value=utkozo_setup[utkozoIndex].value;
-	if(utkozoIndex==0 && mode==0)
-	{
-		value*=2;
-	}
+//	if(utkozoIndex==0 && mode==0)
+//	{
+//		value*=2;
+//	}
 	switch(index)
 	{
 		case 10:
@@ -169,6 +229,27 @@ static void buttonPressedMeasured(uint8_t index)
 			break;
 	}
 }
+static void buttonPressedSzerszam(uint8_t index)
+{
+	if(index<10)
+	{
+		szerszam=index;
+	}else
+	{
+		switch(index)
+		{
+			case 10: // '*'
+				szerszamValue[szerszam]=diffValues[0];
+				saveSettings();
+				break;
+			case 11: // '#'
+				diffValues[0]=szerszamValue[szerszam];
+				break;
+			default:
+				break;
+		}
+	}
+}
 typedef void (*handler_t)(uint8_t index);
 
 void gui_buttonPressed(uint8_t index)
@@ -184,6 +265,9 @@ void gui_buttonPressed(uint8_t index)
 		case EDIT_UTKOZO_KERESZT:
 		case EDIT_UTKOZO_HOSSZ:
 			handler=buttonPressedUtkozo;
+			break;
+		case EDIT_SZERSZAM:
+			handler=buttonPressedSzerszam;
 			break;
 		default:
 			handler=buttonPressedOff;
@@ -206,7 +290,7 @@ void gui_buttonPressed(uint8_t index)
 		case 11:
 			handler(index);
 			break;
-		case 200: mode++; mode%=2; break;
+		case 200: mode++; mode%=2; saveSettings(); break;
 		case 201:
 			toggleEditFocus(EDIT_UTKOZO_KERESZT);
 			break;
@@ -231,11 +315,12 @@ void gui_buttonPressed(uint8_t index)
 			break;
 		case 205:
 			toggleEditFocus(EDIT_MEASURED_KERESZT);
-			// TODO Activate input for the kereszt measure
 			break;
 		case 206:
 			toggleEditFocus(EDIT_MEASURED_HOSSZ);
-			// TODO Activate input for the hossz measure
+			break;
+		case 207:
+			toggleEditFocus(EDIT_SZERSZAM);
 			break;
 	}
 }
@@ -266,21 +351,37 @@ static void toggleEditFocus(uint8_t target)
 	}
 }
 
-void gui_updateInput(uint8_t index, int32_t value, uint8_t errorcode)
+void gui_updateInput(uint8_t index, int32_t value, uint8_t errorcode, int32_t zero, bool zeroed)
 {
 	int32_t prev=inputValues[index]+diffValues[index];
-	int32_t next=value+diffValues[index];
-	if(utkozo_setup[index].state==2)
+	if(index==0 && inputValuesValidState[index]==STATE_UNCALIBRATED && zeroed)
 	{
-		int32_t value=utkozo_setup[index].value;
-		if(crossed(prev, next, value) ||
-		   crossed(prev, next, -value)
-			)
+		inputValuesCalibration[index]=-zero;
+	}
+	if(inputValuesValidState[index]==STATE_UNINITIALIZED)
+	{
+		inputValuesValidState[index]=STATE_UNCALIBRATED;
+		inputValuesCalibration[index]=-value;
+	}
+	inputValues[index]=value+inputValuesCalibration[index];
+	int32_t next=inputValues[index]+diffValues[index];
+	{
+		if(index==0 && mode==0)
 		{
-			fireUtkozo(index);
+			prev*=2;
+			next*=2;
+		}
+		if(utkozo_setup[index].state==1)
+		{
+			int32_t utkvalue=utkozo_setup[index].value;
+			if(crossed(prev, next, utkvalue) ||
+			   crossed(prev, next, -utkvalue)
+				)
+			{
+				fireUtkozo(index);
+			}
 		}
 	}
-	inputValues[index]=value;
 }
 
 
@@ -310,6 +411,13 @@ static void showNumberUnsigned(uint8_t target, uint8_t length, int32_t value, ui
 		dotMask>>=1;
 	}
 }
+void setDigitPattern(uint8_t target, uint8_t pattern)
+{
+	if(target<DIGITS_END_INDEX)
+	{
+		segmentValues[target]=pattern;
+	}
+}
 
 void setDigit(uint8_t target, uint8_t value, bool dot)
 {
@@ -335,10 +443,7 @@ void setDigit(uint8_t target, uint8_t value, bool dot)
 	{
 		pattern |= 0b10000000;
 	}
-	if(target<DIGITS_END_INDEX)
-	{
-		segmentValues[target]=pattern;
-	}
+	setDigitPattern(target, pattern);
 }
 static void setLed(uint16_t ledIndex, bool value)
 {
@@ -360,10 +465,10 @@ static void setLed(uint16_t ledIndex, bool value)
 
 static void setUtkozoValue(uint8_t counterIndex, int32_t value)
 {
-	if(mode==0 && counterIndex==0)
-	{
-		value/=2;
-	}
+//	if(mode==0 && counterIndex==0)
+//	{
+//		value/=2;
+//	}
 	utkozo_setup[counterIndex].value=value;
 }
 

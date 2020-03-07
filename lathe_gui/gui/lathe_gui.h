@@ -12,8 +12,8 @@
 
 #define DIGIT_MODE_INDEX 24
 
-#define DIGITS_UTKOZO_SZERSZAM_INDEX 25
-#define DIGITS_UTKOZO_SZERSZAM_N 2
+#define DIGITS_SZERSZAM_INDEX 25
+#define DIGITS_SZERSZAM_N 2
 
 #define DIGITS_END_INDEX 27
 
@@ -30,6 +30,7 @@
 #define EDIT_MEASURED_HOSSZ 2
 #define EDIT_UTKOZO_KERESZT 3
 #define EDIT_UTKOZO_HOSSZ 4
+#define EDIT_SZERSZAM 5
 
 typedef struct {
 	uint8_t state; // 0:not active, 1:active
@@ -81,6 +82,8 @@ void gui_buttonPressed(uint8_t index);
  * @param index of the sensor subsystem: 0 kereszt, 1 hossz
  * @param value
  * @param errcode error code of the readout of the value. 0 means no error
+ * @param zero The zero value of the last calibration
+ * @param zeroed true if zero was updated in the latest readout - will be received exactly once per sensor crossing
  */
-void gui_updateInput(uint8_t index, int32_t value, uint8_t errcode);
+void gui_updateInput(uint8_t index, int32_t value, uint8_t errcode, int32_t zero, bool zeroed);
 
