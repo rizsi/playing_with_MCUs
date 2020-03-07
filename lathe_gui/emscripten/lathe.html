@@ -95,8 +95,6 @@ Hossz érzékelő:
 	</div>
     </div>
 
-<input type = 'button' value='Click me to save information in localstorage' onClick='saveData()'>
-
 <div class="title">Debug &nbsp; Logs:</div>
 <!-- Emscripten log(debug) and canvas(unused) windows. -->
     <textarea class="emscripten" id="output" rows="20"></textarea>
@@ -118,10 +116,13 @@ function loadDataTrigger(nchar)
 {
   if (typeof(Storage) !== "undefined") {
 	var text=localStorage.getItem('text');
+	if(text)
+	{
 //	console.info('data loaded from localstorage: '+text);
 	for (var i = 0; i < text.length && i<nchar; i+=2) {
 		// console.info('callback: '+i+" "+text.charCodeAt(i)+" "+text.charCodeAt(i+1));
 		loadDataCallback(i, text.charCodeAt(i), text.charCodeAt(i+1));
+	}
 	}
     return text;
   } else {

@@ -6,6 +6,7 @@
 #include <pinmapping.h>
 #include <timer1.h>
 #include <debug_uart0.h>
+#include <avr/eeprom.h>
 
 // Number of input shift registers multipled by number of repeats due to scanning rows of pinpad
 #define NUMBER_SHIFT_IN_BYTES 6
@@ -178,7 +179,9 @@ static void shiftButtonsAndSegments()
 inline static void sensor_readout_callback(uint8_t sensorIndex, int32_t data32, uint8_t errorcode, uint32_t zero)
 {
 	uint32_t time=timer1_GetCycles();
-	gui_updateInput(sensorIndex, data32, errorcode);
+	bool zeroed=errorcode&2;
+	errorcode&=~2;
+	gui_updateInput(sensorIndex, data32, errorcode, zero, zeroed);
 }
 
 
@@ -339,4 +342,27 @@ static void resetAllHW()
 	prevPIND=PIND;
 	sei();
 }
+
+void saveData(const uint8_t* data, uint8_t length)
+{
+	eeprom_update_byte((uint8_t *)0, length);
+	for(uint8_t i=0;i<length;++i)
+	{
+		eeprom_update_byte((uint8_t *)(i+1),data[i]);
+	}
+}
+bool loadData(uint8_t * data, uint8_t length)
+{
+	uint8_t l=eeprom_read_byte((uint8_t *)0);
+	if(l==length)
+	{
+		for(uint8_t i=0;i<length;++i)
+		{
+			data[i]=eeprom_read_byte((uint8_t *)(i+1));
+		}
+		return true;
+	}
+	return false;
+}
+
 
