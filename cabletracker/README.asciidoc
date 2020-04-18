@@ -12,7 +12,7 @@ The cable to be tracked can not be connected to anything electrically. If the ca
 
 Upload the program onto an ATTiny25:
 
-```` $ make burn ````
+``` $ make burn ```
 
 It is a very simple square wave signal generator with about 2.2kHz frequency. (Any other signal generator could be used.)
 
@@ -21,10 +21,11 @@ It is a very simple square wave signal generator with about 2.2kHz frequency. (A
  ** MCU is powered by a battery. Anything providing between 3-5V works. I used a 18650B
  ** The usual capacitor on the GNC-VCC and the pullup resistor on RESET is nice to have. (Though it works without them.)
 
-That is all that is necessary to wire the signal generator circuit up.
-
+That is all that is necessary to wire the signal generator circuit up. In the picture you can see a programmer hooked onto an ATTiny using a DIP clip and pach wires. GND and PB3 signal output is connected to the oscilloscope probe:
 
 image::IMG_20200417_154646.jpg[Minimal signal generator]
+
+The generated square wave signal is visible on the scope:
 
 image::IMG_20200417_154700.jpg[Square signal of the signal generator]
 
@@ -37,10 +38,15 @@ image::IMG_20200417_154700.jpg[Square signal of the signal generator]
 
 === What we see
 
-As we move the probe closer to and farther from the signalling wire the signal on the scope screen rises and decreases. With proper level setting the scope is able to lock trigger onto the signal. In a real life set up the signal was much noisier than in the test setup images but it definitely worked and I could find the end of the unconnected cable using the probe.
+As we move the probe closer to and farther from the signalling wire the signal on the scope screen rises and decreases. With proper level setting the scope is able to lock trigger onto the signal. In the real life set up the signal was much noisier than in the test setup images but it definitely worked and I could find the end of the unconnected cable using the probe.
 
 On the images the purple cable is a simple cable attached to the probe of the oscilloscope. The black cable is connected to PB3 signal output of the ATTiny25 and is connected to a longer yellow-green cable that I used to simulate the cable in the wall.
 
+When the signal and the receiver are in proximity then the signal is visible on the scope:
+
 image::vlcsnap-2020-04-18-14h37m56s477.png[probe a few centimeter away from the signal. Signal is visible.]
+
+When the signal and the receiver are even closer then the signal is stronger on the scope:
+
 image::vlcsnap-2020-04-18-14h38m15s129.png[probe closer to the signal. Signal has a higher amplitude.]
 
