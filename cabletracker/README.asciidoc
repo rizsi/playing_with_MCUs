@@ -12,9 +12,9 @@ The cable to be tracked can not be connected to anything electrically. If the ca
 
 Upload the program onto an ATTiny25:
 
-````
+----
 $ make burn
-````
+----
 
 It is a very simple square wave signal generator with about 2.2kHz frequency. (Any other signal generator could be used.)
 
