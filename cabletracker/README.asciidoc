@@ -1,0 +1,46 @@
+= Cable tracker using ATTiny signal generator and oscilloscope
+
+I have used this cable tracker solution to find the direction of a cable inside the wall. The setup can detect the proximity of the cable within a few centimeters. Hardware required: oscilloscope, Signal generator (ATTiny25 with battery power)
+
+WARNING: Electrical network should only be handled by a professional! This technique should never be used on high voltage electrical network. (Eg. 230V AC)
+
+The cable to be tracked can not be connected to anything electrically. If the cable short circuits that could kill the ATTiny MCU. It could be possible to create a protected circuit to drive the output but that was outside my goals.
+
+== The measurement arrangement
+
+=== Signal generator
+
+Upload the program onto an ATTiny25:
+
+```` $ make burn ````
+
+It is a very simple square wave signal generator with about 2.2kHz frequency. (Any other signal generator could be used.)
+
+ ** PB3 is directly connected to the wire to be tracked.
+ ** MCU GND is connected to grounding. This is necessary because otherwise the signal generator would float and would not cause much change in Voltage relative to ground in the wire to be tracked
+ ** MCU is powered by a battery. Anything providing between 3-5V works. I used a 18650B
+ ** The usual capacitor on the GNC-VCC and the pullup resistor on RESET is nice to have. (Though it works without them.)
+
+That is all that is necessary to wire the signal generator circuit up.
+
+
+image::IMG_20200417_154646.jpg[Minimal signal generator]
+
+image::IMG_20200417_154700.jpg[Square signal of the signal generator]
+
+=== Oscilloscope as a receiver
+
+ * A piece of unshielded wire have to be connected to the tip of the probe. The length I have used is about 10cm. This probe will be in capacitive coupling with the signalling wire.
+ * The ground connection of the probe should be touched by hand so we add some capacity to it so it is not totally floating.
+ * Time resolution should be set so that the signal frequency is well visible. (about 0.1us - 1us)
+ * Voltage resolution should be set to about maximum resolution. Until there signal becomes visible.
+
+=== What we see
+
+As we move the probe closer to and farther from the signalling wire the signal on the scope screen rises and decreases. With proper level setting the scope is able to lock trigger onto the signal. In a real life set up the signal was much noisier than in the test setup images but it definitely worked and I could find the end of the unconnected cable using the probe.
+
+On the images the purple cable is a simple cable attached to the probe of the oscilloscope. The black cable is connected to PB3 signal output of the ATTiny25 and is connected to a longer yellow-green cable that I used to simulate the cable in the wall.
+
+image::vlcsnap-2020-04-18-14h37m56s477.png[probe a few centimeter away from the signal. Signal is visible.]
+image::vlcsnap-2020-04-18-14h38m15s129.png[probe closer to the signal. Signal has a higher amplitude.]
+
