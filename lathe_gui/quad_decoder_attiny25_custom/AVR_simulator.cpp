@@ -30,6 +30,7 @@ bool AVR_error_nosp(AVR_simulator_t * ctx, uint32_t pc)
 {
 	printf("ERROR NOSP: 0x%x\n", pc);
 	ASSERT_FAIL();
+	return false;
 }
 static bool is16PC(AVR_simulator_t * ctx)
 {

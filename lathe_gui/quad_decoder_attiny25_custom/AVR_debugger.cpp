@@ -90,7 +90,7 @@ static void ASSERT_SILENT(bool ok, const char * format, ...)
 	{
 //		printf("OK: ");
 	}
-//if(!ok) {fflush(stdout); fflush(stderr); exit(1);}
+if(!ok) {fflush(stdout); fflush(stderr); exit(1);}
 
 }
 
@@ -175,6 +175,7 @@ static int32_t setCounterValue(int32_t v)
 	setReg(ctx,27, (v>>8)&0xff);
 	setReg(ctx,28, (v>>16)&0xff);
 	setReg(ctx,29, (v>>24)&0xff);
+	return v;
 }
 static bool getCounterError()
 {
@@ -427,13 +428,13 @@ static void checkBreakpoint(AVR_simulator_t * ctx, uint32_t pc)
 	commandExecuted[ctx->PC]=true;
 	uint64_t cycle=ctx->cycle;
 	uint8_t COMM_STATE=getReg(ctx, 24);
+	uint8_t portb=getIO(ctx, PORTB);
+	uint8_t ddrb=getIO(ctx, DDRB);
 	if(pc==comm_read)
 	{
 		if(rxTriggered)
 		{
 			rxTriggered=false;
-			uint8_t portb=getIO(ctx, PORTB);
-			uint8_t ddrb=getIO(ctx, DDRB);
 			bool rxval=((portb&MASK_RX)==0) && ((ddrb&MASK_RX)!=0);
 			uint8_t bit=rxCtr%8;
 			uint8_t byte=rxCtr/8;
@@ -458,8 +459,6 @@ static void checkBreakpoint(AVR_simulator_t * ctx, uint32_t pc)
 	{
 		if(rxOn)
 		{
-			uint8_t portb=getIO(ctx, PORTB);
-			uint8_t ddrb=getIO(ctx, DDRB);
 			bool rxval=((portb&MASK_RX)==0) && ((ddrb&MASK_RX)!=0);
 			if(rxval)
 			{
@@ -496,6 +495,11 @@ static void checkBreakpoint(AVR_simulator_t * ctx, uint32_t pc)
 	if(pc==sample1a)
 	{
 		initialized=true;
+	}
+	if(initialized)
+	{
+		ASSERT_SILENT((portb&0b11101)==0b11000, "PB3 and PB4 are in pullup mode, PB0 and PB2 are high Z");
+		ASSERT_SILENT((ddrb&0b11101)==0, "All other than PB1 is in input mode %d", ddrb);
 	}
 	static uint32_t prevSampleCycle=0;
 
