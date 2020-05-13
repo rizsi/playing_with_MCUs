@@ -84,7 +84,7 @@ case 0x26:
 case 0x27:
 	if(AVR_lpm(ctx, 0x27, /* d */0x14, /* i */0x0) || ctx->breakpointActivated) break;	// lpm {d=10100, i=0} HEX:0x9144
 case 0x28:
-	if(AVR_sbrc(ctx, 0x28, /* b */0x3, /* r */0xb) || ctx->breakpointActivated) break;	// sbrc {b=011, r=01011} HEX:0xfcb3
+	if(AVR_sbrs(ctx, 0x28, /* b */0x3, /* r */0xb) || ctx->breakpointActivated) break;	// sbrs {b=011, r=01011} HEX:0xfeb3
 case 0x29:
 	if(AVR_rjmp(ctx, 0x29, /* k */0x7) || ctx->breakpointActivated) break;	// rjmp {k=000000000111} HEX:0xc007
 case 0x2a:

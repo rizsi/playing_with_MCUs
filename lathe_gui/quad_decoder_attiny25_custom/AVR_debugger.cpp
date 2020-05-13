@@ -17,7 +17,7 @@ static uint8_t sindex=0;
 static uint8_t signalAB;
 #define N_CS_MASK MASK_RX
 static uint8_t nChipSelect=N_CS_MASK;
-static uint8_t nZero=ZERO_MASK;
+static bool zeroInput=false;
 static AVR_simulator_t * ctx;
 static bool loopLabelTouched=false;
 static uint8_t signalPatterns[]={
@@ -275,10 +275,10 @@ int main (int argc, char ** argv)
 	uint32_t zeroValue=0xABCDEF01;
 	setCounterValue(zeroValue);
 	clearCounterError();
-	nZero=0;
+	zeroInput=true;
 	updatePins(&ctx);
 	executeOneCycle(&ctx);
-	nZero=ZERO_MASK;
+	zeroInput=false;
 	updatePins(&ctx);
 	executeOneCycle(&ctx);
 	uint32_t counterValue=0x12345678;
@@ -288,7 +288,7 @@ int main (int argc, char ** argv)
 	setCounterValue(0);
 	clearCounterError();
 	inc[0]=0; inc[1]=0;inc[2]=1; inc[3]=0; inc[4]=0; inc[5]=0;
-	nZero=0;
+	zeroInput=true;
 	updatePins(&ctx);
 	// Test reading out counter while counting
 	testCommunication(2, 2, 48);	// Counter is latched after two cycles, zero is latched after 131 cycles
@@ -398,7 +398,7 @@ static void testFromAllStates(uint32_t initialCounter)
 
 static void updatePins(AVR_simulator_t * ctx)
 {
-	setIO(ctx, PINB, signalAB|nChipSelect|nZero);
+	setIO(ctx, PINB, signalAB|nChipSelect|(zeroInput?ZERO_MASK:0));
 }
 static void beforeStart(AVR_simulator_t * _ctx)
 {

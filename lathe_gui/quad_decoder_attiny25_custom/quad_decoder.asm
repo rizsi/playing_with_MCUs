@@ -29,7 +29,7 @@
 
 ; HW pinout:
 ;			NRESET	-|1	8|- VCC
-;	NZERO_IN 	PB3	-|2	7|- PB2 Input	Quad SignalA 
+;	ZERO_IN 	PB3	-|2	7|- PB2 Input	Quad SignalA 
 ;			PB4	-|3	6|- PB1 COMM
 ;			GND	-|4	5|- PB0 Input Quad SignalB
 ; All pins are high-Z input by default. Pullup is not applied.
@@ -148,7 +148,7 @@ sample1a:
 	or ZL, PRSAMPLE2
 process3samples_a:
 	lpm ADD_CYCLE0, Z			; Cycles: 3
-	sbrc PRSAMPLE1, PIN_ZERO_IN		; Do not update zero reg if not
+	sbrs PRSAMPLE1, PIN_ZERO_IN		; Do not update zero reg if low
 	rjmp no_zero
 	movw ZERO_0, COUNTER32_0
 	movw ZERO_2, COUNTER32_2
