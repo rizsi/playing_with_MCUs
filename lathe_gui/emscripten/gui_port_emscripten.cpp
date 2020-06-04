@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <emscripten.h>
 
 #include <lathe_gui.h>
 #include <bsp.h>
+/// Exported functions are available in JS
+#define EMSCRIPTEN_EXPORT EMSCRIPTEN_KEEPALIVE
 
 static uint64_t currentTimeMillis=0;
 
@@ -11,6 +15,8 @@ static uint8_t* dataCallback=NULL;
 static int dataCallbackLength=0;
 static bool dataCallbackDone=false;
 static uint8_t fromHex(uint8_t ch);
+
+static uint8_t state=0;
 
 uint32_t getCurrentTimeMillis()
 {
@@ -21,6 +27,17 @@ uint32_t getCurrentTimeMillis()
 /// In order to emscripten work simply the JS interfacing functions have to use
 /// C calling convention.
 extern "C" {
+
+void EMSCRIPTEN_EXPORT render(uint32_t width, uint32_t height, uint32_t * canvasRGB)
+{
+   state++;
+   for (int y = 0; y < height; y++) {
+     int yw = y * width;
+     for (int x = 0; x < height; x++) {
+       canvasRGB[yw + x] = (255 << 24) | state; // ABGR
+     }
+   }
+}
 
 int main(int argc, char ** argv) {
 	gui_init();

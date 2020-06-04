@@ -27,6 +27,7 @@
 	</style>
   </head>
   <body>
+    <canvas id="c" width="640px" height="480px"></canvas>
     <div id="eszterga">
 	<div class="solid">
 	<div class="title">
@@ -200,6 +201,7 @@ var dom=document.getElementById("buttonKalibralas");
     buttonPressed = Module.cwrap('buttonPressed', null, ['number']);
     updateTime = Module.cwrap('updateTime', null, ['number']);
     loadDataCallback = Module.cwrap('loadDataCallback', null, ['number', 'number', 'number']);
+    render = Module.cwrap('render', 'null', ['number', 'number', 'number']);
     setup();
     setInterval(jsLoop, 50);
   }
@@ -216,6 +218,18 @@ var dom=document.getElementById("buttonKalibralas");
 	{
 		digits[i].setPattern(getSegmentValues(i));
 	}
+
+	// Get 2d drawing context
+	const canvas = document.getElementById('c');
+	const ctx = canvas.getContext('2d');
+	var width=canvas.width;
+	var height=canvas.height;
+	var buf = Module._malloc(width * height * 4);
+	render(width, height, buf);
+	const data = new Uint8ClampedArray(Module.HEAPU8.buffer, buf, width * height * 4);
+	const img = new ImageData(data, width, height);
+	ctx.putImageData(img, 0, 0);
+	Module._free(buf);
   }
     </script>
     <script type="text/javascript" src="gui_port_emscripten.js"></script>
