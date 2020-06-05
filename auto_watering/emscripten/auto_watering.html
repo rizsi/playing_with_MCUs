@@ -1,0 +1,239 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Auto Watering DEMO</title>
+	<style>
+.solid {border-style: solid;}
+.fullwidth {width: 100%;}
+.row {
+  display: flex;
+}
+.led-off{
+ background-color: #222222;
+ color: #FFFFFF;
+}
+.led-on{
+ background-color: #FF0000;
+}
+
+.column {
+  flex: 50%;
+}
+.title {
+  font-weight: bold;
+}
+	</style>
+  </head>
+  <body>
+    <canvas id="c" width="128px" height="64px"></canvas>
+    <div id="eszterga">
+	<div class="solid">
+	<div class="title">
+		Bemenetek:
+	</div>
+Kereszt érzékelő:  <button id="buttonKalibralas">Kalibrálás</button>
+<input class="fullwidth" id="inputKereszt" type="range"
+ min="0" max="2000" step="1" value="1000"/>
+Hossz érzékelő:
+<input class="fullwidth" id="inputHossz" type="range"
+ min="0" max="2000" step="1" value="1000" />
+	</div>
+  <div class="row">
+	<div class="solid" style="flex:20%">
+		Szerszam:
+		<button id="szerszamValasztas">választás</button><br/>
+		<span id="digitsSzerszam"></span>
+	</div>
+  </div>
+  <div class="row">
+	<div class="solid column">
+		<div class="title">Ütköztetés Kereszt</div>
+		  <div style="flex: 20%">
+			<button id="keresztBevitel">értékbevitel</button><br/>
+			<button id="keresztActivalas">aktiválás</button>
+		  </div>
+		    <span id="digitsUtkoztetesKereszt"></span>
+		    <button id="ledUtkoztetesKereszt" class="led-off">&nbsp;</button>
+		<button id="ledTransistorKereszt" class="led-off">TRANZISZTOR</button>
+	</div>
+	<div class="solid column">
+		<div class="title">Ütköztetés Hossz</div>
+		  <div style="flex: 20%">
+			<button id="hosszBevitel">értékbevitel</button><br/>
+			<button id="hosszActivalas">aktiválás</button>
+		  </div>
+		<span id="digitsUtkoztetesHossz"></span>
+		<button id="ledUtkoztetesHossz" class="led-off">&nbsp;</button>
+	</div>
+  </div>
+  <div class="row">
+	<div class="solid" style="flex: 40%">
+		<button id="bevitelKeresztMert">értékbevitel</button><br/>
+		<div class="title">Mért Kereszt</div>
+		<span id="digitsKereszt"></span>
+		<button id="ledInputKereszt" class="led-off">&nbsp;</button>
+	</div>
+	<div class="solid" style="flex: 20%">
+		<button id="button-select">MODE</button>
+		<span id="digitMode"></span>
+	</div>
+	<div class="solid" style="flex: 40%">
+		<button id="bevitelHosszMert">értékbevitel</button><br/>
+		<div class="title">Mért Hossz</div>
+		<span id="digitsHossz"></span>
+		<button id="ledInputHossz" class="led-off">&nbsp;</button>
+	</div>
+  </div>
+	<div class="row">
+	 <div class="column">
+		<div><button id="pad-left-1">1</button><button id="pad-left-2">2</button><button id="pad-left-3">3</button></div>
+		<div><button id="pad-left-4">4</button><button id="pad-left-5">5</button><button id="pad-left-6">6</button></div>
+		<div><button id="pad-left-7">7</button><button id="pad-left-8">8</button><button id="pad-left-9">9</button></div>
+		<div><button id="pad-left-*">*</button><button id="pad-left-0">0</button><button id="pad-left-#">#</button></div>
+	 </div>
+	</div>
+    </div>
+
+<div class="title">Debug &nbsp; Logs:</div>
+<!-- Emscripten log(debug) and canvas(unused) windows. -->
+    <textarea class="emscripten" id="output" rows="20"></textarea>
+    <div id="canvas"></div>
+
+<!-- Scripts that drive the UI -->
+    <script type="text/javascript" src="sevensegment.js"></script>
+    <script type="text/javascript" src="helpers.js"></script>
+    <script type="text/javascript">
+function saveData(text) {
+  if (typeof(Storage) !== "undefined") {
+    localStorage.setItem('text',text);
+//    alert('data added in localstorage: '+text);
+  } else {
+    alert('local storage not supported');
+  }
+}
+function loadDataTrigger(nchar)
+{
+  if (typeof(Storage) !== "undefined") {
+	var text=localStorage.getItem('text');
+	if(text)
+	{
+//	console.info('data loaded from localstorage: '+text);
+	for (var i = 0; i < text.length && i<nchar; i+=2) {
+		// console.info('callback: '+i+" "+text.charCodeAt(i)+" "+text.charCodeAt(i+1));
+		loadDataCallback(i, text.charCodeAt(i), text.charCodeAt(i+1));
+	}
+	}
+    return text;
+  } else {
+    alert('local storage not supported');
+  }
+}
+	var digits = [];
+	createSevenSegmentDigits(document.getElementById("digitsKereszt"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitsHossz"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesKereszt"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesHossz"), 50,100, 6, digits);
+	createSevenSegmentDigits(document.getElementById("digitMode"), 50,100, 1, digits);
+	createSevenSegmentDigits(document.getElementById("digitsSzerszam"), 50,100, 2, digits);
+	digits.push(new Leds()
+		.add(new Led(document.getElementById("ledUtkoztetesKereszt")))
+		.add(new Led(document.getElementById("ledUtkoztetesHossz")))
+		.add(new Led(document.getElementById("ledTransistorKereszt")))
+		.add(new Led(document.getElementById("ledInputKereszt")))
+		.add(new Led(document.getElementById("ledInputHossz")))
+		);
+
+	buttonHandler("pad-left-1", 1);
+	buttonHandler("pad-left-2", 2);
+	buttonHandler("pad-left-3", 3);
+	buttonHandler("pad-left-4", 4);
+	buttonHandler("pad-left-5", 5);
+	buttonHandler("pad-left-6", 6);
+	buttonHandler("pad-left-7", 7);
+	buttonHandler("pad-left-8", 8);
+	buttonHandler("pad-left-9", 9);
+	buttonHandler("pad-left-0", 0);
+	buttonHandler("pad-left-*", 10);
+	buttonHandler("pad-left-#", 11);
+
+	buttonHandler("button-select", 200);
+	buttonHandler("keresztBevitel", 201);
+	buttonHandler("keresztActivalas", 202);
+	buttonHandler("hosszBevitel", 203);
+	buttonHandler("hosszActivalas", 204);
+	buttonHandler("bevitelKeresztMert", 205);
+	buttonHandler("bevitelHosszMert", 206);
+	buttonHandler("szerszamValasztas", 207);
+
+{
+zero=0;
+zeroed=false;
+var dom=document.getElementById("buttonKalibralas");
+	dom.addEventListener("click", function(){
+		var inputKereszt=document.getElementById("inputKereszt").value;
+		zero=inputKereszt;
+		zeroed=true;
+	});
+}
+
+ // Minimal embed code for emscript
+ var Module = {
+    print: (function() {
+      var element = document.getElementById('output');
+      return function(text) {
+        element.innerHTML += text.replace('\n', '<br/>', 'g') + '<br/>';
+      };
+    })(),
+    canvas: document.getElementById('canvas'),
+  };
+
+  // This is called by CPP/main after that was initialized.
+  // If cwrap is used before main has returned then that causes an error
+  // This is a predictable way to call into emscript from JS
+  function jsSetup()
+  {
+    var setup = Module.cwrap('setup', null);
+    loop = Module.cwrap('loop', null);
+    getSegmentValues = Module.cwrap('getSegmentValues', 'number', ['number']);
+    setInput = Module.cwrap('setInput', null, ['number', 'number', 'number', 'bool']);
+    buttonPressed = Module.cwrap('buttonPressed', null, ['number']);
+    updateTime = Module.cwrap('updateTime', null, ['number']);
+    loadDataCallback = Module.cwrap('loadDataCallback', null, ['number', 'number', 'number']);
+    render = Module.cwrap('render', 'null', ['number', 'number', 'number']);
+    setup();
+    setInterval(jsLoop, 50);
+  }
+  function jsLoop()
+  {
+	var inputKereszt=document.getElementById("inputKereszt").value;
+	var inputHossz=document.getElementById("inputHossz").value;
+	setInput(0, inputKereszt, zero, zeroed);
+	zeroed=false;
+	setInput(1, inputHossz, 0, false);
+	updateTime(new Date().getTime());
+	loop();
+	for(var i=0; i<digits.length;++i)
+	{
+		digits[i].setPattern(getSegmentValues(i));
+	}
+
+	// Get 2d drawing context
+	const canvas = document.getElementById('c');
+	const ctx = canvas.getContext('2d');
+	var width=canvas.width;
+	var height=canvas.height;
+	var buf = Module._malloc(width * height * 4);
+	render(width, height, buf);
+	const data = new Uint8ClampedArray(Module.HEAPU8.buffer, buf, width * height * 4);
+	const img = new ImageData(data, width, height);
+	ctx.putImageData(img, 0, 0);
+	Module._free(buf);
+  }
+    </script>
+    <script type="text/javascript" src="gui_port_emscripten.js"></script>
+  </body>
+</html>
+
+

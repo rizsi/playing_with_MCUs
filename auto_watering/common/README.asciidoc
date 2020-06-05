@@ -1,0 +1,2 @@
+= Platform independent implementation of the auto-watering system
+

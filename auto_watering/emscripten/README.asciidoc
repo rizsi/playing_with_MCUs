@@ -1,0 +1,3 @@
+= emscripten based simulator
+
+The HAL of the system is implemented using emscripten+JS+HTML to show a simulated version of the system.
