@@ -12,10 +12,23 @@
 
 static uint8_t frame[1024];
 
+boolean first=true;
+
+static uint8_t SPIWaitPrev()
+{
+  if(!first)
+  {
+    while(!(SPSR & (1<<SPIF)));
+  }
+  uint8_t x=SPDR;
+  while((SPSR & (1<<SPIF))); // Test that IF is really cleared
+  first=true;
+  return x;
+}
 static uint8_t SPItransfer(uint8_t d)
 {
-  while(!(SPSR & (1<<SPIF)));
-  uint8_t x=SPDR;
+  uint8_t x=SPIWaitPrev();
+  first=false;
   SPDR = d;
   return x;
 }
@@ -26,11 +39,12 @@ void setup() {
   DDRB |= (1<<2)|(1<<3)|(1<<5);    // SCK, MOSI and SS as outputs
   DDRB &= ~(1<<4);                 // MISO as input
 
+  // MAx freq: 400kHz
   SPCR |= (1<<MSTR);               // Set as Master
-  SPCR |= (1<<SPR0)|(1<<SPR1);     // divided clock by 128
+  // divider is 4: about 100FPS is achieved and it works even though it is much higher than specification
+//  SPCR |= (1<<SPR0)|(1<<SPR1);     // divided clock by 128 -> 125kHz
 //  SPCR |= (1<<SPIE);               // Enable SPI Interrupt
   SPCR |= (1<<SPE);                // Enable SPI
-  SPDR = 0xAF;
 
   pinMode(RES, OUTPUT);
   pinMode(DC, OUTPUT);
@@ -47,17 +61,14 @@ void setPage(uint8_t page)
 static int32_t counter=0;
 void loop() {
   RD_clearScreen();
-//  RD_STRING("demo\n");
+  RD_STRING("demo\nalma\nkorte\nszilva---------\n");
   RD_drawNumber(counter, 10);
   digitalWrite(RES, HIGH);
-  // 14MHz clock selected: it works but probably it is slower that is capable of an UNO
-//  SPIbeginTransaction(SPISettings(14000000, MSBFIRST, SPI_MODE0));
-
-//  SPI.transfer(0xAF);  // TURN on
   uint16_t index=0;
   for(uint8_t p=0;p<8;++p)
   {
     setPage(p);
+    SPIWaitPrev();
     digitalWrite(DC, HIGH);
     for(uint16_t l=0;l<128;++l)
     {
@@ -71,9 +82,6 @@ void loop() {
   SPItransfer(0xA4);  // All pixels from GRAM
   SPItransfer(0xA6);  // no invert
   SPItransfer(0xAF);  // TURN on
-  delay(200);
-//  SPIendTransaction();
-//  digitalWrite(RES, LOW);
   // put your main code here, to run repeatedly:
   counter++;
 }
