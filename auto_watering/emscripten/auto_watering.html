@@ -27,73 +27,11 @@
 	</style>
   </head>
   <body>
+Automatic watering controller GUI DEMO<br/>
     <canvas id="c" width="128px" height="64px"></canvas>
-    <div id="eszterga">
-	<div class="solid">
-	<div class="title">
-		Bemenetek:
-	</div>
-Kereszt érzékelő:  <button id="buttonKalibralas">Kalibrálás</button>
-<input class="fullwidth" id="inputKereszt" type="range"
- min="0" max="2000" step="1" value="1000"/>
-Hossz érzékelő:
-<input class="fullwidth" id="inputHossz" type="range"
- min="0" max="2000" step="1" value="1000" />
-	</div>
-  <div class="row">
-	<div class="solid" style="flex:20%">
-		Szerszam:
-		<button id="szerszamValasztas">választás</button><br/>
-		<span id="digitsSzerszam"></span>
-	</div>
-  </div>
-  <div class="row">
-	<div class="solid column">
-		<div class="title">Ütköztetés Kereszt</div>
-		  <div style="flex: 20%">
-			<button id="keresztBevitel">értékbevitel</button><br/>
-			<button id="keresztActivalas">aktiválás</button>
-		  </div>
-		    <span id="digitsUtkoztetesKereszt"></span>
-		    <button id="ledUtkoztetesKereszt" class="led-off">&nbsp;</button>
-		<button id="ledTransistorKereszt" class="led-off">TRANZISZTOR</button>
-	</div>
-	<div class="solid column">
-		<div class="title">Ütköztetés Hossz</div>
-		  <div style="flex: 20%">
-			<button id="hosszBevitel">értékbevitel</button><br/>
-			<button id="hosszActivalas">aktiválás</button>
-		  </div>
-		<span id="digitsUtkoztetesHossz"></span>
-		<button id="ledUtkoztetesHossz" class="led-off">&nbsp;</button>
-	</div>
-  </div>
-  <div class="row">
-	<div class="solid" style="flex: 40%">
-		<button id="bevitelKeresztMert">értékbevitel</button><br/>
-		<div class="title">Mért Kereszt</div>
-		<span id="digitsKereszt"></span>
-		<button id="ledInputKereszt" class="led-off">&nbsp;</button>
-	</div>
-	<div class="solid" style="flex: 20%">
-		<button id="button-select">MODE</button>
-		<span id="digitMode"></span>
-	</div>
-	<div class="solid" style="flex: 40%">
-		<button id="bevitelHosszMert">értékbevitel</button><br/>
-		<div class="title">Mért Hossz</div>
-		<span id="digitsHossz"></span>
-		<button id="ledInputHossz" class="led-off">&nbsp;</button>
-	</div>
-  </div>
-	<div class="row">
-	 <div class="column">
-		<div><button id="pad-left-1">1</button><button id="pad-left-2">2</button><button id="pad-left-3">3</button></div>
-		<div><button id="pad-left-4">4</button><button id="pad-left-5">5</button><button id="pad-left-6">6</button></div>
-		<div><button id="pad-left-7">7</button><button id="pad-left-8">8</button><button id="pad-left-9">9</button></div>
-		<div><button id="pad-left-*">*</button><button id="pad-left-0">0</button><button id="pad-left-#">#</button></div>
-	 </div>
-	</div>
+    <div id="buttons">
+	<button id="button1">1</button><button id="button2">2</button><br/>
+	<button id="button3">3</button><button id="button4">4</button>
     </div>
 
 <div class="title">Debug &nbsp; Logs:</div>
@@ -102,7 +40,6 @@ Hossz érzékelő:
     <div id="canvas"></div>
 
 <!-- Scripts that drive the UI -->
-    <script type="text/javascript" src="sevensegment.js"></script>
     <script type="text/javascript" src="helpers.js"></script>
     <script type="text/javascript">
 function saveData(text) {
@@ -130,53 +67,10 @@ function loadDataTrigger(nchar)
     alert('local storage not supported');
   }
 }
-	var digits = [];
-	createSevenSegmentDigits(document.getElementById("digitsKereszt"), 50,100, 6, digits);
-	createSevenSegmentDigits(document.getElementById("digitsHossz"), 50,100, 6, digits);
-	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesKereszt"), 50,100, 6, digits);
-	createSevenSegmentDigits(document.getElementById("digitsUtkoztetesHossz"), 50,100, 6, digits);
-	createSevenSegmentDigits(document.getElementById("digitMode"), 50,100, 1, digits);
-	createSevenSegmentDigits(document.getElementById("digitsSzerszam"), 50,100, 2, digits);
-	digits.push(new Leds()
-		.add(new Led(document.getElementById("ledUtkoztetesKereszt")))
-		.add(new Led(document.getElementById("ledUtkoztetesHossz")))
-		.add(new Led(document.getElementById("ledTransistorKereszt")))
-		.add(new Led(document.getElementById("ledInputKereszt")))
-		.add(new Led(document.getElementById("ledInputHossz")))
-		);
-
-	buttonHandler("pad-left-1", 1);
-	buttonHandler("pad-left-2", 2);
-	buttonHandler("pad-left-3", 3);
-	buttonHandler("pad-left-4", 4);
-	buttonHandler("pad-left-5", 5);
-	buttonHandler("pad-left-6", 6);
-	buttonHandler("pad-left-7", 7);
-	buttonHandler("pad-left-8", 8);
-	buttonHandler("pad-left-9", 9);
-	buttonHandler("pad-left-0", 0);
-	buttonHandler("pad-left-*", 10);
-	buttonHandler("pad-left-#", 11);
-
-	buttonHandler("button-select", 200);
-	buttonHandler("keresztBevitel", 201);
-	buttonHandler("keresztActivalas", 202);
-	buttonHandler("hosszBevitel", 203);
-	buttonHandler("hosszActivalas", 204);
-	buttonHandler("bevitelKeresztMert", 205);
-	buttonHandler("bevitelHosszMert", 206);
-	buttonHandler("szerszamValasztas", 207);
-
-{
-zero=0;
-zeroed=false;
-var dom=document.getElementById("buttonKalibralas");
-	dom.addEventListener("click", function(){
-		var inputKereszt=document.getElementById("inputKereszt").value;
-		zero=inputKereszt;
-		zeroed=true;
-	});
-}
+	buttonHandler("button1", 1);
+	buttonHandler("button2", 2);
+	buttonHandler("button3", 3);
+	buttonHandler("button4", 4);
 
  // Minimal embed code for emscript
  var Module = {
@@ -196,8 +90,6 @@ var dom=document.getElementById("buttonKalibralas");
   {
     var setup = Module.cwrap('setup', null);
     loop = Module.cwrap('loop', null);
-    getSegmentValues = Module.cwrap('getSegmentValues', 'number', ['number']);
-    setInput = Module.cwrap('setInput', null, ['number', 'number', 'number', 'bool']);
     buttonPressed = Module.cwrap('buttonPressed', null, ['number']);
     updateTime = Module.cwrap('updateTime', null, ['number']);
     loadDataCallback = Module.cwrap('loadDataCallback', null, ['number', 'number', 'number']);
@@ -207,17 +99,8 @@ var dom=document.getElementById("buttonKalibralas");
   }
   function jsLoop()
   {
-	var inputKereszt=document.getElementById("inputKereszt").value;
-	var inputHossz=document.getElementById("inputHossz").value;
-	setInput(0, inputKereszt, zero, zeroed);
-	zeroed=false;
-	setInput(1, inputHossz, 0, false);
 	updateTime(new Date().getTime());
 	loop();
-	for(var i=0; i<digits.length;++i)
-	{
-		digits[i].setPattern(getSegmentValues(i));
-	}
 
 	// Get 2d drawing context
 	const canvas = document.getElementById('c');

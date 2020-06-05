@@ -70,30 +70,6 @@ void EMSCRIPTEN_EXPORT loop()
 {
 	gui_loop((uint32_t)currentTimeMillis);
 }
-/**
- * Get the current segment values of a digit - called from JS to update the UI.
- * @param index of the digit
- * @return bitmask pattern of the 8 segment display
- */
-uint8_t EMSCRIPTEN_EXPORT getSegmentValues(uint8_t index)
-{
-//	if(index<sizeof(segmentValues))
-//	{
-//		return segmentValues[index];
-//	}
-	return 0;
-}
-
-/**
- * Set the current input value of a sensor subsystem.
- * @param index of the sensor subsystem: 0 kereszt, 1 hossz
- * @param value
- */
-void EMSCRIPTEN_EXPORT setInput(uint8_t index, int32_t value, int32_t zero, bool zeroed)
-{
-	gui_updateInput(index, value, 0, zero, zeroed);
-}
-
 void EMSCRIPTEN_EXPORT updateTime(uint64_t t)
 {
 	currentTimeMillis=t;
