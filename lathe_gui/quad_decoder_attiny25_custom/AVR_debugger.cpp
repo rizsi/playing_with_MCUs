@@ -88,9 +88,13 @@ static void ASSERT_SILENT(bool ok, const char * format, ...)
 		error=true;
 	}else
 	{
-//		printf("OK: ");
+		printf("OK: ");
+		va_start(args, format);
+		vprintf(format, args);
+		    va_end(args);
+		printf("\n");
 	}
-if(!ok) {fflush(stdout); fflush(stderr); exit(1);}
+//if(!ok) {fflush(stdout); fflush(stderr); exit(1);}
 
 }
 

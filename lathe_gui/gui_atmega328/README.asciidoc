@@ -16,15 +16,15 @@ DEBUG/extend   - (RXD) PD0 -|2        |- PC4 - NUMPAD row 3
 DEBUG/extend   - (TXD) PD1 -|3        |- PC3 - NUMPAD row 2
          INPUT LATCH - PD2 -|         |- PC2 - NUMPAD row 1
   DIGITS PWM 1 - (OC2B)PD3 -|         |- PC1 - DIGITS latch
-         Sensor2 NCS - PD4 -|         |- PC0 (ADC0) - NC
+         Sensor2 COMM- PD4 -|         |- PC0 (ADC0) - NC
       ICSP, PowerCAP - VCC -|ATMEGA328|- GND - Connected to other GND pin
       ICSP, PowerCAP - GND -|         |- AREF - capacitor to GND
              NC-(XTAL1)PB6 -|         |- AVCC - same as VCC but additional cap to GND
              NC-(XTAL2)PB7 -|         |- PB5 (SCK)  - ISCP, SWSPI CLK, SPI ALL, Sensor ATTiny25
   DIGITS PWM 0 - (OC0B)PD5 -|         |- PB4 (MISO) - ICSP, SWSPI in, SPI BUTTONS
-    NCALIB1 - (PCINT22)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI DIGITS, Sensor ATTiny25
-                       PD7 -|         |- PB2 (SS)   - SPI (Sensor ATTiny25)
-           INPUT NCS - PB0 -|14     15|- PB1 - Sensor1 NCS
+         NC - (PCINT22)PD6 -|         |- PB3 (MOSI) - ICSP, SWSPI out, SPI DIGITS, Sensor ATTiny25
+                  NC - PD7 -|         |- PB2 (SS) - NC
+           INPUT NCS - PB0 -|14     15|- PB1 - Sensor1 COMM
 
 == Main clock
 
@@ -99,28 +99,25 @@ Minden egyéb funkciót egy 4.7k ellenálláson kerresztül kell rákötni, hogy
 
 == SPI
 
-A Hardweres SPI-t arra használjuk, hogy a Quad dekóder adatát beolvassuk.
+A Hardweres SPI-t arra használjuk, hogy az input és az output shift regisztereket írjuk/olvassuk.
 
- * SS -> 4.7k pull down to GND szükséges, más nem kell.
- * SCK -> 4.7k-n keresztül a SHR-ekre és a két Attiny25 CLK-jára kell kötni
- * MOSI -> 4.7k-n keresztül a kimeneti SHR-ekre kell kötni, és az Attiny25 DO-jára
+ * SCK -> Buffert vezérlünk vele, amivel az SHR-eket vezéreljük
+ * MOSI -> 4.7k-n keresztül a kimeneti SHR-ekre kell kötni
  * MISO -> 4.7k-n keresztül a bemeneti SHR-ek kimenetére kell kötni
 
 == ATTiny sensor
 
- * Sensor1 NCS - Negated Chip Select: a szenzor 1 (Attiny25)-nek jelzi, hogy küldheti az adatot
- * Sensor2 NCS - Negated Chip Select: a szenzor 2 (Attiny25)-nek jelzi, hogy küldheti az adatot
+ * Sensor1 COMM - a szenzor 1-gyel (Attiny25) kommunikál. A teljes kommunikáció ezen a vonalon megy. 470Ohm-mal védjük szembehajtás ellen.
+ * Sensor2 COMM - a szenzor 2-vel (Attiny25) kommunikál. A teljes kommunikáció ezen a vonalon megy. 470Ohm-mal védjük szembehajtás ellen.
 
 === Első szenzor bekötése
 
  * GND, VCC értelemszerűen (kapacitás kell rá)
  * /RESET - VCC-re 10kOhm-mal
  * T25 PB0(INPUT_A)                - QuadA a jeladóból
- * T25 PB1(NCS)                    - MEGA328 PB1 - Sensor1 NCS - soros 10kOhm lehet
+ * T25 PB1(COMM)                    - MEGA328 PB1 - Sensor1 COMM - soros 470Ohm lehet
  * T25 PB2(INPUT_B)                - QuadB a jeladóból
- * T25 PB3(SPI_DATA)               - MEGA328 PB3 (MOSI) - Kisértékű ellenálláson keresztül, pl 500 Ohm (max 10mA-re korlátoz)
- * T25 PB4(SPI_CLK)                - MEGA328 PB5 (SCK) - Kisértékű ellenálláson keresztül, pl 500 Ohm (max 10mA-re korlátoz)
-                                   - MEGA328 SS -> 4.7k pull down to GND szükséges, különben nem működik
+ * T25 PB3			- Nullázó jel. Lebegő input, aktív magas
 
 
 === Második szenzor bekötése
@@ -128,16 +125,9 @@ A Hardweres SPI-t arra használjuk, hogy a Quad dekóder adatát beolvassuk.
  * GND, VCC értelemszerűen (kapacitás kell rá)
  * /RESET - VCC-re 10kOhm-mal
  * T25 PB0(INPUT_A)                - QuadA a jeladóból
- * T25 PB1(NCS)                    - MEGA328 PD4 - Sensor2 NCS - soros 10kOhm lehet
+ * T25 PB1(NCS)                    - MEGA328 PD4 - Sensor2 COMM - soros 470Ohm lehet
  * T25 PB2(INPUT_B)                - QuadB a jeladóból
- * T25 PB3(SPI_DATA)               - MEGA328 PB3 (MOSI) - Kisértékű ellenálláson keresztül, pl 500 Ohm (max 10mA-re korlátoz)
- * T25 PB4(SPI_CLK)                - MEGA328 PB5 (SCK) - Kisértékű ellenálláson keresztül, pl 500 Ohm (max 10mA-re korlátoz)
-                                   - MEGA328 SS -> 4.7k pull down to GND szükséges, különben nem működik
-
-== NCALIB1
-
-Kalibrációs bemenet - alacsony aktív jelzi a kalibrációs pont elérését.
-
+ * T25 PB3                         - Nullázó jel, lebegő input, alacsonyba kell húzni
 
 == transistor out
 
