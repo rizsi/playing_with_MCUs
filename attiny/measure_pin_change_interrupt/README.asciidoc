@@ -1,0 +1,11 @@
+= Measure pin change interrupt reaction time and execution time on ATTiny25
+
+The program generates a constant signal that is visible on an oscilloscope.
+
+An external signal generates an interrupt. During interrupt the signal is not working so we can se how long the execution of the interrupt takes.
+
+Results:
+ * Execution of main program stops: 4 cycles are executed before interrupt breaks execution of main program
+ * __vector_2 (.org 0x0002) executes: 3 additional cycles to enter ISR 4th cycle is ISR entry command
+ * reti: 4 cycles - as written in datasheet
+
