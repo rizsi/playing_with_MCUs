@@ -12,22 +12,6 @@
 // Retry iterations in case of retriable error in communication
 #define MAX_ITER 10
 
-/// Initialize TWI bus hardware registers
-static void twi_init()
-{
-	TWSR = 0;	// No prescaler
-	TWBR = 70;	// divider
-	// FCPU/(16+2(TWBR)*(PrescalerValue)) = 103kHz
-}
-
-static void twi_write(uint8_t addr, uint8_t reg, uint8_t n, uint8_t * data)
-{
-}
-
-static bool twi_start()
-{
-}
-
 /* send start condition, wait for transmission, accept start, goto begin or return true in case of error */
 #define TWI_START()   TWCR = _BV(TWINT) | _BV(TWSTA) | _BV(TWEN);  \
   while ((TWCR & _BV(TWINT)) == 0) ; /* wait for transmission */ \
@@ -81,6 +65,16 @@ static bool twi_start()
       rv=-3; \
       goto error;		/* must send stop condition */ \
     }
+
+
+/// Initialize TWI bus hardware registers
+static void twi_init()
+{
+	TWSR = 0;	// No prescaler
+	TWBR = 70;	// divider
+	// FCPU/(16+2(TWBR)*(PrescalerValue)) = 103kHz
+}
+
 
 /// Read n data bytes from slave device
 /// @return number of bytes read or negative means error
@@ -141,23 +135,87 @@ static int8_t twi_read(uint8_t sla, uint8_t reg, uint8_t n, uint8_t * data)
   goto quit;
 }
 
+static int8_t twi_write(uint8_t sla, uint8_t reg, uint8_t n, uint8_t * data)
+{
+  uint8_t nrestart = 0;
+  int8_t rv=0;
+  uint8_t twst; // Temp storage of TWST register
+  restart:
+  if (nrestart++ >= MAX_ITER)
+    return -5;
+  begin:
+	TWI_START();
+
+	/* send SLA+W */
+	TWI_SEND(sla | TW_WRITE, restart);
+
+	TWI_SEND(reg, quit);
+	for(;n>0;n--)
+	{
+		TWI_SEND(data[rv], quit);
+		rv++;
+	}
+  quit:
+  /* Note [14] */
+  TWCR = _BV(TWINT) | _BV(TWSTO) | _BV(TWEN); /* send stop condition */
+  while(TWCR & (1<<TWSTO)); /* Wait for transmission of stop condition. Could be omitted in some cases. */
+  return rv;
+
+  error:
+  goto quit;
+}
+
+
 void sensor_init()
 {
 	twi_init();
 }
 
+static bool sensor_initialized=false;
+
 void sensor_poll()
 {
-	uint8_t data[6];
+	uint8_t data[6];	// Temporary data buffer
+	if(!sensor_initialized)
+	{
+		data[0]=8; // Set measure mode in the POWER_CTL register
+		if(twi_write(ACC_ADDR, 0x2D, 1, data)!=1)
+		{
+			return;
+		}
+		data[0]=11; // Set data format to FULL_RES, +-16G
+		if(twi_write(ACC_ADDR, 0x31, 1, data)!=1)
+		{
+			return;
+		}
+		sensor_initialized=true;
+	}
 	int8_t ret=twi_read(ACC_ADDR, 0x32, 6, data);
 	if(ret==6)
 	{
-		UART0_Send_Bin(data[0]);
+		int16_t x=*((int16_t *)&data[0]);
+		int16_t y=*((int16_t *)&data[2]);
+		int16_t z=*((int16_t *)&data[4]);
 		UART0_Send_Bin(data[1]);
-		UART0_Send_Bin(data[2]);
-		UART0_Send_Bin(data[3]);
-		UART0_Send_Bin(data[4]);
-		UART0_Send_Bin(data[5]);
+		UART0_Send(' ');
+		UART0_Send_Bin(data[0]);
+		UART0_Send(' ');
+		uint8_t n=UART0_Send_int32(x);
+		for(;n<5;++n)
+		{
+			UART0_Send(' ');
+		}
+		n=UART0_Send_int32(y);
+		for(;n<5;++n)
+		{
+			UART0_Send(' ');
+		}
+		n=UART0_Send_int32(z);
+//		UART0_Send_Bin(data[2]);
+//		UART0_Send_Bin(data[3]);
+//		UART0_Send(' ');
+//		UART0_Send_Bin(data[4]);
+//		UART0_Send_Bin(data[5]);
 	}else
 	{
 		UART0_Send_uint32(-ret);

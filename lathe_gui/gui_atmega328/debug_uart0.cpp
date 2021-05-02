@@ -25,19 +25,33 @@ void UART0_Send_Bin(uint8_t data)
 	}
 }
 
-void UART0_Send_uint32(uint32_t v)
+uint8_t UART0_Send_uint32(uint32_t v)
 {
 	int8_t out[16];
 	int8_t i=0;
+	uint8_t n=0;
 	do
 	{
 		out[i]='0'+v%10;
 		v/=10;
 		i++;
 	}while(v>0&&i<16);
+	n=i;
 	for(i--;i>=0;--i)
 	{
 		UART0_Send(out[i]);
+	}
+	return n;
+}
+uint8_t UART0_Send_int32(int32_t v)
+{
+	if(v<0)
+	{
+		UART0_Send('-');
+		return UART0_Send_uint32(-v)+1;
+	}else
+	{
+		return UART0_Send_uint32(v);
 	}
 }
 
