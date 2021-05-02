@@ -4,7 +4,7 @@
 
 // Connections:
 // 3, 11: PWM of motors
-// A4-A5 switch
+// A2-A1 switch
 // SDA, SCL: Sensor https://www.sparkfun.com/products/retired/10724 ADXL345 and 
 // Pullup to 3.3V
 
@@ -19,16 +19,19 @@
 /** Initialize HW for switch sensing */
 static void switch_init()
 {
-	PORTC&=~_BV(5);  // PC5 - A05 drive to low
-	DDRC|=_BV(5);
+	PORTC&=~_BV(1);  // PC1 - A01 drive to low
+	DDRC|=_BV(1);
 	
-	DDRC&=~_BV(4); // PC4 - A04 drive to input+pullup
-	PORTC|=_BV(4);
+	DDRC&=~_BV(2); // PC2 - A02 drive to input+pullup
+	PORTC|=_BV(2);
+
+	DDRC&=~_BV(0); // PC2 - A02 drive to input+pullup
+	PORTC|=_BV(0);
 }
 
 static bool switch_on()
 {
-	return (PINC&_BV(4))==0;
+	return (PINC&_BV(2))==0;
 }
 
 int main ()
