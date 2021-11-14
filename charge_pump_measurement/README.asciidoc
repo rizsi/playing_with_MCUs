@@ -23,17 +23,18 @@ To handle the case when the output is pulled low by the target it is a good idea
 
 == Test circuit
 
-
+----
 PD4  -R470Omh--diode>|----+-diode>|-+--diode>|--output ~12V----Rtest---GND
                      |         |                   |          (1MOhm test load)
                      - C1      -C2                 -Cout
                      -         -                   -
-                     |         |                   |
+                     |         |                   |GND
 PD3  -R470Omh--------+         |
                                |
                                |
 PD2  -R470Omh------------------+
 
+----
 C1, C2: 0.1uF tantal capacitor (because that is at hand).
 
 diodes: Shottky type diodes.
