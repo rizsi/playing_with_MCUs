@@ -103,14 +103,23 @@ Increasing the frequency lessens the ripple effect but also lowers the output vo
 Images half period is: 100us, 50us, 10us
 
 Half period is 100us
+
 image::04halfperiod100us.jpg[100us]
+
 Half period is 50us
+
 image::05halfperiod50us.jpg[50us]
+
 Half period is 10us
+
 image::06halfperiod10us.jpg[10us]
+
 Half period is 5us
+
 image::07halperiod5us.jpg[5us]
+
 Half period is 1us
+
 image::08halfperiod1us.jpg[1us]
 
 
@@ -120,10 +129,15 @@ With shorted active cycles the output voltage becomes less (using the same outpu
 Images: active vs inactive (us) 10 of 10, 6 of 10, 2 of 10
 
 duty 10 of 10us
+
 image::06halfperiod10us.jpg[duty 10 of 10us]
+
 duty 6 of 10us
+
 image::09duty6of10.jpg[duty 6 of 10us]
+
 duty 2 of 2 us
+
 image::10duty_2of10.jpg[duty 2 of 2 us]
 
 
