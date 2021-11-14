@@ -1,4 +1,4 @@
-= Charge pump trial
+= Dickson Charge pump trial
 
 Test circuit to charge pump for HV programming AVR chips. Target is 12V
 
@@ -70,6 +70,9 @@ Output can be fed back through a voltage divider to the controller MCU. Easiest 
 
 (Comparator could use an internal source so we don't use additional pins. And the voltage divider can be an adjustable trim potmeter so we can easily set the 12V without counting but only measuring.)
 
+== The test circuit on breadbord
+
+image::01charge_pump_on_breadboard.jpg[]
 
 == Results
 
@@ -84,22 +87,36 @@ Routmin=4.8-6.3V
 96kOhm
 12-12.4V see photo (<-readout error because the line did not start from 0. The precise value is about 0.4V more but I can't go back to measure it again.)
 
+image::02charge_hp100us_duty100_load96kOhm.jpg[load is 96kOhm]
+
+image::03_10MOhm.jpg[load is 1MOhm]
 1MOhm
 14.2V see photo
 
 == Effects of changing the frequency
 
-The envelope of the line is the same independent of the charging frequency (using the same 50% PWM duty in each case) but higher frequency means less noise on the signal.
+Increasing the frequency lessens the ripple effect but also lowers the output voltage.
+
 
 (Time is 2mS/div, voltage is 2V/div and 0V is set to the lowest grid. PD4 is used as trigger signal.)
 Images half period is: 100us, 50us, 10us
 
-Eventually using too small time periods degrades performance. See images half period is: 5us, 1us
+image::04halfperiod100us.jpg[100us]
+image::05halfperiod50us.jpg[5us]
+image::06halfperiod10us.jpg[10us]
+image::07halperiod5us.jpg[5us]
+image::08halfperiod1us.jpg[1us]
+
 
 == Effects of changing duty cycle
 
 With shorted active cycles the output voltage becomes less (using the same output load)
-Images: active vs inactive (us) 10 vs 0, 6 vs 4, 2 vs 8
+Images: active vs inactive (us) 10 of 10, 6 of 10, 2 of 10
+
+image::06halfperiod10us.jpg[duty 10 of 10us]
+image::09duty6of10.jpg[duty 6 of 10us]
+image::10duty_2of10.jpg[duty 2 of 2 us]
+
 
 In case of 2:8 (8 inactive) timing and 0 output load the output voltage slowly climbs to ~11.4V
 
