@@ -41,7 +41,7 @@ diodes: Shottky type diodes.
 
 MCU pins:
 
-PD4: (HIGH - enable pumping, LOW disengage target - in most designs this point is connected to Vcc but in our case that would not allow us to totally switch off the output when the chip is in already in programming mode)
+PD4: HIGH - enable pumping, LOW disengage target - in most designs this point is connected to Vcc but in our case that would not allow us to totally switch off the output when the chip is in already in programming mode
 
 PD3, PD2: opposite phase 50% PWM with period counted below
 
@@ -62,8 +62,6 @@ Discharge has similar timing as charge. In case of the second capacitor we swing
 
 This is a rough estimation that with half period time of 100uS the charge pump will output about 5+2*4.4=13.8V. (In real that will be less because charging and discharging always starts at less than 5V and thus the current will be a little less than what we calculated for 5V).
 
-
-Note: In theory it is not absolutely necessary that PIN2 and PIN3 works in opposite phase. But it helps that they always drive different direction of current and thus they feed each other with electrons instead of adding ripple to the power line of the MCU.
 
 == Regulation of output
 
