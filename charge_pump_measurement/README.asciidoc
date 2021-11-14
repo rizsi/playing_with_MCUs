@@ -73,7 +73,7 @@ Output can be fed back through a voltage divider to the controller MCU. Easiest 
 
 The ATTiny25 in the right edge of the image is not part of this measurement. It just hangs out on my breadboard without a job.
 
-image::01charge_pump_on_breadboard.jpg[]
+image::01charge_pump_on_breadboard.jpg[Breadboard, 50%]
 
 == Results
 
@@ -88,11 +88,11 @@ Routmin=4.8-6.3V
 96kOhm
 12-12.4V see photo (<-readout error because I forgot that the line does not go to GND level. The precise value is about 0.4V more but I don't go back to calibrate GND to a grid line and measure it again.)
 
-image::02charge_hp100us_duty100_load96kOhm.jpg[load is 96kOhm]
+image::02charge_hp100us_duty100_load96kOhm.jpg[load is 96kOhm, 50%]
 
 1MOhm load resistor: Maximum is 14.2V. It is also visible that the voltage does only falls back to about 8V while the pump is inactive.
 
-image::03_10MOhm.jpg[load is 1MOhm]
+image::03_10MOhm.jpg[load is 1MOhm, 50%]
 
 == Effects of changing the frequency
 
@@ -104,23 +104,23 @@ Images half period is: 100us, 50us, 10us
 
 Half period is 100us
 
-image::04halfperiod100us.jpg[100us]
+image::04halfperiod100us.jpg[100us, 50%]
 
 Half period is 50us
 
-image::05halfperiod50us.jpg[50us]
+image::05halfperiod50us.jpg[50us, 50%]
 
 Half period is 10us
 
-image::06halfperiod10us.jpg[10us]
+image::06halfperiod10us.jpg[10us, 50%]
 
 Half period is 5us
 
-image::07halperiod5us.jpg[5us]
+image::07halperiod5us.jpg[5us, 50%]
 
 Half period is 1us
 
-image::08halfperiod1us.jpg[1us]
+image::08halfperiod1us.jpg[1us, 50%]
 
 
 == Effects of changing duty cycle
@@ -130,15 +130,15 @@ Images: active vs inactive (us) 10 of 10, 6 of 10, 2 of 10
 
 duty 10 of 10us
 
-image::06halfperiod10us.jpg[duty 10 of 10us]
+image::06halfperiod10us.jpg[duty 10 of 10us, 50%]
 
 duty 6 of 10us
 
-image::09duty6of10.jpg[duty 6 of 10us]
+image::09duty6of10.jpg[duty 6 of 10us, 50%]
 
 duty 2 of 2 us
 
-image::10duty_2of10.jpg[duty 2 of 2 us]
+image::10duty_2of10.jpg[duty 2 of 2 us, 50%]
 
 
 In case of 2:8 (8 inactive) timing and 0 output load the output voltage slowly climbs to ~11.4V
