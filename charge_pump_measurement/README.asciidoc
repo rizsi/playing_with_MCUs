@@ -1,0 +1,119 @@
+= Charge pump trial
+
+Test circuit to charge pump for HV programming AVR chips. Target is 12V
+
+Input voltage is 5V (we use an USB powered 5V Arduino).
+
+Motivation: I played with AVR chips for years and I never needed a 12V programmer. But according to the datasheet new series of AVR chips come with only 12V programming enabled. So I have to build a simple yet functional 12V programmer.
+
+
+== Capacitor inrush current limitation
+
+The voltage when we switch the input pins of the capacitors is always max 5V. Even though the second capacitor is charged to 10V we always start charging from at least 5V.
+
+Highes current happens when PIN is switched. Formula: I=U/R
+
+To limit the current to 20mA (what is the maximum for many AVRs) we need a 250Ohm resistor at least. (I use 470Ohm in the test circuit because that is at hand.)
+
+On PIN1 (see circuit below) the current is only theoretically unlimited when turning the system on (it could be protected by software if we turn PIN2 on first and wait until C1 is well charged) but it is best to protect all pins and the resistor does not limit the efficiency of the pump much.
+
+== Output current limitation
+
+To handle the case when the output is pulled low by the target it is a good idea to limit the output current with a resistor.
+
+== Test circuit
+
+
+PD4  -R470Omh--diode>|----+-diode>|-+--diode>|--output ~12V----Rtest---GND
+                     |         |                   |          (1MOhm test load)
+                     - C1      -C2                 -Cout
+                     -         -                   -
+                     |         |                   |
+PD3  -R470Omh--------+         |
+                               |
+                               |
+PD2  -R470Omh------------------+
+
+C1, C2: 0.1uF tantal capacitor (because that is at hand).
+
+diodes: Shottky type diodes.
+
+MCU pins:
+
+PD4: (HIGH - enable pumping, LOW disengage target - in most designs this point is connected to Vcc but in our case that would not allow us to totally switch off the output when the chip is in already in programming mode)
+
+PD3, PD2: opposite phase 50% PWM with period counted below
+
+atmega328 PD4, PD3, PD2 are connected to Arduino pins 4, 3, 2
+
+Test load: we test the output current of the pump with a test load. Different test loads can be tried.
+
+
+== Timing values of PIN2 PIN3 pump charging
+
+Charging time of a capacitor can be counted using the formula: Vc=Vin(1-exp(-t/RC))
+
+Capacitor charge calculator for the impatient: http://www.learningaboutelectronics.com/Articles/Capacitor-charge-calculator.php
+
+Example timing for our setup: Voltage: 5V time: 100uS R= 470Omh C=0.1uF Capacitor voltage= 4.4V
+
+Discharge has similar timing as charge. In case of the second capacitor we swing between about 9.4V<->13.8V not 0-4.4V but the shape of charge/discharge is similar.
+
+This is a rough estimation that with half period time of 100uS the charge pump will output about 5+2*4.4=13.8V. (In real that will be less because charging and discharging always starts at less than 5V and thus the current will be a little less than what we calculated for 5V).
+
+
+Note: In theory it is not absolutely necessary that PIN2 and PIN3 works in opposite phase. But it helps that they always drive different direction of current and thus they feed each other with electrons instead of adding ripple to the power line of the MCU.
+
+== Regulation of output
+
+Output can be fed back through a voltage divider to the controller MCU. Easiest is to use a comparator input of the ATmega328 to turn pumping off at once when 12V is reached. After a time (timeout should be found out by measurement) pumping can be restarted and thus the output can be controlled. It is also possible to implement a hysteresis for the reference of the comparator so we can implement a high and a low limit to turn pump on/off.
+
+(Comparator could use an internal source so we don't use additional pins. And the voltage divider can be an adjustable trim potmeter so we can easily set the 12V without counting but only measuring.)
+
+
+== Results
+
+Cout=0.1uF
+Rtest=4.5kOhm
+Routmin=4.8-6.3V
+
+10kOhm
+
+7.0-8.0V
+
+96kOhm
+12-12.4V see photo (<-readout error because the line did not start from 0. The precise value is about 0.4V more but I can't go back to measure it again.)
+
+1MOhm
+14.2V see photo
+
+== Effects of changing the frequency
+
+The envelope of the line is the same independent of the charging frequency (using the same 50% PWM duty in each case) but higher frequency means less noise on the signal.
+
+(Time is 2mS/div, voltage is 2V/div and 0V is set to the lowest grid. PD4 is used as trigger signal.)
+Images half period is: 100us, 50us, 10us
+
+Eventually using too small time periods degrades performance. See images half period is: 5us, 1us
+
+== Effects of changing duty cycle
+
+With shorted active cycles the output voltage becomes less (using the same output load)
+Images: active vs inactive (us) 10 vs 0, 6 vs 4, 2 vs 8
+
+In case of 2:8 (8 inactive) timing and 0 output load the output voltage slowly climbs to ~11.4V
+
+
+Conclusion: PWM duty cycle can be used to control the output voltage.
+
+
+== Analysis
+
+The theoretical output current is limited by the input current. The input current is limited by the series resistor on the feeding lines of the capacitors. To use smaller value resistors a more powerful current source have to be used.  (Or we have to overdrive the output pins of the MCU. There are several such examples online and I am sure that would work because the pins endure temporary overcurrent. Though it is not a good idea to design outside the maximum ratings of components.)
+
+Using bigger capacity condensators would make the charge time longer but does not increase the theoretical reachable voltage or current.
+
+It is also worth noting that after rising the output voltage and only supplying current within a normal workload range the switched voltage of the capacitors is much less than 5V. This happens because the capacitor stays charged but the voltage of _both ends_ of the capacitor are floating on a 0-5V range. The current only charges and discharges the capacitance of that part of the circuit against the outside world. This means that after "booting" the pump a lesser resistor can safely be used. This could be achieved implementing dual feed and use one (with high resistor values) to boot the system (precharge the capacitors) and an other (with low resistor values) to feed the system in normal operation.
+
+My guess is that the most important factor for efficiency is the need for current  limiting resistors and the ESR (equivalent series resistance) of the capacitors.
+
