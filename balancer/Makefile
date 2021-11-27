@@ -10,7 +10,7 @@ F_CPU = 16000000
 DEBUG_PARAMS="-DDEBUG_EDGE_START=" "-DDEBUG_EDGE_END="
 
 
-SRCS = balancer.cpp ../lathe_gui/gui_atmega328/debug_uart0.cpp sensor.cpp
+SRCS = balancer.cpp ../lathe_gui/gui_atmega328/debug_uart0.cpp sensor.cpp motor.cpp
 ASM_SRCS = 
 INCLUDES = -I. -I../lathe_gui/gui_atmega328/
 

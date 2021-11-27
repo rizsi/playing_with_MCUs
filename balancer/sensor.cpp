@@ -1,4 +1,9 @@
 
+// Sensor handling of accelerometer and gyroscope used for the balancer robot project
+
+// SDA, SCL: Sensor https://www.sparkfun.com/products/retired/10724 ADXL345 and ITG-3200
+
+
 #include <avr/io.h>
 #include <stdint.h>
 #include <debug_uart0.h>
@@ -173,27 +178,69 @@ void sensor_init()
 
 static bool sensor_initialized=false;
 
-void sensor_poll()
+bool sensor_poll(int16_t * xyz)
 {
 	uint8_t data[6];	// Temporary data buffer
+	if(twi_read(0b11010000, 0x0, 1, data)!=1)
+	{
+		UART0_Send('X');
+	}else
+	{
+		UART0_Send_Bin(data[0]);
+	}
+	if(twi_read(0b11010000, 0x1d, 6, data)==6)
+	{
+		uint8_t tmp=data[1];
+		data[1]=data[0];
+		data[0]=tmp;
+
+
+		tmp=data[3];
+		data[3]=data[2];
+		data[2]=tmp;
+
+		tmp=data[5];
+		data[5]=data[4];
+		data[4]=tmp;
+
+//		UART0_Send(' ');
+//		UART0_Send_Bin(data[1]);
+//		UART0_Send(' ');
+//		UART0_Send_Bin(data[0]);
+//		UART0_Send(' ');
+		UART0_Send(' ');
+		uint8_t n=UART0_Send_int32(*((int16_t *)data));
+		for(;n<7;++n)
+		{
+			UART0_Send(' ');
+		}
+		n=UART0_Send_int32(*(((int16_t *)data)+1));
+		for(;n<7;++n)
+		{
+			UART0_Send(' ');
+		}
+		UART0_Send_int32(*(((int16_t *)data)+2));
+	}
+	UART0_Send('\n');
 	if(!sensor_initialized)
 	{
 		data[0]=8; // Set measure mode in the POWER_CTL register
 		if(twi_write(ACC_ADDR, 0x2D, 1, data)!=1)
 		{
-			return;
+			return true;
 		}
 		data[0]=11; // Set data format to FULL_RES, +-16G
 		if(twi_write(ACC_ADDR, 0x31, 1, data)!=1)
 		{
-			return;
+			return true;
 		}
 		sensor_initialized=true;
 	}
-	int8_t ret=twi_read(ACC_ADDR, 0x32, 6, data);
+	int8_t ret=twi_read(ACC_ADDR, 0x32, 6, (uint8_t *)xyz);
 	if(ret==6)
 	{
-		int16_t x=*((int16_t *)&data[0]);
+		return false;
+/*		int16_t x=*((int16_t *)&data[0]);
 		int16_t y=*((int16_t *)&data[2]);
 		int16_t z=*((int16_t *)&data[4]);
 		UART0_Send_Bin(data[1]);
@@ -210,16 +257,10 @@ void sensor_poll()
 		{
 			UART0_Send(' ');
 		}
-		n=UART0_Send_int32(z);
-//		UART0_Send_Bin(data[2]);
-//		UART0_Send_Bin(data[3]);
-//		UART0_Send(' ');
-//		UART0_Send_Bin(data[4]);
-//		UART0_Send_Bin(data[5]);
+		n=UART0_Send_int32(z);*/
 	}else
 	{
-		UART0_Send_uint32(-ret);
+		return true;
 	}
-	UART0_Send('\n');
 }
 
