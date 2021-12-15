@@ -56,7 +56,7 @@ ovf2=26
 ovf3=27
 tmp4=28
 
-// The required PWM frequency - current actual frequency may be different until it is slowly adjusted to this value
+// The required PWM width - current actual width may be different until it is slowly adjusted to this value
 PWM_REQ=29
 
 // Z is r30 - this is not practical to use for specific purpose
@@ -72,16 +72,15 @@ PWM_REQ=29
 #define STATE_DISABLED 5
 #define pcint__COUNT 6
 
-// TODO OUTPUT  =   PB0 // Debug output pin - flashes a LED for debug purpose
 #define UART_PORT _SFR_IO_ADDR(PORTB)
-UART_TX = PB2
-IR_INPUT = PB3 // IR input pin - PCINT3
+UART_TX = PB2	// not connected on the PCB
+IR_INPUT = PCINT4 // IR input pin - 
 
 // PWM output: OC0A, Pin 5 (4th on the right from top), PB0
 PWM_PIN = PB0
 
-BUTTON_PLUS_PIN = PB1 // Button input pin (2nd on the left from the top)
-BUTTON_MINUS_PIN = PB4 // Button input pin (3rd on the left from the top)
+BUTTON_PLUS_PIN = PB1 // Button input pin
+BUTTON_MINUS_PIN = PB0 // Button input pin
 
 .global	lastUserInteraction
 //	.noinit
@@ -126,11 +125,12 @@ main:
     sbi _SFR_IO_ADDR(DDRB), PWM_PIN // Configure pin to output
     
     ldi tmp0, _BV(TOIE0)
-    sts TIMSK0, tmp0
+    sts TIMSK, tmp0
     ldi tmp0, _BV(CS00)     ; tmr0:  CK/1
     out _SFR_IO_ADDR(TCCR0B), tmp0
     ldi tmp0, 0
     out _SFR_IO_ADDR(TCNT0), tmp0
+    
     ldi RECEIVER_STATE, 0
     ldi ovf0, 0
     ldi ovf1, 0
@@ -146,7 +146,7 @@ main:
     ldi tmp0, _BV(PCIF)
     sts GIFR, tmp0 // Clear the interrupt active flag if there was one unhandled before!
     
-    ldi tmp0, _BV(PCINT3)
+    ldi tmp0, _BV(IR_INPUT)
     sts PCMSK, tmp0
 
     // Setup output
@@ -289,15 +289,15 @@ updatePwm:
     breq updatePwm_zero
     // Fast PWM mode WGM0[2:0]=0x3
     // COM0A1:COM0A0 10 (non inverting mode)
-    ldi tmp0, _BV(COM0A1)|_BV(WGM01)|_BV(WGM00)     // COM0A: 10 - non inverting mode WGM0[0:1]: 11 Fast PWM
-    out _SFR_IO_ADDR(TCCR0A), tmp0
+//    ldi tmp0, _BV(COM0A1)|_BV(WGM01)|_BV(WGM00)     // COM0A: 10 - non inverting mode WGM0[0:1]: 11 Fast PWM
+//    out _SFR_IO_ADDR(TCCR0A), tmp0
     rjmp updatePwm_ret
 updatePwm_zero:
     // Normal mode WGM0[2:0]=0x0
     // COM0A1:COM0A0 00 (OC0A disconnected)
     ldi tmp0, 0     // Disable PWM output
-    out _SFR_IO_ADDR(TCCR0A), tmp0
-    cbi _SFR_IO_ADDR(PORTB), PWM_PIN // Set initial output to low
+//    out _SFR_IO_ADDR(TCCR0A), tmp0
+//    cbi _SFR_IO_ADDR(PORTB), PWM_PIN // Set initial output to low
 updatePwm_ret:
     ret
 
@@ -575,6 +575,18 @@ TIM0_OVF_vect:
     in r0,_SFR_IO_ADDR(SREG)
     push tmp0
     push r0
+    
+// PWM output
+    lds tmp0, OCR0A
+    tst tmp0
+    breq lamp_off
+    cp tmp0, ovf0
+    brge lamp_off
+    sbi _SFR_IO_ADDR(PORTB), PWM_PIN
+    rjmp goon
+lamp_off:
+    cbi _SFR_IO_ADDR(PORTB), PWM_PIN
+goon:
 // Increment ovfX 4 bytes and also save the previous value of ovf1
     mov r0, ovf1
     ldi tmp0, 1
@@ -837,7 +849,7 @@ pcint_ret:
     ldi tmp0, _BV(PCIF)
     sts GIFR, tmp0 // Clear the interrupt active flag if there was one unhandled before!
     
-    ldi tmp0, _BV(PCINT3)
+    ldi tmp0, _BV(IR_INPUT)
     sts PCMSK, tmp0
     // RESTORE SAVED REGS ([tmp0, tmp1, tmp2, tmp3, ZL, ZH])
     pop ZH
