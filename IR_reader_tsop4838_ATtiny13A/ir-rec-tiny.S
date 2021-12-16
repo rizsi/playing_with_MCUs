@@ -76,8 +76,8 @@ PWM_REQ=29
 UART_TX = PB2	// not connected on the PCB
 IR_INPUT = PCINT4 // IR input pin - 
 
-// PWM output: OC0A, Pin 5 (4th on the right from top), PB0
-PWM_PIN = PB0
+// PWM output pin
+PWM_PIN = PB3
 
 BUTTON_PLUS_PIN = PB1 // Button input pin
 BUTTON_MINUS_PIN = PB0 // Button input pin
