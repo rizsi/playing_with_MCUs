@@ -1,10 +1,13 @@
-// CPU_FREQ: 9600000Hz
-// Overflow freq: 37500Hz T=: 26micros
-// Overflow 256 freq: 146Hz T=: 6849micros
+// CPU_FREQ: 8000000Hz
+// Overflow freq: 31250Hz T=: 32micros
+// Overflow 256 freq: 122Hz T=: 8192micros
 // Stack frames of all IT handlers - possible to be on the stack at the same time: 14
-// Turn off timeout in ovf cycles: 34615384
+// Turn off timeout in ovf cycles: 3minutes= 5625000
 
-// Bitbang baud rate divisor and exact value: 221:5 = 3993cycles 2404Hz
+// Bitbang baud rate divisor and exact value: 221:5 = 3993cycles 2003,00450676Hz
+
+// TODO proper PWM output is disabled and timer interrupt drives the output instead
+// TODO debud TX is disabled
 
 #include <avr/io.h>
 
@@ -301,81 +304,57 @@ updatePwm_zero:
 updatePwm_ret:
     ret
 
+.macro	handleLess SET_TO
+    ldi PWM_REQ, \SET_TO
+    ldi tmp1, \SET_TO
+    cp tmp0, tmp1
+    brsh .+2
+    ret
+.endm
+
+.macro	handleMore SET_TO
+    ldi PWM_REQ, \SET_TO
+    ldi tmp1, \SET_TO
+    cp tmp1, tmp0
+    brsh .+2
+    ret
+.endm
 
 inputButtonMinus:
     ldi tmp0, 0x0f
     rcall txchar
     rcall saveLastUserInteraction
-    cpi PWM_REQ, 31 // Step 1 to 0
-    brne inputButtonMinus_NOT_1
+    mov tmp0, PWM_REQ
+
+    handleMore 225
+    handleMore 192
+    handleMore 159
+    handleMore 127
+    handleMore 95
+    handleMore 63
+    handleMore 31
     ldi PWM_REQ, 0
-inputButtonMinus_NOT_1:
-    cpi PWM_REQ, 63 // Step 2 to 1
-    brne inputButtonMinus_NOT_2
-    ldi PWM_REQ, 31
-inputButtonMinus_NOT_2:
-    cpi PWM_REQ, 95 // Step 3 to 2
-    brne inputButtonMinus_NOT_3
-    ldi PWM_REQ, 63
-inputButtonMinus_NOT_3:
-    cpi PWM_REQ, 127 // Step 4 to 3
-    brne inputButtonMinus_NOT_4
-    ldi PWM_REQ, 95
-inputButtonMinus_NOT_4:
-    cpi PWM_REQ, 159 // Step 5 to 4
-    brne inputButtonMinus_NOT_5
-    ldi PWM_REQ, 127
-inputButtonMinus_NOT_5:
-    cpi PWM_REQ, 192 // Step 6 to 5
-    brne inputButtonMinus_NOT_6
-    ldi PWM_REQ, 159
-inputButtonMinus_NOT_6:
-    cpi PWM_REQ, 225 // Step 7 to 6
-    brne inputButtonMinus_NOT_7
-    ldi PWM_REQ, 192
-inputButtonMinus_NOT_7:
-    cpi PWM_REQ, 255 // Step 8 to 7
-    brne inputButtonMinus_NOT_8
-    ldi PWM_REQ, 225
-inputButtonMinus_NOT_8:
     ret
 
 inputButtonPlus:
     ldi tmp0, '+'
     rcall txchar
     rcall saveLastUserInteraction
-    cpi PWM_REQ, 225 // Step 7 to 8
-    brne inputButtonPlus_NOT_7
-    ldi PWM_REQ, 255
-inputButtonPlus_NOT_7:
-    cpi PWM_REQ, 192 // Step 6 to 7
-    brne inputButtonPlus_NOT_6
-    ldi PWM_REQ, 225
-inputButtonPlus_NOT_6:
-    cpi PWM_REQ, 159 // Step 5 to 6
-    brne inputButtonPlus_NOT_5
-    ldi PWM_REQ, 192
-inputButtonPlus_NOT_5:
-    cpi PWM_REQ, 127 // Step 4 to 5
-    brne inputButtonPlus_NOT_4
-    ldi PWM_REQ, 159
-inputButtonPlus_NOT_4:
-    cpi PWM_REQ, 95 // Step 3 to 4
-    brne inputButtonPlus_NOT_3
-    ldi PWM_REQ, 127
-inputButtonPlus_NOT_3:
-    cpi PWM_REQ, 63 // Step 2 to 3
-    brne inputButtonPlus_NOT_2
-    ldi PWM_REQ, 95
-inputButtonPlus_NOT_2:
-    cpi PWM_REQ, 31 // Step 1 to 2
-    brne inputButtonPlus_NOT_1
-    ldi PWM_REQ, 63
-inputButtonPlus_NOT_1:
-    cpi PWM_REQ, 0 // Step 0 to 1
-    brne inputButtonPlus_NOT_0
-    ldi PWM_REQ, 31
-inputButtonPlus_NOT_0:
+    mov tmp0, PWM_REQ
+    handleLess 31
+    handleLess 63
+    handleLess 95
+    handleLess 127
+    handleLess 159
+    handleLess 192
+    handleLess 225
+    handleLess 255
+/*    handleLess 64,95
+    handleLess 96,127
+    handleLess 128,159
+    handleLess 160,192
+    handleLess 193,225
+    handleLess 226,255*/
     ret
 
 inputIRMinus:
@@ -500,10 +479,10 @@ checkTimeoutTurnOff_ret:
     ret
 
 turnOffTimeout:
-.byte 0x58
-.byte 0x30
-.byte 0x10
-.byte 0x2
+.byte 0xA8
+.byte 0xD4
+.byte 0x55
+.byte 0x0
 
 /// Is user interaction allowed by timeout?
 /// Interaction is disabled for a period of time
@@ -528,6 +507,13 @@ isUserInteractionAllowed_ret:
     ret
 
 repeatTimeout:
+.byte 0x83 // TODO remove
+.byte 0x21 // TODO remove
+.byte 0x0
+.byte 0x0
+
+
+
 .byte 0x83
 .byte 0x7
 .byte 0x0
@@ -580,8 +566,8 @@ TIM0_OVF_vect:
     lds tmp0, OCR0A
     tst tmp0
     breq lamp_off
-    cp tmp0, ovf0
-    brge lamp_off
+    cp ovf0, tmp0
+    brsh lamp_off
     sbi _SFR_IO_ADDR(PORTB), PWM_PIN
     rjmp goon
 lamp_off:
@@ -723,20 +709,20 @@ pcint__STATE_IDLE:
     rjmp pcint__end
 
 pcint__STATE_START_HIGH:
-    ldi tmp2, 0x4c
+    ldi tmp2, 62
     cp tmp0, tmp2
     ldi tmp2, 0x0
     cpc tmp1, tmp2
-    brge pcint__STATE_START_HIGH_RangeGt_2000 // If measured value is GT 2000 micros (76 ticks)
+    brge pcint__STATE_START_HIGH_RangeGt_2000 // If measured value is GT 2000 micros (62 ticks)
 pcint__STATE_START_HIGH_Range_0_TO_2000:
     rcall disableReceiverTimeout // Start HIGH is too short
     rjmp pcint__STATE_START_HIGH_Range_EXIT
 pcint__STATE_START_HIGH_RangeGt_2000:
-    ldi tmp2, 0xa7
+    ldi tmp2, 88
     cp tmp0, tmp2
     ldi tmp2, 0x1
     cpc tmp1, tmp2
-    brge pcint__STATE_START_HIGH_RangeGt_11000 // If measured value is GT 11000 micros (423 ticks)
+    brge pcint__STATE_START_HIGH_RangeGt_11000 // If measured value is GT 11000 micros (344 ticks)
 pcint__STATE_START_HIGH_Range_2000_TO_11000:
     ldi RECEIVER_STATE, STATE_START_LOW // Correct Start_HIGH signal moves us into START_LOW state
     rjmp pcint__STATE_START_HIGH_Range_EXIT
@@ -747,20 +733,20 @@ pcint__STATE_START_HIGH_Range_EXIT:
     rjmp pcint__end
 
 pcint__STATE_START_LOW:
-    ldi tmp2, 0xb
+    ldi tmp2, 0x9
     cp tmp0, tmp2
     ldi tmp2, 0x0
     cpc tmp1, tmp2
-    brge pcint__STATE_START_LOW_RangeGt_300 // If measured value is GT 300 micros (11 ticks)
+    brge pcint__STATE_START_LOW_RangeGt_300 // If measured value is GT 300 micros (9 ticks)
 pcint__STATE_START_LOW_Range_0_TO_300:
     rcall disableReceiverTimeout // Signal too short
     rjmp pcint__STATE_START_LOW_Range_EXIT
 pcint__STATE_START_LOW_RangeGt_300:
-    ldi tmp2, 0xa7
+    ldi tmp2, 88
     cp tmp0, tmp2
     ldi tmp2, 0x1
     cpc tmp1, tmp2
-    brge pcint__STATE_START_LOW_RangeGt_11000 // If measured value is GT 11000 micros (423 ticks)
+    brge pcint__STATE_START_LOW_RangeGt_11000 // If measured value is GT 11000 micros (344 ticks)
 pcint__STATE_START_LOW_Range_300_TO_11000:
     ldi tmp0, 32 // Set awaited number of bits
     mov RECEIVER_DATA_REMAINING, tmp0
@@ -778,20 +764,20 @@ pcint__STATE_START_LOW_Range_EXIT:
     rjmp pcint__end
 
 pcint__STATE_DATA_HIGH:
-    ldi tmp2, 0xb
+    ldi tmp2, 0x9
     cp tmp0, tmp2
     ldi tmp2, 0x0
     cpc tmp1, tmp2
-    brge pcint__STATE_DATA_HIGH_RangeGt_300 // If measured value is GT 300 micros (11 ticks)
+    brge pcint__STATE_DATA_HIGH_RangeGt_300 // If measured value is GT 300 micros (9 ticks)
 pcint__STATE_DATA_HIGH_Range_0_TO_300:
     rcall disableReceiverTimeout // Invalid signal length
     rjmp pcint__STATE_DATA_HIGH_Range_EXIT
 pcint__STATE_DATA_HIGH_RangeGt_300:
-    ldi tmp2, 0x26
+    ldi tmp2, 31
     cp tmp0, tmp2
     ldi tmp2, 0x0
     cpc tmp1, tmp2
-    brge pcint__STATE_DATA_HIGH_RangeGt_1000 // If measured value is GT 1000 micros (38 ticks)
+    brge pcint__STATE_DATA_HIGH_RangeGt_1000 // If measured value is GT 1000 micros (31 ticks)
 pcint__STATE_DATA_HIGH_Range_300_TO_1000:
     // Valid length of data HIGH - go to LOW sate
     ldi RECEIVER_STATE, STATE_DATA_LOW
@@ -802,31 +788,31 @@ pcint__STATE_DATA_HIGH_Range_EXIT:
     rjmp pcint__end
 
 pcint__STATE_DATA_LOW:
-    ldi tmp2, 0xb
+    ldi tmp2, 0x9
     cp tmp0, tmp2
     ldi tmp2, 0x0
     cpc tmp1, tmp2
-    brge pcint__STATE_DATA_LOW_RangeGt_300 // If measured value is GT 300 micros (11 ticks)
+    brge pcint__STATE_DATA_LOW_RangeGt_300 // If measured value is GT 300 micros (9 ticks)
 pcint__STATE_DATA_LOW_Range_0_TO_300:
     rcall disableReceiverTimeout // Invalid signal length
     rjmp pcint__STATE_DATA_LOW_Range_EXIT
 pcint__STATE_DATA_LOW_RangeGt_300:
-    ldi tmp2, 0x26
+    ldi tmp2, 31
     cp tmp0, tmp2
     ldi tmp2, 0x0
     cpc tmp1, tmp2
-    brge pcint__STATE_DATA_LOW_RangeGt_1000 // If measured value is GT 1000 micros (38 ticks)
+    brge pcint__STATE_DATA_LOW_RangeGt_1000 // If measured value is GT 1000 micros (31 ticks)
 pcint__STATE_DATA_LOW_Range_300_TO_1000:
     ldi RECEIVER_STATE, STATE_DATA_HIGH
     ldi tmp0, 0 // Received bit
     rcall dataReceived
     rjmp pcint__STATE_DATA_LOW_Range_EXIT
 pcint__STATE_DATA_LOW_RangeGt_1000:
-    ldi tmp2, 0x4c
+    ldi tmp2, 62
     cp tmp0, tmp2
     ldi tmp2, 0x0
     cpc tmp1, tmp2
-    brge pcint__STATE_DATA_LOW_RangeGt_2000 // If measured value is GT 2000 micros (76 ticks)
+    brge pcint__STATE_DATA_LOW_RangeGt_2000 // If measured value is GT 2000 micros (62 ticks)
 pcint__STATE_DATA_LOW_Range_1000_TO_2000:
     ldi RECEIVER_STATE, STATE_DATA_HIGH
     ldi tmp0, 1  // Received bit
@@ -864,6 +850,7 @@ pcint_ret:
 
 // Send byte in tmp0 (alias regA) with bitbang uart. Blocking call waits until send is ready
 txchar:				;transmit character in regA out the port bit
+    ret	// TODO TX disabled: reenable after proper PWM output was implemented and it does not ruin the PWM output
     cli
 	cbi	UART_PORT,UART_TX		;begin start bit
 	rcall	txrxbd		;bit time delay				// C3 + txrxbd
