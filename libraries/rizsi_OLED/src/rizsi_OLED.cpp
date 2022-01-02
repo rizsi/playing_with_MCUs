@@ -165,6 +165,9 @@ uint8_t fillCommand(uint8_t * address, const uint8_t ** getData, uint8_t *comman
       return 0;
     case 10:
       return 0;
+    default:
+      oledState=10;
+      return 0;
   }
 }
 
@@ -174,7 +177,7 @@ void oledData(const uint8_t * fb)
   oledState=0;
   twiBulkData(fillCommand);
 }
-boolean oledFinished()
+bool oledFinished()
 {
   return oledState==10;
 }
@@ -199,7 +202,6 @@ void _oledData(const uint8_t * fb)
 */
   oledCommand2(0x20, 0B00000010);
 //  oledCommand(0xb0);
-  int i=0;
   uint8_t page=0;
   for(int i=0;i<1024;)
   {

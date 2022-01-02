@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <avr/pgmspace.h>
 #include <rizsi_DRAW.h>
 #include "characters.h"
 

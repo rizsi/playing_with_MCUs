@@ -1,5 +1,5 @@
-#include <Arduino.h>
 
+#include <stdint.h>
 /**
  * Configure DRAW library. Must be called before anything else.
  * @param framebuffer 1024 bytes (128x64 mono pixels)
