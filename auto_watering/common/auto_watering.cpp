@@ -14,12 +14,30 @@ static void GUI_activateHandler(GUI_HANDLER handler);
 static GUI_HANDLER currentHandler = NULL;
 
 static void GUI_mainScreen(uint8_t ev, uint8_t p);
-static void GUI_secondScreen(uint8_t ev, uint8_t p);
+static void GUI_programs(uint8_t ev, uint8_t p);
+
+#define MAX_PROGRAM_SLOT 16
+#define N_PROGRAM 16
+
+static uint8_t ui_currentProgram=0;
+
+typedef struct {
+  program_slot slots[MAX_PROGRAM_SLOT];
+	
+} program_t;
+
+typedef struct {
+  uint16_t pattern;	// bit pattern of open valves while executing this program slot
+  uint8_t minutes;	// Length of execution in minutes.
+	// 0 means unused slot
+	// 255 means the slot is a special call pattern slot
+} program_slot_t;
 
 
 /// Framebuffer for OLED 128x64x1bit
 static uint8_t frame[1024];
 static int32_t counter=0;
+static program_t programs[N_PROGRAM];
 
 void gui_init()
 {
@@ -62,13 +80,14 @@ static void GUI_mainScreen(uint8_t ev, uint8_t p)
       break;
   }
 }
-static void GUI_secondScreen(uint8_t ev, uint8_t p)
+static void GUI_programs(uint8_t ev, uint8_t p)
 {
   switch(ev)
   {
     case GUIEV_REDRAW:
       RD_clearScreen();
-      RD_STRING("Öntöző második\n");
+      RD_STRING("Programok ");
+      // RD_drawString(ui_currentProgram);
       RD_drawNumber(counter, 10);
       counter++;
       break;

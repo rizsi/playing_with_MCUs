@@ -1,8 +1,9 @@
 /**
  * Initialize One Wire library.
  * Must be called once before averything else.
+ * Pin is configured by the configure_onewire.h header.
  */
-void owInit(uint8_t pin);
+void owInit();
 
 /**
  * Is last query finished? True may mean error code!

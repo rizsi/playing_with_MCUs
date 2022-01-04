@@ -15,6 +15,14 @@ void UART0_Send(uint8_t data)
 	UDR0=data;
 	return;
 }
+void UART0_Send_str(char * str)
+{
+	while(*str!=0)
+	{
+		UART0_Send(*str);
+		str++;
+	}
+}
 
 void UART0_Send_Bin(uint8_t data)
 {
@@ -53,6 +61,16 @@ uint8_t UART0_Send_int32(int32_t v)
 	{
 		return UART0_Send_uint32(v);
 	}
+}
+uint8_t UART0_read()
+{
+    while(!(UCSR0A & (1 << RXC0)));
+    return UDR0;
+}
+
+uint8_t UART0_available()
+{
+	return (UCSR0A & (1 << RXC0))!=0;
 }
 
 void UART0_Init()
