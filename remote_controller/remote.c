@@ -11,6 +11,7 @@
 #include <util/atomic.h>
 #include <avr/eeprom.h>
 #include <util/delay.h>
+#include <avr/cpufunc.h>
 
 /*
 
@@ -86,29 +87,26 @@ static void sendOnNPeriod(uint8_t nperiod)
 // One cycle should be 105. 21 DDRB|= lines are necessary
 	while(nperiod>0)
 	{
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
+	PORTB&=~0b00010000;
 	
-
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
+	PORTB|= 0b00010000;
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
+	_NOP();
 	nperiod--;
 	}
 }
@@ -116,10 +114,15 @@ static void sendOnNPeriod(uint8_t nperiod)
 /// @param us max value is 6630 (255 periods of 38khz signal)
 static void sendOn(uint16_t us)
 {
+	DDRB =0b00010000;
+
+
 	// 38kHz
 	// one period is 26,316 us
 	uint8_t nperiod=(uint8_t)(((uint32_t)us)*1000/26316); // 26,316
-  sendOnNPeriod(nperiod);
+	sendOnNPeriod(nperiod);
+	PORTB=0b11111111;
+	DDRB =0b00000000;
 }
 
 // Takes about 110ms
@@ -137,6 +140,7 @@ void sendCode(uint32_t code)
 		{
 			_delay_us(600);
 		}
+		code<<=1;
 	}
 	sendOn(600);	// Close signal	
 	_delay_us(46000);	// Close signal
@@ -150,7 +154,7 @@ void main ()
 	// All button pins set to pullup
 	// Except pwm output because that is set to input low
 	DDRB =0b00000000;
-	PORTB=0b11101111;
+	PORTB=0b11111111;
 	
 	GIMSK=0b100000; // PCIE Pin Change Interrupt enabled
 	PCMSK=0b1111; // PB0-3 causes IRQ
@@ -166,6 +170,7 @@ void main ()
 				sendCode(codes[i]);
 				active=true;
 			}
+//			sendCode(codes[i]);
 		}
 		if(!active)
 		{
