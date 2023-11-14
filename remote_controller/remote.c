@@ -14,24 +14,6 @@
 #include <avr/cpufunc.h>
 
 /*
-
-Description of FUSE settings:
- Device Clocking Select(1)   Device Clocking Option CKSEL3..0
- Calibrated Internal RC Oscillator 4MHz   0010
-
-
- Program CKDIV8 to 1
-
- Program BODLEVEL - brown out detector:
-
- 101 - 2.7V
- 100 - 4.3V
-
-
-
-So main freq is 0.6MHz
-
-
 Top view of DIP socket ATtiny25
 
                  ____U____
