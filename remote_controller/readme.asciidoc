@@ -1,0 +1,4 @@
+= IR remote controller
+
+4 button IR remote controller that sends NEC commands.
+
