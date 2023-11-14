@@ -18,8 +18,10 @@ burn:	all
 	avrdude -cusbtiny -p $(MCU_DUDE) -u -U flash:w:$(BINARY).hex
 
 fuse:
+# factory Default FUSE settings of the processor are good.
+# This was not tested to work but a new ATTiny25 was installed with default fuse. But in theory this is the factory default
 	avrdude -cusbtiny -p $(MCU_DUDE) -u \
-				-U lfuse:w:0x69:m -U hfuse:w:0xf9:m
+                                 -U lfuse:w:0x62:m -U hfuse:w:0xdf:m -U efuse:w:0xff:m 
 
 clean:
 	rm -f $(BINARY).elf $(BINARY).disassemble.txt $(BINARY).list.txt $(BINARY).hex $(BINARY).o

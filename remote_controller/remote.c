@@ -1,7 +1,6 @@
 // 4 button IR Remote controller
 
-#define 	F_CPU   8000000UL
-#define N_PRESS_TO_TOGGLE 10
+#define 	F_CPU   1000000UL
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -45,6 +44,7 @@ Additional circuits:
  * Connect Battery to GND/VCC. Chip is Always on in deep sleep waiting for button press
  * Remove battery while programming (if using programmer that supports power)
  * Buttons short the pin to GND. Do not press buttons while programming
+ * Using 3V battery, 1.2V IR LEd, 20mA the current limiter should be 90 Ohm
 */
 
 /*
@@ -72,19 +72,20 @@ ISR(	PCINT0_vect)
 GIFR|=0b00100000;
 // ISR is not handled it was just used to break the sleep of the MCU
 }
-static uint32_t codes[4]={0xE0E0D02F,1,2,3};
+static uint32_t codes[4]={0xE0E0D02F,0xE0E0E01F,0xE0E040BF,0xE0E040BF};
 
 static bool is_pressed(uint8_t pin)
 {
-return false;
+  uint8_t mask=1<<pin;
+  return (PINB&mask)==0;
 }
 static void sendOnNPeriod(uint8_t nperiod)
 {
-// 4MHz clock: 4000000÷38000 = 105,263157895
-// One cycle should be 105. 100 DDRB|= lines are necessary
+// 1MHz clock: 1000000÷38000 = 26
+// 1 cycle for each line and 5 cycles to increment and loop (ASM was checked)
+// One cycle should be 105. 21 DDRB|= lines are necessary
 	while(nperiod>0)
 	{
-	// 1 cycle for each line and 5 cycles to increment and loop (ASM was checked)
 	DDRB|= 0b00010000;
 	DDRB|= 0b00010000;
 	DDRB|= 0b00010000;
@@ -95,85 +96,8 @@ static void sendOnNPeriod(uint8_t nperiod)
 	DDRB|= 0b00010000;
 	DDRB|= 0b00010000;
 	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB|= 0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
-	DDRB&=~0b00010000;
+	
+
 	DDRB&=~0b00010000;
 	DDRB&=~0b00010000;
 	DDRB&=~0b00010000;
