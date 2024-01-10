@@ -10,50 +10,36 @@ void gui_setup()
 {
 }
 
-static uint8_t prev0=0;
-static uint8_t state0=0;
-static uint8_t prev1=0;
-static uint8_t state1=0;
-static uint8_t fel1=0;
+static uint8_t prev[2]={0};
+static uint8_t state[2]={0};
+static uint8_t fel[2]={1,1};
 
-#define STEP 5
+#define STEP 10
 void gui_loop(uint32_t currentTimeMillis)
 {
-	uint8_t button0=getButtonState(0);
-	if( button0 == 1 && prev0!=1)
+	for(uint8_t i=0;i<2;++i)
 	{
-	  if(state0==0)
-	  {
-	  	state0=1;
-	  	setPower(0,255);
-	  }else
-	  {
-	  	state0=0;
-	  	setPower(0,0);
-	  }
-	}
-	prev0=button0;
-
-	uint8_t button1=getButtonState(1);
-	if(!button1 && prev1)
-	{
-		fel1=!fel1;
-  	printf("FEL: %d\n",fel1);
-	}
-	if(button1!=0)
-	{
-	  if(fel1)
-	  {
-			state1+=STEP;
-			if(state1<STEP) state1=255;
-		}else
+		uint8_t button=getButtonState(i);
+		if(!button && prev[i])
 		{
-			state1-=STEP;
-			if(state1>255-STEP) state1=0;
+			fel[i]=!fel[i];
+			printf("FEL: %d\n",fel[i]);
 		}
+		if(button!=0)
+		{
+			if(fel[i])
+			{
+				state[i]+=STEP;
+				if(state[i]<STEP) state[i]=255;
+			}else
+			{
+				state[i]-=STEP;
+				if(state[i]>255-STEP) state[i]=0;
+			}
+		}
+		setPower(i,state[i]);
+		prev[i]=button;
 	}
-	setPower(1,state1);
-	prev1=button1;
 }
 
 
