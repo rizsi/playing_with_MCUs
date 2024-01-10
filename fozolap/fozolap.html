@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <title>Főzőlap DEMO</title>
+	<style>
+.solid {border-style: solid;}
+.fullwidth {width: 100%;}
+.row {
+  display: flex;
+}
+.led-off{
+ background-color: #222222;
+ color: #FFFFFF;
+}
+.led-on{
+ background-color: #FF0000;
+}
+
+.column {
+  flex: 50%;
+}
+.title {
+  font-weight: bold;
+}
+.dot {
+  height: 200px;
+  width: 200px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.button {
+  height: 25px;
+  width: 25px;
+  border-radius: 50%;
+  display: inline-block;
+  background-color: #000000;
+}
+	</style>
+  </head>
+  <body>
+  <div id="fozolap">
+    <span id="tuzhelyout0" class="dot" style="background-color: #000000;"></span>
+    <span id="tuzhelyout1" class="dot" style="background-color: #000000;"></span>
+    <br/>
+    <span style="  display: inline-block; width:175px;">Tűzhely</span>
+    <span class="button" id="tuzhelygomb1"></span>
+    <span class="button" id="tuzhelygomb2"></span>
+  </div>
+
+<!-- Scripts that drive the UI -->
+    <script type="text/javascript" src="helpers.js"></script>
+    <script type="text/javascript">
+	buttonHandler("tuzhelygomb1", 0);
+	buttonHandler("tuzhelygomb2", 1);
+
+ // Minimal embed code for emscript
+ var Module = {
+    print: (function() {
+      return function(text) {
+      console.info(text);
+      };
+    })(),
+    canvas: document.getElementById('canvas'),
+  };
+
+  // This is called by CPP/main after that was initialized.
+  // If cwrap is used before main has returned then that causes an error
+  // This is a predictable way to call into emscript from JS
+  function jsSetup()
+  {
+    var setup = Module.cwrap('setup', null);
+    loop = Module.cwrap('loop', null);
+    buttonPressed = Module.cwrap('buttonPressed', null, ['number','number']);
+    updateTime = Module.cwrap('updateTime', null, ['number']);
+    setup();
+    setInterval(jsLoop, 50);
+  }
+  function jsLoop()
+  {
+//   document.getElementById("tuzhelyout0").style="background-color: #aa0000;";
+	updateTime(new Date().getTime());
+	loop();
+  }
+/*  function setPower(index, power)
+  {
+    document.getElementById("tuzhelyout"+index).style="background-color: #aa0000;";
+  }
+  */
+    </script>
+    <script type="text/javascript" src="gui_port_emscripten.js"></script>
+  </body>
+</html>
+
+
